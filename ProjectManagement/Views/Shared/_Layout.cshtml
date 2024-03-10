@@ -1,0 +1,382 @@
+﻿<!doctype html>
+<html class="no-js" lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>:: My-Task:: Employee Dashboard </title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon-->
+    <!-- project css file  -->
+    <link rel="stylesheet" href="~/User/assets/css/my-task.style.min.css">
+</head>
+
+<body data-mytask="theme-indigo">
+    <div id="mytask-layout">
+
+        <!-- sidebar -->
+        <div class="sidebar px-4 py-4 py-md-5 me-0">
+            <div class="d-flex flex-column h-100">
+                <a href="index.html" class="mb-0 brand-icon">
+                    <span class="logo-icon">
+                        <svg width="35" height="35" fill="currentColor" class="bi bi-clipboard-check" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                        </svg>
+                    </span>
+                    <span class="logo-text">Company</span>
+                </a>
+                <!-- Menu: main ul -->
+
+                <ul class="menu-list flex-grow-1 mt-3">
+                    <li class="collapsed">
+                        <a class="m-link" asp-area="Admin" asp-controller="Home" asp-action="Index">
+                            <i class="icofont-home fs-5"></i> <span>Admin</span>
+                        </a>
+                    </li>
+                    <li class="collapsed">
+                        <a class="m-link active" data-bs-toggle="collapse" data-bs-target="#dashboard-Components" href="#">
+                            <i class="icofont-home fs-5"></i> <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">
+                            <i class="icofont-layers"></i><span>Backlog</span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#tikit-Components" href="#">
+                            <i class="icofont-leaflet"></i> <span>Board</span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+                            <i class="icofont-calendar"></i> <span>Calendar</span></span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+                            <i class="icofont-ui-text-chat"></i> <span>Chat</span></span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+                            <i class="icofont-ui-note"></i> <span>Notes</span></span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+                            <i class="icofont-users-social"></i> <span>TeamMembers</span></span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+                            <i class="icofont-user-alt-5"></i> <span>Employees</span></span>
+                        </a>
+                    </li>
+
+                    <li class="collapsed">
+                        <a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+                            <i class="icofont-ui-user"></i> <span>Accounts</span></span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Menu: menu collepce btn -->
+                <button type="button" class="btn btn-link sidebar-mini-btn text-light">
+                    <span class="ms-2"><i class="icofont-bubble-right"></i></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- main body area -->
+        <div class="main px-lg-4 px-md-4">
+
+            <!-- Body: Body -->
+            @RenderBody()
+
+            <!-- Modal Members-->
+            <div class="modal fade" id="addUser" tabindex="-1" aria-labelledby="addUserLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title  fw-bold" id="addUserLabel">Employee Invitation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="inviteby_email">
+                                <div class="input-group mb-3">
+                                    <input type="email" class="form-control" placeholder="Email address" id="exampleInputEmail1" aria-describedby="exampleInputEmail1">
+                                    <button class="btn btn-dark" type="button" id="button-addon2">Sent</button>
+                                </div>
+                            </div>
+                            <div class="members_list">
+                                <h6 class="fw-bold ">Employee </h6>
+                                <ul class="list-unstyled list-group list-group-custom list-group-flush mb-0">
+                                    <li class="list-group-item py-3 text-center text-md-start">
+                                        <div class="d-flex align-items-center flex-column flex-sm-column flex-md-column flex-lg-row">
+                                            <div class="no-thumbnail mb-2 mb-md-0">
+                                                <img class="avatar lg rounded-circle" src="~/User/assets/images/xs/avatar2.jpg" alt="">
+                                            </div>
+                                            <div class="flex-fill ms-3 text-truncate">
+                                                <h6 class="mb-0  fw-bold">Rachel Carr(you)</h6>
+                                                <span class="text-muted">rachel.carr@gmail.com</span>
+                                            </div>
+                                            <div class="members-action">
+                                                <span class="members-role ">Admin</span>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn bg-transparent dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="icofont-ui-settings  fs-6"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li><a class="dropdown-item" href="#"><i class="icofont-ui-password fs-6 me-2"></i>ResetPassword</a></li>
+                                                        <li><a class="dropdown-item" href="#"><i class="icofont-chart-line fs-6 me-2"></i>ActivityReport</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item py-3 text-center text-md-start">
+                                        <div class="d-flex align-items-center flex-column flex-sm-column flex-md-column flex-lg-row">
+                                            <div class="no-thumbnail mb-2 mb-md-0">
+                                                <img class="avatar lg rounded-circle" src="~/User/assets/images/xs/avatar3.jpg" alt="">
+                                            </div>
+                                            <div class="flex-fill ms-3 text-truncate">
+                                                <h6 class="mb-0  fw-bold">Lucas Baker<a href="#" class="link-secondary ms-2">(Resend invitation)</a></h6>
+                                                <span class="text-muted">lucas.baker@gmail.com</span>
+                                            </div>
+                                            <div class="members-action">
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn bg-transparent dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Members
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li>
+                                                            <a class="dropdown-item" href="#">
+                                                                <i class="icofont-check-circled"></i>
+
+                                                                <span>All operations permission</span>
+                                                            </a>
+
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" href="#">
+                                                                <i class="fs-6 p-2 me-1"></i>
+                                                                <span>Only Invite & manage team</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <div class="btn-group">
+                                                    <button type="button" class-="btn bg-transparent dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="icofont-ui-settings  fs-6"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li><a class="dropdown-item" href="#"><i class="icofont-delete-alt fs-6 me-2"></i>Delete Member</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item py-3 text-center text-md-start">
+                                        <div class="d-flex align-items-center flex-column flex-sm-column flex-md-column flex-lg-row">
+                                            <div class="no-thumbnail mb-2 mb-md-0">
+                                                <img class="avatar lg rounded-circle" src="~/User/assets/images/xs/avatar8.jpg" alt="">
+                                            </div>
+                                            <div class="flex-fill ms-3 text-truncate">
+                                                <h6 class="mb-0  fw-bold">Una Coleman</h6>
+                                                <span class="text-muted">una.coleman@gmail.com</span>
+                                            </div>
+                                            <div class="members-action">
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn bg-transparent dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Members
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li>
+                                                            <a class="dropdown-item" href="#">
+                                                                <i class="icofont-check-circled"></i>
+
+                                                                <span>All operations permission</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" href="#">
+                                                                <i class="fs-6 p-2 me-1"></i>
+                                                                <span>Only Invite & manage team</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <div class="btn-group">
+                                                    <div class="btn-group">
+                                                        <button type="button" class="btn bg-transparent dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="icofont-ui-settings  fs-6"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <li><a class="dropdown-item" href="#"><i class="icofont-ui-password fs-6 me-2"></i>ResetPassword</a></li>
+                                                            <li><a class="dropdown-item" href="#"><i class="icofont-chart-line fs-6 me-2"></i>ActivityReport</a></li>
+                                                            <li><a class="dropdown-item" href="#"><i class="icofont-delete-alt fs-6 me-2"></i>Suspend member</a></li>
+                                                            <li><a class="dropdown-item" href="#"><i class="icofont-not-allowed fs-6 me-2"></i>Delete Member</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- start: template setting, and more. -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas_setting" aria-labelledby="offcanvas_setting">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title">Template Setting</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body d-flex flex-column">
+                <div class="mb-4">
+                    <h6>Set Theme Color</h6>
+                    <ul class="choose-skin list-unstyled mb-0">
+                        <li data-theme="ValenciaRed"><div style="--mytask-theme-color: #D63B38;"></div></li>
+                        <li data-theme="SunOrange"><div style="--mytask-theme-color: #F7A614;"></div></li>
+                        <li data-theme="AppleGreen"><div style="--mytask-theme-color: #5BC43A;"></div></li>
+                        <li data-theme="CeruleanBlue"><div style="--mytask-theme-color: #00B8D6;"></div></li>
+                        <li data-theme="Mariner"><div style="--mytask-theme-color: #0066FE;"></div></li>
+                        <li data-theme="PurpleHeart" class="active"><div style="--mytask-theme-color: #6238B3;"></div></li>
+                        <li data-theme="FrenchRose"><div style="--mytask-theme-color: #EB5393;"></div></li>
+                    </ul>
+                </div>
+                <div class="mb-4 flex-grow-1">
+                    <h6>Set Theme Light/Dark/RTL</h6>
+                    <!-- Theme: Switch Theme -->
+                    <ul class="list-unstyled mb-0">
+                        <li>
+                            <div class="form-check form-switch theme-switch">
+                                <input class="form-check-input fs-6" type="checkbox" role="switch" id="theme-switch">
+                                <label class="form-check-label mx-2" for="theme-switch">Enable Dark Mode!</label>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="form-check form-switch theme-rtl">
+                                <input class="form-check-input fs-6" type="checkbox" role="switch" id="theme-rtl">
+                                <label class="form-check-label mx-2" for="theme-rtl">Enable RTL Mode!</label>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="form-check form-switch monochrome-toggle">
+                                <input class="form-check-input fs-6" type="checkbox" role="switch" id="monochrome">
+                                <label class="form-check-label mx-2" for="monochrome">Monochrome Mode</label>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="d-flex">
+                    <a href="https://themeforest.net/item/mytask-hr-project-management-admin-template/31974551" class="btn w-100 me-1 py-2 btn-primary">Buy Now</a>
+                    <a href="https://themeforest.net/user/pixelwibes/portfolio" class="btn w-100 ms-1 py-2 btn-dark">View Portfolio</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Jquery Core Js -->
+    <script src="~/User/assets/bundles/libscripts.bundle.js"></script>
+
+    <!-- Plugin Js-->
+    <script src="~/User/assets/bundles/apexcharts.bundle.js"></script>
+
+    <!-- Jquery Page Js -->
+    <script src="../js/template.js"></script>
+    <script src="../js/page/hr.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ProjectManagement</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ProjectManagement.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ProjectManagement</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2024 - ProjectManagement - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+ *@
+

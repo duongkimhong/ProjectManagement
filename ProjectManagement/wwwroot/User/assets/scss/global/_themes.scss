@@ -1,0 +1,256 @@
+:root {
+	--dark-color: 		#323A45;
+
+	--color-fff:		#FFFFFF;
+	--color-100:		#F0F0F0;
+	--color-200:		#EEEEEE;
+	--color-300:		#E0E0E0;
+	--color-400:		#BDBDBD;
+	--color-500:		#555555;
+	--color-600:		#757575;
+	--color-700:		#616161;
+	--color-800:		#424242;
+	--color-900:		#212121;
+	--color-000:		#000000;
+
+	--border-color:		#f0f0f0;
+	--card-color: 		#ffffff;
+	--body-color: 		#f9fbfd;
+	--white-color: 		#ffffff;
+	--sidebar-color:	#fcfcfc;
+    --text-color:       #212529;
+
+	--hc-font-color:	#555555;
+	--hc-bg-color:		#f0f0f0;
+
+}
+
+[data-theme="dark"] {
+	--dark-color: 		#323A45;
+
+	--color-fff:		#000000;
+	--color-100:		#212121;
+	--color-200:		#262727;
+	--color-300:		#616161;
+	--color-400:		#757575;
+	--color-500:		#8f8f8f;
+	--color-600:		#BDBDBD;
+	--color-700:		#E0E0E0;
+	--color-800:		#EEEEEE;
+	--color-900:		#F0F0F0;
+	--color-000:		#FFFFFF;
+
+	--border-color:		#353535;
+	--card-color: 		#262727;
+	--body-color: 		#1e1f20;
+	--white-color: 		#ffffff;
+	--sidebar-color:	#fcfcfc;
+    --text-color:       #8f8f8f;
+
+	--hc-font-color:	#555555;
+	--hc-bg-color:		#f0f0f0;
+
+	--body-color: #17161a;
+	--bs-body-bg: #1b1a1e;
+	--reverse-color: #f9f9f9;
+	--bs-border-color: #212024;
+	--bs-heading-color:#f9f9f9;
+	--bs-card-color:#8f8f8f;
+	--bs-body-color:#8f8f8f;
+}
+
+[data-mytask="theme-indigo"] {
+	--primary-color: 	#4C3575;
+	--secondary-color: 	#e05170;
+
+    --chart-color1: 	#484c7f; 
+    --chart-color2: 	#F19828;
+    --chart-color3: 	#f5558d;
+    --chart-color4: 	#a7daff;
+    --chart-color5: 	#9cbf3b;
+    --chart-color6: 	#a0c1b8;
+    --chart-color7: 	#64868e;
+
+
+	--primary-gradient: linear-gradient(45deg, #f5558d, #FF1843);
+}
+
+[data-mytask="theme-ValenciaRed"] {
+
+	--primary-color: 		#D63B38;
+	--secondary-color: 		#8467cb;
+	
+	--primary-rgb: 			214, 59, 56;
+	--accent-rgb: 			132, 103, 203;
+
+	--chart-color1:	 		#da3164;
+	--chart-color2: 		#ce3c8d;
+	--chart-color3: 		#b152b1;
+	--chart-color4: 		#8467cb;
+	--chart-color5: 		#9aa9e0;
+	--chart-color6: 		#314674;
+	--chart-color7: 		#64868e;
+
+	--primary-gradient: linear-gradient(-45deg, var(--primary-color), var(--secondary-color));
+}
+[data-mytask="theme-SunOrange"] {
+
+	--primary-color: 		#F7A614;
+	--secondary-color: 		#006b60;
+
+	--primary-rgb: 			247, 166, 20;
+	--accent-rgb: 			0, 107, 96;
+
+	--chart-color1:	 		#F7A614;
+	--chart-color2: 		#c25450;
+	--chart-color3: 		#ff8982;
+	--chart-color4: 		#9e7c50;
+	--chart-color5: 		#ffc0b7;
+	--chart-color6: 		#2f4858;
+	--chart-color7: 		#64868e;
+
+	--primary-gradient: linear-gradient(-45deg, var(--primary-color), var(--secondary-color));
+}
+[data-mytask="theme-AppleGreen"] {
+	
+	--primary-color: 		#5BC43A;
+	--secondary-color: 		#006b5f;
+
+	--primary-rgb: 			91, 196, 58;
+	--accent-rgb: 			0, 107, 95;
+
+	--chart-color1:	 		#00b864;
+	--chart-color2: 		#0097aa;
+	--chart-color3: 		#0084bd;
+	--chart-color4: 		#004e72;
+	--chart-color5: 		#96b0b7;
+	--chart-color6: 		#2f4858;
+	--chart-color7: 		#64868e;
+
+	--primary-gradient: linear-gradient(-45deg, var(--primary-color), var(--secondary-color));
+}
+[data-mytask="theme-CeruleanBlue"] {
+
+	--primary-color: 		#00B8D6;
+	--secondary-color: 		#00a686;
+
+	--primary-rgb: 			0, 184, 214;
+	--accent-rgb: 			0, 166, 134;
+
+	--chart-color1:	 		#00b8d6;
+	--chart-color2: 		#8966a4;
+	--chart-color3: 		#bf9adb;
+	--chart-color4: 		#b2a8b8;
+	--chart-color5: 		#96b0b7;
+	--chart-color6: 		#00a686;
+	--chart-color7: 		#64868e;
+
+	--primary-gradient: linear-gradient(-45deg, var(--primary-color), var(--secondary-color));
+}
+[data-mytask="theme-Mariner"] {
+
+	--primary-color: 		#0066FE;
+	--secondary-color: 		#DEAD00;
+
+	--primary-rgb: 			0, 102, 254;
+	--accent-rgb: 			222, 173, 0;
+
+	--chart-color1:	 		#2561BE;
+	--chart-color2: 		#d3a518;
+	--chart-color3: 		#f26a7f;
+	--chart-color4: 		#002878;
+	--chart-color5: 		#858fbb;
+	--chart-color6: 		#5b9591;
+	--chart-color7: 		#64868e;
+
+	--primary-gradient: linear-gradient(-45deg, var(--primary-color), var(--secondary-color));
+}
+[data-mytask="theme-PurpleHeart"] {
+	--primary-color: 	#4C3575;
+	--secondary-color: 	#e05170;
+
+	--primary-rgb: 		76, 53, 117;
+	--accent-rgb: 		224, 81, 112;
+
+	--chart-color1:	 	#4C3575;
+	--chart-color2: 	#354175;
+	--chart-color3: 	#98427e;
+	--chart-color4: 	#d55a75;
+	--chart-color5: 	#fb8665;
+	--chart-color6: 	#d19a8b;
+	--chart-color7: 	#64868e;
+
+	--primary-gradient: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
+
+	.page-header .header-right>li > a,
+	.page-header .header-right>li > div > a{
+		color: var(--white-color) !important;
+	}
+}
+[data-mytask="theme-FrenchRose"] {
+
+	--primary-color: 		#EB5393;
+	--secondary-color: 		#4d74c9;
+
+	--primary-rgb: 			235, 83, 147;
+	--accent-rgb: 			77, 116, 201;
+
+	--chart-color1:	 		#c82f75;
+	--chart-color2: 		#4d74c9;
+	--chart-color3: 		#5bbab5;
+	--chart-color4: 		#b861c2;
+	--chart-color5: 		#ddd7c6;
+	--chart-color6: 		#765a76;
+	--chart-color7: 		#64868e;
+
+	--primary-gradient: linear-gradient(-45deg, var(--primary-color), var(--secondary-color));
+}
+
+// Theme Color Settings
+.choose-skin {
+    display: flex;
+	flex-wrap: wrap;
+
+	li{
+        margin-right: .5rem;
+		margin-bottom: .5rem;
+        font-size: 0;
+        
+		div{
+            //@include transition(ease .3s);
+            background-color: var(--mytask-theme-color);
+            display: flex;
+            position: relative;
+			justify-content: center;
+			align-items: center;
+            height: 14px;
+            width: 60px;
+			height: 60px;
+            border-radius: 12px;
+
+            &::after{
+                //border: 1px solid var(--bs-border-color);
+				font-family: 'FontAwesome';
+				color: var(--bs-white);
+                position: absolute;
+                content: "\f00c";
+				font-size: 1rem;
+				opacity: 0;
+            }
+        }
+
+        &.active,
+        &:hover{
+            div:after{
+                opacity: 1;
+            }
+        }
+	}
+}
+
+.secondary-color{
+    color: var(--secondary-color);
+}
+.secondary-color-fill{
+    fill: var(--secondary-color);
+}

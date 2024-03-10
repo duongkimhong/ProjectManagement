@@ -1,0 +1,1085 @@
+﻿@model IEnumerable<ProjectManagement.Models.Sprints>
+
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+	body {
+		font-family: Arial, sans-serif;
+		background-color: #f4f4f4;
+		padding: 20px;
+	}
+
+	.issue {
+		background-color: #fff;
+		border: 1px solid #ccc;
+		padding: 10px;
+		margin-bottom: 10px;
+		cursor: move;
+	}
+
+	.row-content {
+		display: grid;
+		grid-template-columns: 3fr 1fr;
+		gap: 10px;
+	}
+
+	.epic-item {
+		width: 100%; /* Chiếm hết chiều ngang của thẻ cha */
+		border: 1px solid #ccc; /* Viền màu xám */
+		border-radius: 5px; /* Bo góc */
+		padding: 10px; /* Khoảng cách nội dung với viền */
+		margin-bottom: 5px; /* Khoảng cách giữa các mục */
+	}
+</style>
+
+<div class="body d-flex py-lg-3 py-md-2">
+	<div class="container-xxl">
+		<div class="row align-items-center">
+			<div class="border-0 mb-4">
+				<!---->
+				<div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
+					<h3 class="fw-bold mb-0">Backlog</h3>
+					<div class="col-auto d-flex w-sm-100">
+
+						<button type="button" class="btn btn-primary btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#anotherModal">
+							<i class="icofont-chart-line-alt me-2 fs-6"></i>Insights
+						</button>
+					</div>
+				</div>
+			</div>
+		</div> <!-- Row end  -->
+		<div class="row-content">
+			<div class="mb-4">
+				@* <div class="card mb-3" ondrop="drop(event, '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId"> *@
+				<div class="card mb-3" ondrop="drop(event, '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId">
+					<div class="card-header py-3 bg-transparent border-bottom-0">
+						<div class="row align-items-center">
+							<div class="col-sm-8">
+								<h5 class="mb-0 fw-bold">Backlog</h5>
+							</div>
+							<div class="col-sm-4 d-flex align-items-center justify-content-end">
+								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">0</span>
+								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">0</span>
+								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">0</span>
+								<span>
+									<button id="createSprintButton" class="btn btn-primary">Create Sprint</button>
+								</span>
+							</div>
+						</div>
+					</div>
+					<div id="backlogIssues">
+						@if (ViewBag.BacklogIssues != null)
+						{
+							@foreach (var item in ViewBag.BacklogIssues as List<Issues>)
+							{
+								@* <input type="hidden" data-issueId="@item.Id" name="ID" /> *@
+								<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" id="@item.Id" draggable="true" ondragstart="drag(event)">
+								
+									<div>
+										@if (item.Type == IssueType.Task)
+										{
+											<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+												<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+											</span>
+										}
+										else if (item.Type == IssueType.Bug)
+										{
+											<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+												<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+											</span>
+										}
+										else
+										{
+											<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+												<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+											</span>
+										}
+
+										<span style="margin-left: 8px;">@item.Name</span>
+									</div>
+									<div class="d-flex align-items-center">
+										@if (item.EpicID != null)
+										{
+											<span class="badge bg-primary me-2" style="font-size: 14px;">@item.EpicID</span>
+										}
+
+										<div class="dropdown">
+											@* <a class="dropdown-item" href="#" data-issueId="@item.Id">Action</a> *@
+											<button class="btn btn-secondary btn-sm dropdown-toggle me-2" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+												@item.Status
+											</button>
+											<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+												<a class="dropdown-item" href="#" data-status="Todo">Todo</a>
+												<a class="dropdown-item" href="#" data-status="InProgress">In Progress</a>
+												<a class="dropdown-item" href="#" data-status="Completed">Completed</a>
+											</div>
+										</div>
+
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: black !important; background-color:#D8D8D8 !important; border-radius: 50%;">
+											<span style="font-size: 19px;">@item.StoryPoint</span>
+										</span>
+
+										@if (item.Priority == Priorities.Lowest)
+										{
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+												<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+											</span>
+										}
+										else if (item.Priority == Priorities.Low)
+										{
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+												<i class="icofont-curved-left" style="font-size: 20px;"></i>
+											</span>
+										}
+										else if (item.Priority == Priorities.Medium)
+										{
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; color: #F0DE36 !important">
+												<i class="icofont-navigation-menu" style="font-size: 20px;"></i>
+											</span>
+
+										}
+										else if (item.Priority == Priorities.High)
+										{
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+												<i class="icofont-curved-left" style="font-size: 20px;"></i>
+											</span>
+										}
+										else if (item.Priority == Priorities.Highest)
+										{
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+												<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+											</span>
+										}
+										else
+										{
+
+										}
+
+										<span class="p-2 me-1">
+											<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+										</span>
+
+									</div>
+								</div>
+							}
+						}
+					</div>
+
+					<div class="card-body">
+						<div id="issueButtonWrapper">
+							<button id="createIssueButton" class="btn btn-transparent">
+								<i class="icofont-ui-add fs-5"></i>Create Issue
+							</button>
+						</div>
+						<form id="issueForm" method="post" asp-area="Admin" asp-controller="Issues" asp-action="Create">
+							<div class="input-group">
+								<button id="selectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+									<a class="dropdown-item" href="#" onclick="updateButton('Task')" data-value="Task"></a>
+								</button>
+								<ul class="dropdown-menu">
+									<li>
+										<a class="dropdown-item" href="#" onclick="updateButton('Task')" data-value="Task">
+											<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+												<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+											</span> Task
+										</a>
+									</li>
+									<li>
+										<a class="dropdown-item" href="#" onclick="updateButton('Bug')" data-value="Bug">
+											<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+												<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+											</span> Bug
+										</a>
+									</li>
+									<li>
+										<a class="dropdown-item" href="#" onclick="updateButton('User story')" data-value="User story">
+											<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+												<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+											</span> User story
+										</a>
+									</li>
+								</ul>
+								<input type="hidden" id="typeInput" name="Type" />
+								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter your issue" onkeypress="handleKeyPress(event)" />
+							</div>
+						</form>
+					</div>
+				</div>
+
+				@foreach (var item in ViewBag.ProjectSprints as List<Sprints>)
+				{
+					<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
+						<div class="card-header py-3 bg-transparent border-bottom-0">
+							<div class="row align-items-center">
+								<div class="col-sm-8">
+									<h6 class="mb-0 fw-bold">@item.Name</h6>
+								</div>
+								<div class="col-sm-4 d-flex align-items-center justify-content-end">
+									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">0</span>
+									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">0</span>
+									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">0</span>
+									<span>
+										<button class="btn btn-primary" onclick="startSprint('@item.Id')">Start Sprint</button>
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							@if (item.Issues != null && item.Issues.Any())
+							{
+								<ul style="padding: 0px;">
+									@foreach (var issue in item.Issues)
+									{
+										@* <input type="hidden" data-issueId="@issue.Id" /> *@
+										<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" id="@issue.Id" draggable="true" ondragstart="drag(event)">
+											<div>
+												@if (issue.Type == IssueType.Task)
+												{
+													<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+														<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+													</span>
+												}
+												else if (issue.Type == IssueType.Bug)
+												{
+													<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+														<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+													</span>
+												}
+												else
+												{
+													<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+														<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+													</span>
+												}
+
+												<span style="margin-left: 8px; cursor: pointer;" onclick="openEditModal('@issue.Id')">@issue.Name</span>
+											</div>
+
+											<div class="d-flex align-items-center">
+												@if (issue.EpicID != null)
+												{
+													<span class="badge bg-primary me-2" style="font-size: 14px;">@issue.EpicID</span>
+												}
+
+												<div class="dropdown">
+													<button class="btn btn-secondary btn-sm dropdown-toggle me-2" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+														@issue.Status
+													</button>
+													<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+														<a class="dropdown-item" href="#">Todo</a>
+														<a class="dropdown-item" href="#">In Progress</a>
+														<a class="dropdown-item" href="#">Completed</a>
+													</div>
+												</div>
+
+												<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: black !important; background-color:#D8D8D8 !important; border-radius: 50%;">
+													<span style="font-size: 19px;">@issue.StoryPoint</span>
+												</span>
+
+												@if (issue.Priority == Priorities.Lowest)
+												{
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+														<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+													</span>
+												}
+												else if (issue.Priority == Priorities.Low)
+												{
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+														<i class="icofont-curved-left" style="font-size: 20px;"></i>
+													</span>
+												}
+												else if (issue.Priority == Priorities.Medium)
+												{
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; color: #F0DE36 !important">
+														<i class="icofont-navigation-menu" style="font-size: 20px;"></i>
+													</span>
+
+												}
+												else if (issue.Priority == Priorities.High)
+												{
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+														<i class="icofont-curved-left" style="font-size: 20px;"></i>
+													</span>
+												}
+												else if (issue.Priority == Priorities.Highest)
+												{
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+														<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+													</span>
+												}
+												else
+												{
+
+												}
+
+												<span class="p-2 me-1">
+													<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+												</span>
+											</div>
+										</div>
+									}
+								</ul>
+							}
+							else
+							{
+								<p class="me-2">No issues found for this sprint</p>
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			<div class="">
+				<div class="card mb-3">
+					<div class="card-header" style="padding: 20px 20px 0px 20px;">
+						<h5 class="mb-0 fw-bold">Epics</h5>
+					</div>
+					<div class="card-body">
+
+						@foreach (var item in ViewBag.ProjectEpics as List<Epics>)
+						{
+							<div class="epic-item" style="background-color: @item.Color;" ondragover="allowDrop(event)" ondrop="drop(event, 'epic')" data-type="epic" data-epic-id="@item.Id">
+								@item.Name
+							</div>
+						}
+						<div>
+							<button type="button" class="btn btn-dark btn-set-task w-sm-100 me-2" id="createEpicBtn">
+								<i class="icofont-plus-circle me-2 fs-6"></i>Create Epic
+							</button>
+							<form id="epicForm" method="post" asp-area="Admin" asp-controller="Epics" asp-action="Create">
+								<input type="hidden" id="projectIdInput" name="projectId" />
+								<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter your Epic" onkeypress="handleEpicKeyPress(event)" />
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+
+<!-- cập nhật trường Status của issue ở giao diện ngoài -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<!-- #region Modal -->
+<!-- Create Sprint Modal -->
+<div class="modal fade" id="createSprintModal" tabindex="-1" aria-labelledby="createSprintModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="createSprintModalLabel">Create Sprint</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<!-- Form để tạo Sprint -->
+				<form id="createSprintForm" method="post" asp-area="Admin" asp-action="Create" asp-controller="Sprints">
+					<div class="mb-3">
+						<label for="sprintName" class="form-label">Sprint Name</label>
+						<input type="text" class="form-control" id="sprintName" name="Name">
+					</div>
+
+					<div class="mb-3">
+						<label for="weekSelect" class="form-label">Weeks</label>
+						<select class="form-select" id="weekSelect" name="weekSelect" onchange="handleWeekSelect()">
+							<option value="1">1 Week</option>
+							<option value="2">2 Weeks</option>
+							<option value="3">3 Weeks</option>
+							<option value="4">4 Weeks</option>
+							<option value="custom">Custom</option>
+						</select>
+					</div>
+
+					<div class="mb-3">
+						<label for="startDate" class="form-label">Start Date</label>
+						<input type="date" class="form-control" id="startDate" name="StartDate">
+					</div>
+					<div class="mb-3">
+						<label for="endDate" class="form-label">End Date</label>
+						<input type="date" class="form-control" id="endDate" name="EndDate">
+					</div>
+
+					<button type="submit" class="btn btn-primary">Create</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal popup để chỉnh sửa issue -->
+<div class="modal fade" id="editIssueModal" tabindex="-1" role="dialog" aria-labelledby="editIssueModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content" style="width: 600px;">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editIssueModalLabel">Edit Issue</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<!-- Form để chỉnh sửa issue -->
+				<form id="editIssueForm">
+					@* 
+					<!-- Hàng 2 -->
+					<div class="form-group row">
+					<label for="issueType" class="col-sm-3 col-form-label">Issue Type</label>
+					<div class="col-sm-9">
+					<input type="text" class="form-control" id="issueType" name="issueType">
+					</div>
+					</div>
+
+					<!-- Hàng 3 -->
+					<div class="form-group row">
+					<label for="priority" class="col-sm-3 col-form-label">Priority</label>
+					<div class="col-sm-9">
+					<input type="text" class="form-control" id="priority" name="priority">
+					</div>
+					</div>
+
+					<!-- Hàng 4 -->
+					<!-- Thêm các hàng tương tự cho các trường khác --> *@
+					<div class="row g-3 align-items-center">
+						<div class="col-md-2">
+							<div class="dropdown">
+								<button id="newSelectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+									<!-- Hiển thị icon tương ứng với loại issue -->
+									<span id="selectedIcon" style="display: inline-block;"></span>
+								</button>
+
+								<!-- Menu dropdown -->
+								<ul class="dropdown-menu">
+									<li>
+										<a class="dropdown-item" href="#" onclick="updateNewButton('Task')" data-value="Task">
+											<!-- Icon và tên cho loại Task -->
+											<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+												<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+											</span> Task
+										</a>
+									</li>
+									<li>
+										<a class="dropdown-item" href="#" onclick="updateNewButton('Bug')" data-value="Bug">
+											<!-- Icon và tên cho loại Bug -->
+											<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+												<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+											</span> Bug
+										</a>
+									</li>
+									<li>
+										<a class="dropdown-item" href="#" onclick="updateNewButton('User story')" data-value="User story">
+											<!-- Icon và tên cho loại User story -->
+											<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+												<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+											</span> User story
+										</a>
+									</li>
+								</ul>
+							</div>
+
+						</div>
+
+						<div class="col-md-4">
+							<input type="text" class="form-control" id="issueName" name="issueName" placeholder="Issue Name">
+						</div>
+
+						<div class="col-md-3">
+							<select class="form-select" id="epicDropdown">
+								<option value="" selected> None </option>
+								@foreach (var epic in ViewBag.ProjectEpics as List<Epics>)
+								{
+									<option value="@epic.Id">@epic.Name</option>
+								}
+							</select>
+						</div>
+
+						<div class="col-md-3">
+							<select class="form-select" id="statusSelect" onchange="setStatus()">
+								<option value="Todo">Todo</option>
+								<option value="In Progress">In Progress</option>
+								<option value="Completed">Completed</option>
+							</select>
+						</div>
+
+						<div class="col-md-6">
+							<label class="form-label">Phone Number</label>
+							<input type="text" class="form-control" id="phonenumber" required="">
+						</div>
+						<div class="col-md-6">
+							<label for="emailaddress" class="form-label">Email Address</label>
+							<input type="email" class="form-control" id="emailaddress" required="">
+						</div>
+						<div class="col-md-6">
+							<label for="admitdate" class="form-label">Date</label>
+							<input type="date" class="form-control" id="admitdate" required="">
+						</div>
+						<div class="col-md-6">
+							<label for="admittime" class="form-label">Time</label>
+							<input type="time" class="form-control" id="admittime" required="">
+						</div>
+						<div class="col-md-6">
+							<label for="formFileMultiple" class="form-label"> File Upload</label>
+							<input class="form-control" type="file" id="formFileMultiple" multiple="" required="">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label">Gender</label>
+							<div class="row">
+								<div class="col-md-6">
+									<div class="form-check">
+										<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios11" value="option1" checked="">
+										<label class="form-check-label" for="exampleRadios11">
+											Male
+										</label>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="form-check">
+										<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios22" value="option2">
+										<label class="form-check-label" for="exampleRadios22">
+											Female
+										</label>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<label for="addnote" class="form-label">Add Note</label>
+							<textarea class="form-control" id="addnote" rows="3"></textarea>
+						</div>
+					</div>
+				</form>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- #endregion -->
+<!-- #region <script> -->
+<!-- Hiện textbox khi click vào Create Issue và trở về trạng thái ban đầu khi click ra ngoài -->
+<script>
+	// Lắng nghe sự kiện click vào nút "Create Issue"
+	document.getElementById('createIssueButton').addEventListener('click', function (event) {
+		event.stopPropagation(); // Ngăn chặn sự kiện click từ lan rộng
+
+		// Ẩn nút "Create Issue"
+		document.getElementById('issueButtonWrapper').style.display = 'none';
+		// Hiển thị input textbox
+		document.getElementById('issueInputWrapper').style.display = 'block';
+	});
+
+	// Lắng nghe sự kiện click trên trang
+	document.addEventListener('click', function (event) {
+		// Kiểm tra xem người dùng đã click vào nút "Create Issue" hay ô textbox không
+		if (event.target.id !== 'createIssueButton' && event.target.id !== 'issueInput' && event.target.id !== 'selectedItemButton') {
+			// Kiểm tra xem ô textbox có rỗng không
+			var issueInput = document.getElementById('issueInput');
+			if (issueInput.value.trim() === '') {
+				// Nếu ô textbox rỗng, hiển thị lại nút "Create Issue" và ẩn textbox
+				document.getElementById('issueButtonWrapper').style.display = 'block';
+				document.getElementById('issueInputWrapper').style.display = 'none';
+			}
+		}
+	});
+
+	// hiển thị loại issue lên nút dropdown
+	function updateButton(itemName) {
+		document.getElementById('selectedItemButton').innerText = itemName;
+	}
+</script>
+
+<!-- Xử lí nhấn enter để tạo issue -->
+<script>
+	function handleKeyPress(event) {
+		if (event.key === 'Enter') {
+			event.preventDefault(); // Ngăn chặn hành động mặc định của Enter
+			document.getElementById('issueForm').submit(); // Submit form
+		}
+	}
+
+	function updateButton(type) {
+		document.getElementById('selectedItemButton').textContent = type;
+		document.getElementById('typeInput').value = type;
+	}
+</script>
+
+<!-- Lấy id của project từ URL (issue form) -->
+<script>
+	// Function to extract project ID from URL
+	function extractProjectIdFromUrl() {
+		var url = window.location.href;
+		var segments = url.split('/');
+		var projectId = segments.pop() || segments.pop(); // Extract the last segment
+		return projectId;
+	}
+
+	// Wait for the document to be fully loaded
+	document.addEventListener("DOMContentLoaded", function () {
+		// Get the form element
+		var issueForm = document.getElementById("issueForm");
+
+		// Get the hidden input element for project ID
+		var projectIdInput = document.createElement("input");
+		projectIdInput.setAttribute("type", "hidden");
+		projectIdInput.setAttribute("name", "projectId");
+		projectIdInput.setAttribute("id", "projectId");
+
+		// Set the value of the hidden input element to the project ID extracted from the URL
+		projectIdInput.value = extractProjectIdFromUrl();
+
+		// Append the hidden input element to the form
+		issueForm.appendChild(projectIdInput);
+
+		console.log(projectIdInput);
+	});
+</script>
+
+<!-- Lấy id của project từ URL (create sprint form) -->
+<script>
+	// Function to extract project ID from URL
+	function extractProjectIdFromUrl() {
+		var url = window.location.href;
+		var segments = url.split('/');
+		var projectId = segments.pop() || segments.pop(); // Extract the last segment
+		return projectId;
+	}
+
+	// Wait for the document to be fully loaded
+	document.addEventListener("DOMContentLoaded", function () {
+		// Get the form element
+		var sprintForm = document.getElementById("createSprintForm");
+
+		// Get the hidden input element for project ID
+		var projectIdInput = document.createElement("input");
+		projectIdInput.setAttribute("type", "hidden");
+		projectIdInput.setAttribute("name", "projectId");
+		projectIdInput.setAttribute("id", "projectId");
+
+		// Set the value of the hidden input element to the project ID extracted from the URL
+		projectIdInput.value = extractProjectIdFromUrl();
+
+		// Append the hidden input element to the form
+		sprintForm.appendChild(projectIdInput);
+
+		console.log(projectIdInput);
+	});
+</script>
+
+<!-- Kéo thả -->
+<script>
+	// Hàm để xử lý sự kiện kéo và thả
+	function allowDrop(event) {
+		event.preventDefault();
+	}
+
+	function drag(event) {
+		event.dataTransfer.setData("text", event.target.id);
+	}
+
+	function drop(event) {
+		event.preventDefault();
+		var data = event.dataTransfer.getData("text");
+		event.target.appendChild(document.getElementById(data));
+	}
+</script>
+
+<!-- Hiển thị modal tạo sprint -->
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		document.getElementById('createSprintButton').addEventListener('click', function () {
+			var myModal = new bootstrap.Modal(document.getElementById('createSprintModal'));
+			myModal.show();
+		});
+	});
+</script>
+
+<!-- Xử lý sự kiện chọn thời gian của sprint -->
+<script>
+	function handleWeekSelect() {
+		var weekSelect = document.getElementById('weekSelect');
+		var endDateInput = document.getElementById('endDate');
+
+		if (weekSelect.value === 'custom') {
+			endDateInput.disabled = false;
+		} else {
+			var startDateValue = document.getElementById('startDate').value;
+			var startDate = new Date(startDateValue);
+			var endDate = new Date(startDate);
+			endDate.setDate(startDate.getDate() + (7 * parseInt(weekSelect.value)));
+
+			endDateInput.value = endDate.toISOString().split('T')[0];
+			endDateInput.disabled = true;
+		}
+	}
+</script>
+
+<!-- Load ngày hiện tại khi hiện ngày  -->
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		// Get current date
+		var today = new Date();
+
+		// Format the date as "YYYY-MM-DD" for the date input
+		var formattedDate = today.toISOString().split('T')[0];
+
+		// Set the default value for the start date and end date input fields
+		document.getElementById('startDate').value = formattedDate;
+		document.getElementById('endDate').value = formattedDate;
+	});
+</script>
+
+<!-- Mở trường endate khi submit -->
+<script>
+	function enableEndDateBeforeSubmit() {
+		// Enable trường EndDate
+		document.getElementById('endDate').disabled = false;
+	}
+
+	document.getElementById('createSprintForm').addEventListener('submit', enableEndDateBeforeSubmit);
+</script>
+
+<!-- cập nhật sprint - issue -->
+<script>
+	function allowDrop(event) {
+		event.preventDefault();
+	}
+
+	function drag(event) {
+		event.dataTransfer.setData("text", event.target.id);
+		// Lưu trữ ID của Issue
+		event.dataTransfer.setData("issueId", event.target.getAttribute("data-issue-id"));
+	}
+
+	function drop(event) {
+		event.preventDefault();
+		var data = event.dataTransfer.getData("text");
+		var draggedIssue = document.getElementById(data);
+
+		// Lấy ID của Issue được kéo
+		var issueId = event.dataTransfer.getData("issueId");
+
+		// Lấy ID của sprint mới
+		var sprintId = event.target.getAttribute("data-sprint-id");
+
+		// Gửi request AJAX để cập nhật ID của sprint trong bảng issue
+		fetch('/Admin/Issues/UpdateIssueSprint', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				issueId: issueId,
+				sprintId: sprintId
+			})
+		})
+			.then(response => response.json())
+			.then(data => {
+				console.log('Issue sprint updated successfully');
+			})
+			.catch(error => {
+				console.error('Error updating issue sprint:', error);
+			});
+
+		// Di chuyển vấn đề vào sprint mới
+		event.target.appendChild(draggedIssue);
+	}
+
+	function drop(event, sprintId) {
+		event.preventDefault();
+		var issueId = event.dataTransfer.getData("text");
+		var issueElement = document.getElementById(issueId);
+
+		$.ajax({
+			type: "POST",
+			url: "/Admin/Issues/updateIssueSprint",
+			data: { issueId: issueId, sprintId: sprintId },
+			success: function (response) {
+				location.reload();
+			},
+			error: function (error) {
+				console.error("Error updating issue sprintId:", error);
+			}
+		});
+	}
+
+	function getProjectIdFromUrl() {
+		var url = window.location.href;
+		var segments = url.split('/');
+		var projectId = segments.pop() || segments.pop(); // Extract the last segment
+		return projectId;
+	}
+
+</script>
+
+<!-- #endregion -->
+
+
+<script>
+	// $(document).ready(function () {
+	// 	$('.dropdown-item').on('click', function () {
+	// 		var issueId = $(this).closest('.issue').find('input[name="ID"]').data('issueId');
+	// 		var status = $(this).data('status');
+	// 		console.log(issueId);
+	// 		console.log(issueId);
+	// 		$.ajax({
+	// 			url: '/Admin/Issues/UpdateIssueStatus',
+	// 			type: 'POST',
+	// 			data: { issueId: issueId, status: status },
+	// 			success: function (response) {
+	// 				console.log(response);
+	// 			},
+	// 			error: function (xhr, status, error) {
+	// 				console.error(error);
+	// 			}
+	// 		});
+	// 	});
+	// });
+
+	// Đăng ký sự kiện click cho tất cả các phần tử có lớp là 'dropdown-item'
+	// $('.dropdown-item').on('click', function () {
+	// 	// Lấy giá trị của thuộc tính data-issueId từ phần tử được click
+	// 	var issueId = $(this).data('issueId');
+
+	// 	// Thực hiện các xử lý với issueId ở đây
+	// 	console.log('Clicked on issue with ID:', issueId);
+
+	// 	// Ngăn chặn hành vi mặc định của thẻ <a> (chẳng hạn chuyển hướng trang)
+	// 	return false;
+	// });
+</script>
+
+<!-- Epic -->
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		const createEpicBtn = document.getElementById('createEpicBtn');
+		const epicNameInput = document.getElementById('epicNameInput');
+		projectIdInput.value = extractProjectIdFromUrl();
+
+		createEpicBtn.addEventListener('click', function () {
+			createEpicBtn.style.display = 'none';
+			epicNameInput.style.display = 'block';
+			epicNameInput.focus();
+		});
+
+		epicNameInput.addEventListener('keypress', function (e) {
+			if (e.key === 'Enter') {
+				function handleEpicKeyPress(event) {
+					if (event.key === 'Enter') {
+						event.preventDefault();
+						document.getElementById('epicForm').submit();
+					}
+				}
+				const epicName = epicNameInput.value.trim();
+				if (epicName !== '') {
+					console.log('Creating epic:', epicName);
+					epicNameInput.value = '';
+					epicNameInput.style.display = 'none';
+					createEpicBtn.style.display = 'block';
+				}
+			}
+		});
+
+		document.addEventListener('click', function (e) {
+			if (!epicNameInput.contains(e.target) && e.target !== createEpicBtn) {
+				epicNameInput.style.display = 'none';
+				createEpicBtn.style.display = 'block';
+			}
+		});
+	});
+</script>
+
+<script>
+	var id;
+	function openEditModal(issueId) {
+		$.ajax({
+			url: '/Admin/Issues/Edit',
+			method: 'GET',
+			data: { issueId: issueId },
+			success: function (response) {
+				// Xử lý phản hồi từ máy chủ và điền thông tin vào form chỉnh sửa
+				$('#issueId').val(response.id);
+				$('#issueName').val(response.name);
+				$('#issueEpic').val(response.epic);
+				$('#issueType').val(response.type);
+				$('#issueStartDate').val(response.startDate);
+				$('#issueEndDate').val(response.endDate);
+				$('#issueDescrtiption').val(response.description);
+				$('#issueStatus').val(response.status);
+				$('#priority').val(response.priority);
+				$('#issueIsFlag').val(response.isFlag);
+				$('#storyPoint').val(response.storyPoint);
+				$('#assignee').val(response.assigneeID);
+				$('#reporter').val(response.reporterID);
+				$('#issueDocument').val(response.issueDocument);
+				$('#issueComments').val(response.comments);
+
+				id = response.id;
+				console.log('hello '+ id);
+				console.log(response.name);
+				console.log(response.type);
+				console.log(response.startDate);
+				console.log(response.endDate);
+				console.log(response.description);
+				console.log(response.status);
+				console.log(response.priority);
+				console.log(response.isFlag);
+				console.log(response.storyPoint);
+				console.log(response.assigneeID);
+				console.log(response.reporterID);
+				console.log(response.issueDocument);
+				console.log(response.comments);
+				// Hiển thị modal popup
+				$('#editIssueModal').modal('show');
+			},
+			error: function (xhr, status, error) {
+				// Xử lý lỗi nếu có
+				console.error(error);
+			}
+		});
+	}
+
+	
+
+	function saveIssueChanges() {
+		// Xử lý lưu các thay đổi của issue
+
+		// Sau khi lưu, đóng modal popup
+		$('#editIssueModal').modal('hide');
+	}
+
+	
+
+	// Hàm trả về class của icon dựa trên loại được chọn
+	function getIconClass(value) {
+		switch (value) {
+			case 'Task':
+				return 'icofont-book-mark text-white';
+			case 'Bug':
+				return 'icofont-bug text-white';
+			case 'User story':
+				return 'icofont-ui-messaging text-white';
+			default:
+				return 'icofont-ui-messaging text-white';
+		}
+	}
+
+	// Hàm trả về màu nền dựa trên loại được chọn
+	function getBackgroundColor(value) {
+		switch (value) {
+			case 'Task':
+				return '#1a73e8';
+			case 'Bug':
+				return '#dc3545';
+			case 'User story':
+				return '#ffc107';
+			default:
+				return '#ffffff'; // Mặc định là trắng
+		}
+	}
+
+	function setStatus() {
+		var selectElement = document.getElementById('statusSelect');
+		var selectedStatus = selectElement.options[selectElement.selectedIndex].value;
+		// Thực hiện các hành động khác tùy thuộc vào trạng thái được chọn
+	}
+
+	// Hàm JavaScript để cập nhật nút dropdown
+	function updateNewButton(value) {
+		// Lấy icon tương ứng với loại được chọn
+		var iconClass = getIconClass(value);
+		var backgroundColor = getBackgroundColor(value);
+
+		// Cập nhật icon và màu nền trên nút dropdown
+		document.getElementById('selectedIcon').className = iconClass;
+		document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
+	}
+
+	function updateNewButton(type) {
+		var issueId = id;
+		console.log('update new button');
+		console.log(issueId);
+		$.ajax({
+			url: '/Admin/Issues/Edit',
+			method: 'POST',
+			data: { id: issueId},
+			//data: { issueId: issueId, type: type },
+			success: function (response) {
+				// Xử lý phản hồi từ máy chủ nếu cần
+			},
+			error: function (xhr, status, error) {
+				// Xử lý lỗi nếu có
+				console.error(error);
+			}
+		});
+	}
+
+	// function drop(event, epicId) {
+	// 	event.preventDefault();
+	// 	var issueId = event.dataTransfer.getData("text");
+	// 	updateEpic(issueId, epicId);
+	// }
+
+	function allowDrop(event) {
+		event.preventDefault();
+	}
+
+	function drag(event) {
+		event.dataTransfer.setData("issueId", event.target.id);
+	}
+
+	function drop(event, targetType) {
+		// Lấy dữ liệu issue được kéo
+		var issueId = event.dataTransfer.getData("issueId");
+
+		// Lấy sprintId từ data attribute
+		// var sprintId = event.target.getAttribute('data-sprint-id');
+		var sprintId = $('#sprintId').data('sprint-id');
+		console.log(sprintId);
+		// Lấy epicId từ data attribute
+		var epicId = event.target.getAttribute('data-epic-id');
+
+		if (targetType === 'sprint') {
+			updateSprint(issueId, sprintId);
+		} else if (targetType === 'epic') {
+			updateEpic(issueId, epicId);
+		}
+	}
+
+	function updateSprint(issueId, sprintId) {
+		$.ajax({
+			url: '/Admin/Issues/updateIssueSprint',
+			method: 'POST',
+			data: { issueId: issueId, sprintId: sprintId },
+			success: function (response) {
+				// Xử lý phản hồi từ máy chủ nếu cần
+			},
+			error: function (xhr, status, error) {
+				// Xử lý lỗi nếu có
+				console.error(error);
+			}
+		});
+	}
+
+	function updateEpic(issueId, epicId) {
+		// Gọi controller để cập nhật Epic
+		$.ajax({
+			url: '/Admin/Issues/UpdateEpic',
+			method: 'POST',
+			data: { issueId: issueId, epicId: epicId }, // Truyền epicId vào dữ liệu của yêu cầu
+			success: function (response) {
+				// Xử lý phản hồi từ máy chủ nếu cần
+			},
+			error: function (xhr, status, error) {
+				// Xử lý lỗi nếu có
+				console.error(error);
+			}
+		});
+	}
+</script>
+
+
