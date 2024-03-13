@@ -1,8 +1,9 @@
 ﻿@model IEnumerable<ProjectManagement.Models.Sprints>
-
+@inject ApplicationDbContext _context
 @{
 	ViewData["Title"] = "Index";
 	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
 }
 
 <style>
@@ -27,12 +28,37 @@
 	}
 
 	.epic-item {
-		width: 100%; /* Chiếm hết chiều ngang của thẻ cha */
-		border: 1px solid #ccc; /* Viền màu xám */
-		border-radius: 5px; /* Bo góc */
-		padding: 10px; /* Khoảng cách nội dung với viền */
-		margin-bottom: 5px; /* Khoảng cách giữa các mục */
+		width: 100%;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+		padding: 10px;
+		margin-bottom: 5px;
 	}
+
+	.custom-menu {
+		display: none;
+		position: absolute;
+		background-color: white;
+		border: 1px solid #ccc;
+		padding: 5px 0;
+		z-index: 1000;
+	}
+
+		.custom-menu ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+
+			.custom-menu ul li {
+				padding: 8px 20px;
+				cursor: pointer;
+			}
+
+				.custom-menu ul li:hover {
+					background-color: #f0f0f0;
+				}
+
 </style>
 
 <div class="body d-flex py-lg-3 py-md-2">
@@ -53,8 +79,7 @@
 		</div> <!-- Row end  -->
 		<div class="row-content">
 			<div class="mb-4">
-				@* <div class="card mb-3" ondrop="drop(event, '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId"> *@
-				<div class="card mb-3" ondrop="drop(event, '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId">
+				<div class="card mb-3" ondrop="drop(event, 'sprint', '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId">
 					<div class="card-header py-3 bg-transparent border-bottom-0">
 						<div class="row align-items-center">
 							<div class="col-sm-8">
@@ -75,9 +100,8 @@
 						{
 							@foreach (var item in ViewBag.BacklogIssues as List<Issues>)
 							{
-								@* <input type="hidden" data-issueId="@item.Id" name="ID" /> *@
 								<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" id="@item.Id" draggable="true" ondragstart="drag(event)">
-								
+
 									<div>
 										@if (item.Type == IssueType.Task)
 										{
@@ -103,7 +127,19 @@
 									<div class="d-flex align-items-center">
 										@if (item.EpicID != null)
 										{
-											<span class="badge bg-primary me-2" style="font-size: 14px;">@item.EpicID</span>
+											var epic = _context.Epics.FirstOrDefault(e => e.Id == item.EpicID);
+											if (epic != null)
+											{
+												<span class="badge bg-primary me-2" style="font-size: 14px; position: relative;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+
+												<!-- Menu popup -->
+												<div id="contextMenu" class="custom-menu">
+													<ul>
+														<li id="unlinkEpic" onclick="handleClick('@item.Id')">Unlink Epic</li>
+														<li id="viewDetail">View Detail</li>
+													</ul>
+												</div>
+											}
 										}
 
 										<div class="dropdown">
@@ -169,11 +205,6 @@
 					</div>
 
 					<div class="card-body">
-						<div id="issueButtonWrapper">
-							<button id="createIssueButton" class="btn btn-transparent">
-								<i class="icofont-ui-add fs-5"></i>Create Issue
-							</button>
-						</div>
 						<form id="issueForm" method="post" asp-area="Admin" asp-controller="Issues" asp-action="Create">
 							<div class="input-group">
 								<button id="selectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -203,7 +234,7 @@
 									</li>
 								</ul>
 								<input type="hidden" id="typeInput" name="Type" />
-								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter your issue" onkeypress="handleKeyPress(event)" />
+								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter new issue name" onkeypress="handleKeyPress(event)" />
 							</div>
 						</form>
 					</div>
@@ -211,18 +242,35 @@
 
 				@foreach (var item in ViewBag.ProjectSprints as List<Sprints>)
 				{
-					<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
+					<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@item.Id')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
 						<div class="card-header py-3 bg-transparent border-bottom-0">
 							<div class="row align-items-center">
-								<div class="col-sm-8">
+								<div class="col-sm-8 edit-sprint"
+									 style="display: flex; align-items: center;"
+									 data-id="@item.Id"
+									 data-name="@item.Name"
+									 data-start-date="@item.StartDate"
+									 data-end-date="@item.EndDate">
 									<h6 class="mb-0 fw-bold">@item.Name</h6>
+									<span style="color: gray; margin-left: 10px;">(@($"{item.StartDate:dd/MM/yyyy} - {item.EndDate:dd/MM/yyyy}"))</span>
 								</div>
 								<div class="col-sm-4 d-flex align-items-center justify-content-end">
 									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">0</span>
 									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">0</span>
 									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">0</span>
 									<span>
-										<button class="btn btn-primary" onclick="startSprint('@item.Id')">Start Sprint</button>
+										@if (item.Status == null)
+										{
+											<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Start')">Start Sprint</button>
+										}
+										else if (item.Status == SprintStatus.Start)
+										{
+											<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Complete')">Complete Sprint</button>
+										}
+										else
+										{
+											<button class="btn btn-primary">Sprint completed</button>
+										}
 									</span>
 								</div>
 							</div>
@@ -262,7 +310,19 @@
 											<div class="d-flex align-items-center">
 												@if (issue.EpicID != null)
 												{
-													<span class="badge bg-primary me-2" style="font-size: 14px;">@issue.EpicID</span>
+													var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+													if (epic != null)
+													{
+														<span class="badge bg-primary me-2" style="font-size: 14px; position: relative;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+
+														<!-- Menu popup -->
+														<div id="contextMenu" class="custom-menu">
+															<ul>
+																<li id="unlinkEpic" onclick="handleClick('@issue.Id')">Unlink Epic</li>
+																<li id="viewDetail">View Detail</li>
+															</ul>
+														</div>
+													}
 												}
 
 												<div class="dropdown">
@@ -342,17 +402,17 @@
 
 						@foreach (var item in ViewBag.ProjectEpics as List<Epics>)
 						{
-							<div class="epic-item" style="background-color: @item.Color;" ondragover="allowDrop(event)" ondrop="drop(event, 'epic')" data-type="epic" data-epic-id="@item.Id">
+							<div class="epic-item" style="background-color: @item.Color;" ondragover="allowDrop(event)" ondrop="drop(event, 'epic', '@item.Id')" data-type="epic" data-epic-id="@item.Id">
 								@item.Name
 							</div>
 						}
 						<div>
-							<button type="button" class="btn btn-dark btn-set-task w-sm-100 me-2" id="createEpicBtn">
-								<i class="icofont-plus-circle me-2 fs-6"></i>Create Epic
-							</button>
+							@* <button type="button" class="btn btn-dark btn-set-task w-sm-100 me-2" id="createEpicBtn">
+							<i class="icofont-plus-circle me-2 fs-6"></i>Create Epic
+							</button> *@
 							<form id="epicForm" method="post" asp-area="Admin" asp-controller="Epics" asp-action="Create">
 								<input type="hidden" id="projectIdInput" name="projectId" />
-								<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter your Epic" onkeypress="handleEpicKeyPress(event)" />
+								<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter new epic name" onkeypress="handleEpicKeyPress(event)" />
 							</form>
 						</div>
 					</div>
@@ -426,7 +486,7 @@
 			<div class="modal-body">
 				<!-- Form để chỉnh sửa issue -->
 				<form id="editIssueForm">
-					@* 
+					@*
 					<!-- Hàng 2 -->
 					<div class="form-group row">
 					<label for="issueType" class="col-sm-3 col-form-label">Issue Type</label>
@@ -559,6 +619,41 @@
 	</div>
 </div>
 
+<!-- Modal popup chỉnh sửa sprint -->
+<div class="modal fade" id="editSprintModal" tabindex="-1" aria-labelledby="editSprintModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editSprintModalLabel">Edit Sprint</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="editSprintForm" method="post" enctype="multipart/form-data">
+					<input type="hidden" id="sprintIdInput" name="Id" />
+					<div class="mb-3">
+						<label for="sprintNameInput" class="form-label">Sprint Name</label>
+						<input type="text" class="form-control" id="sprintNameInput" name="Name">
+					</div>
+					<div class="mb-3">
+						<label for="startDateInput" class="form-label">Start Date</label>
+						<input type="date" class="form-control" id="startDateInput" name="StartDate">
+					</div>
+					<div class="mb-3">
+						<label for="endDateInput" class="form-label">End Date</label>
+						<input type="date" class="form-control" id="endDateInput" name="EndDate">
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" id="saveChangesBtn">Save changes</button>
+					</div>
+				</form>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+
 <!-- #endregion -->
 <!-- #region <script> -->
 <!-- Hiện textbox khi click vào Create Issue và trở về trạng thái ban đầu khi click ra ngoài -->
@@ -635,7 +730,7 @@
 		// Append the hidden input element to the form
 		issueForm.appendChild(projectIdInput);
 
-		console.log(projectIdInput);
+		//console.log(projectIdInput);
 	});
 </script>
 
@@ -666,7 +761,7 @@
 		// Append the hidden input element to the form
 		sprintForm.appendChild(projectIdInput);
 
-		console.log(projectIdInput);
+		//console.log(projectIdInput);
 	});
 </script>
 
@@ -764,7 +859,7 @@
 		var issueId = event.dataTransfer.getData("issueId");
 
 		// Lấy ID của sprint mới
-		var sprintId = event.target.getAttribute("data-sprint-id");
+		var sprintId = event.target.getAttribute("data-sprintId");
 
 		// Gửi request AJAX để cập nhật ID của sprint trong bảng issue
 		fetch('/Admin/Issues/UpdateIssueSprint', {
@@ -779,7 +874,7 @@
 		})
 			.then(response => response.json())
 			.then(data => {
-				console.log('Issue sprint updated successfully');
+				//console.log('Issue sprint updated successfully');
 			})
 			.catch(error => {
 				console.error('Error updating issue sprint:', error);
@@ -813,45 +908,9 @@
 		var projectId = segments.pop() || segments.pop(); // Extract the last segment
 		return projectId;
 	}
-
 </script>
 
 <!-- #endregion -->
-
-
-<script>
-	// $(document).ready(function () {
-	// 	$('.dropdown-item').on('click', function () {
-	// 		var issueId = $(this).closest('.issue').find('input[name="ID"]').data('issueId');
-	// 		var status = $(this).data('status');
-	// 		console.log(issueId);
-	// 		console.log(issueId);
-	// 		$.ajax({
-	// 			url: '/Admin/Issues/UpdateIssueStatus',
-	// 			type: 'POST',
-	// 			data: { issueId: issueId, status: status },
-	// 			success: function (response) {
-	// 				console.log(response);
-	// 			},
-	// 			error: function (xhr, status, error) {
-	// 				console.error(error);
-	// 			}
-	// 		});
-	// 	});
-	// });
-
-	// Đăng ký sự kiện click cho tất cả các phần tử có lớp là 'dropdown-item'
-	// $('.dropdown-item').on('click', function () {
-	// 	// Lấy giá trị của thuộc tính data-issueId từ phần tử được click
-	// 	var issueId = $(this).data('issueId');
-
-	// 	// Thực hiện các xử lý với issueId ở đây
-	// 	console.log('Clicked on issue with ID:', issueId);
-
-	// 	// Ngăn chặn hành vi mặc định của thẻ <a> (chẳng hạn chuyển hướng trang)
-	// 	return false;
-	// });
-</script>
 
 <!-- Epic -->
 <script>
@@ -919,7 +978,7 @@
 				$('#issueComments').val(response.comments);
 
 				id = response.id;
-				console.log('hello '+ id);
+				@* console.log(id);
 				console.log(response.name);
 				console.log(response.type);
 				console.log(response.startDate);
@@ -932,7 +991,7 @@
 				console.log(response.assigneeID);
 				console.log(response.reporterID);
 				console.log(response.issueDocument);
-				console.log(response.comments);
+				console.log(response.comments); *@
 				// Hiển thị modal popup
 				$('#editIssueModal').modal('show');
 			},
@@ -943,16 +1002,12 @@
 		});
 	}
 
-	
-
 	function saveIssueChanges() {
 		// Xử lý lưu các thay đổi của issue
 
 		// Sau khi lưu, đóng modal popup
 		$('#editIssueModal').modal('hide');
 	}
-
-	
 
 	// Hàm trả về class của icon dựa trên loại được chọn
 	function getIconClass(value) {
@@ -1002,14 +1057,13 @@
 	function updateNewButton(type) {
 		var issueId = id;
 		console.log('update new button');
-		console.log(issueId);
+		//console.log(issueId);
 		$.ajax({
 			url: '/Admin/Issues/Edit',
 			method: 'POST',
-			data: { id: issueId},
+			data: { id: issueId },
 			//data: { issueId: issueId, type: type },
 			success: function (response) {
-				// Xử lý phản hồi từ máy chủ nếu cần
 			},
 			error: function (xhr, status, error) {
 				// Xử lý lỗi nếu có
@@ -1017,12 +1071,6 @@
 			}
 		});
 	}
-
-	// function drop(event, epicId) {
-	// 	event.preventDefault();
-	// 	var issueId = event.dataTransfer.getData("text");
-	// 	updateEpic(issueId, epicId);
-	// }
 
 	function allowDrop(event) {
 		event.preventDefault();
@@ -1032,54 +1080,161 @@
 		event.dataTransfer.setData("issueId", event.target.id);
 	}
 
-	function drop(event, targetType) {
-		// Lấy dữ liệu issue được kéo
+	function drop(event, targetType, id) {
 		var issueId = event.dataTransfer.getData("issueId");
-
-		// Lấy sprintId từ data attribute
-		// var sprintId = event.target.getAttribute('data-sprint-id');
-		var sprintId = $('#sprintId').data('sprint-id');
-		console.log(sprintId);
-		// Lấy epicId từ data attribute
 		var epicId = event.target.getAttribute('data-epic-id');
 
 		if (targetType === 'sprint') {
-			updateSprint(issueId, sprintId);
+			updateSprint(issueId, id);
 		} else if (targetType === 'epic') {
 			updateEpic(issueId, epicId);
 		}
 	}
 
-	function updateSprint(issueId, sprintId) {
+	function updateSprint(issueId, sId) {
 		$.ajax({
 			url: '/Admin/Issues/updateIssueSprint',
 			method: 'POST',
-			data: { issueId: issueId, sprintId: sprintId },
+			data: { issueId: issueId, sId: sId },
 			success: function (response) {
-				// Xử lý phản hồi từ máy chủ nếu cần
+				location.reload();
 			},
 			error: function (xhr, status, error) {
-				// Xử lý lỗi nếu có
 				console.error(error);
 			}
 		});
 	}
 
 	function updateEpic(issueId, epicId) {
-		// Gọi controller để cập nhật Epic
 		$.ajax({
 			url: '/Admin/Issues/UpdateEpic',
 			method: 'POST',
-			data: { issueId: issueId, epicId: epicId }, // Truyền epicId vào dữ liệu của yêu cầu
+			data: { issueId: issueId, epicId: epicId },
 			success: function (response) {
-				// Xử lý phản hồi từ máy chủ nếu cần
+				location.reload();
 			},
 			error: function (xhr, status, error) {
-				// Xử lý lỗi nếu có
 				console.error(error);
 			}
 		});
 	}
 </script>
+
+<!-- update sprint -->
+<script>
+	$(document).ready(function () {
+		$('.edit-sprint').on('click', function () {
+			var sprintID = $(this).data('id');
+			var pj_id = extractProjectIdFromUrl().toString();
+			var name = $(this).data('name');
+			var startDate = new Date($(this).data('start-date'));
+			var endDate = new Date($(this).data('end-date'));
+
+			startDate.setDate(startDate.getDate() + 1);
+			endDate.setDate(endDate.getDate() + 1);
+
+			$('#sprintIdInput').val(sprintID);
+			$('#projectIdInput').val(pj_id);
+			$('#sprintNameInput').val(name);
+			$('#startDateInput').val(startDate.toISOString().split('T')[0]);
+			$('#endDateInput').val(endDate.toISOString().split('T')[0]); // Chuyển đổi về định dạng YYYY-MM-DD
+			//console.log(pj_id);
+			// Show modal
+			$('#editSprintModal').modal('show');
+		});
+
+		$('#saveChangesBtn').on('click', function () {
+			$('#editSprintModal').modal('hide');
+		});
+	});
+
+	$(document).ready(function () {
+		$('#saveChangesBtn').click(function () {
+			var formData = $('#editSprintForm').serialize();
+
+			$.ajax({
+				url: '/Admin/Sprints/Edit',
+				method: 'POST',
+				data: formData,
+				success: function (response) {
+					window.location.reload();
+				},
+				error: function (xhr, status, error) {
+					console.log(error);
+				}
+			});
+		});
+	});
+
+	function startSprint(sprintId, status) {
+		$.ajax({
+			type: "POST",
+			url: "/Admin/Sprints/UpdateSprintStatus",
+			data: { sprintId: sprintId, status: status },
+			success: function (response) {
+
+			},
+			error: function () {
+
+			}
+		});
+	}
+</script>
+
+<!-- Hiện context menu khi nhấn chuột phải vào epic name -->
+<script>
+	function showContextMenu(event) {
+		event.preventDefault();
+
+		const epicSpan = event.target;
+		const rect = epicSpan.getBoundingClientRect();
+
+		// Hiển thị menu popup tại vị trí chuột
+		const contextMenu = document.getElementById('contextMenu');
+		contextMenu.style.display = 'block';
+		contextMenu.style.left = (rect.left - 350) + 'px';
+		contextMenu.style.top = (rect.top + epicSpan.offsetHeight - 230) + 'px';
+
+		// Thêm một event listener để ẩn menu khi click bên ngoài nó
+		document.addEventListener('click', hideContextMenu);
+	}
+
+	function hideContextMenu() {
+		const contextMenu = document.getElementById('contextMenu');
+		contextMenu.style.display = 'none';
+
+		// Gỡ bỏ event listener sau khi menu đã ẩn
+		document.removeEventListener('click', hideContextMenu);
+	}
+
+	document.addEventListener('DOMContentLoaded', function () {
+		const epicName = document.querySelector('.badge.bg-primary');
+
+		epicName.addEventListener('contextmenu', function (event) {
+			event.preventDefault();
+			showContextMenu(event); 
+		});
+	});
+
+	function handleClick(issueId) {
+		console.log("Click event with issueId:", issueId);
+		$.ajax({
+			url: '/Admin/Issues/UnlinkEpic',
+			method: 'POST',
+			data: { issueId: issueId},
+			success: function (response) {
+				location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+
+		xhr.send(JSON.stringify({ issueId: issueId }));
+	}
+</script>
+
+
+
 
 

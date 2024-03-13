@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis;
@@ -11,7 +12,8 @@ using ProjectManagement.Models;
 namespace ProjectManagement.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    public class SprintsController : Controller
+	[Authorize]
+	public class SprintsController : Controller
     {
         private readonly ApplicationDbContext _context;
 
@@ -129,7 +131,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Status,StartDate,EndDate,ProjectID")] Sprints sprints)
         {
-            if (id != sprints.Id)
+			if (id != sprints.Id)
             {
                 return NotFound();
             }
@@ -152,8 +154,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
-            }
+				return Json(new { message = "Thành công" });
+			}
             return View(sprints);
         }
 
@@ -198,5 +200,28 @@ namespace ProjectManagement.Areas.Admin.Controllers
         {
           return (_context.Sprints?.Any(e => e.Id == id)).GetValueOrDefault();
         }
-    }
+
+		[HttpPost]
+		public IActionResult UpdateSprintStatus(Guid sprintId, string status)
+		{
+			// Cập nhật trạng thái của Sprint ở đây
+			// Ví dụ:
+			var sprint = _context.Sprints.FirstOrDefault(s => s.Id == sprintId);
+			if (sprint != null && status == "Start")
+			{
+				sprint.Status = SprintStatus.Start;
+				_context.SaveChanges();
+				return Json(new { success = true });
+			} else if(sprint != null && status == "Complete")
+            {
+				sprint.Status = SprintStatus.Complete;
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			else
+			{
+				return Json(new { success = false });
+			}
+		}
+	}
 }

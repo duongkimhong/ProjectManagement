@@ -1,4 +1,6 @@
-﻿namespace ProjectManagement.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ProjectManagement.Models
 {
     public class Sprints
     {
@@ -8,7 +10,7 @@
 
         public SprintStatus? Status { get; set; }
 
-        public DateTime? StartDate { get; set; }
+		public DateTime? StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
 

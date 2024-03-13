@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Build.Evaluation;
@@ -13,6 +14,7 @@ using ProjectManagement.Models;
 namespace ProjectManagement.Areas.Admin.Controllers
 {
 	[Area("Admin")]
+	[Authorize]
 	public class IssuesController : Controller
 	{
 		private readonly ApplicationDbContext _context;
@@ -136,14 +138,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return View(issues);
 		}
 
-		public async Task<IActionResult> updateIssueSprint(Guid issueId, Guid sprintId)
+		public async Task<IActionResult> updateIssueSprint(Guid issueId, Guid sId)
 		{
 			try
 			{
 				//Guid id = Guid.Parse(issueId);
 				var issue = await _context.Issues.FindAsync(issueId);
-				var sprint = await _context.Sprints.FindAsync(sprintId);
-				issue.SprintID = sprintId;
+				var sprint = await _context.Sprints.FindAsync(sId);
+				issue.SprintID = sId;
 				issue.Sprints = sprint;
 				var projectId = sprint.ProjectID;
 				_context.Update(issue);
@@ -197,6 +199,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				{
 					issue.Status = IssueStatus.Done;
 				}
+				_context.SaveChanges();
 				return Json(new { success = true });
 			}
 			catch (Exception ex)
@@ -278,12 +281,19 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return Json(new { success = false });
 		}
 
-		
-
-
-
-		#region
-
-		#endregion
+		[HttpPost]
+		public async Task<IActionResult> UnlinkEpic(Guid issueId)
+		{
+			var issue = _context.Issues.Find(issueId);
+			if (issue != null)
+			{
+				issue.EpicID = null;
+				issue.Epics = null;
+				_context.Update(issue);
+				await _context.SaveChangesAsync();
+				return Json(new { success = true });
+			}
+			return Json(new { success = false });
+		}
 	}
 }
