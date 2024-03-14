@@ -10,7 +10,7 @@
 	body {
 		font-family: Arial, sans-serif;
 		background-color: #f4f4f4;
-		padding: 20px;
+		/* padding: 20px; */
 	}
 
 	.issue {
@@ -59,6 +59,20 @@
 					background-color: #f0f0f0;
 				}
 
+	.assignee-row {
+		display: flex;
+		align-items: center;
+		padding: 5px;
+		cursor: pointer;
+	}
+
+	.avatar {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		object-fit: cover;
+		margin-right: 10px;
+	}
 </style>
 
 <div class="body d-flex py-lg-3 py-md-2">
@@ -486,138 +500,160 @@
 			<div class="modal-body">
 				<!-- Form để chỉnh sửa issue -->
 				<form id="editIssueForm">
-					@*
-					<!-- Hàng 2 -->
-					<div class="form-group row">
-					<label for="issueType" class="col-sm-3 col-form-label">Issue Type</label>
-					<div class="col-sm-9">
-					<input type="text" class="form-control" id="issueType" name="issueType">
-					</div>
-					</div>
-
-					<!-- Hàng 3 -->
-					<div class="form-group row">
-					<label for="priority" class="col-sm-3 col-form-label">Priority</label>
-					<div class="col-sm-9">
-					<input type="text" class="form-control" id="priority" name="priority">
-					</div>
-					</div>
-
-					<!-- Hàng 4 -->
-					<!-- Thêm các hàng tương tự cho các trường khác --> *@
+					<!-- Thêm các hàng tương tự cho các trường khác -->
 					<div class="row g-3 align-items-center">
+						<!-- type, name, epic, status -->
 						<div class="col-md-2">
-							<div class="dropdown">
-								<button id="newSelectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-									<!-- Hiển thị icon tương ứng với loại issue -->
-									<span id="selectedIcon" style="display: inline-block;"></span>
-								</button>
+							<button id="newSelectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+								<span id="selectedIcon" style="display: inline-block;"></span>
+							</button>
 
-								<!-- Menu dropdown -->
-								<ul class="dropdown-menu">
-									<li>
-										<a class="dropdown-item" href="#" onclick="updateNewButton('Task')" data-value="Task">
-											<!-- Icon và tên cho loại Task -->
-											<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
-												<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
-											</span> Task
-										</a>
-									</li>
-									<li>
-										<a class="dropdown-item" href="#" onclick="updateNewButton('Bug')" data-value="Bug">
-											<!-- Icon và tên cho loại Bug -->
-											<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
-												<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
-											</span> Bug
-										</a>
-									</li>
-									<li>
-										<a class="dropdown-item" href="#" onclick="updateNewButton('User story')" data-value="User story">
-											<!-- Icon và tên cho loại User story -->
-											<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
-												<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
-											</span> User story
-										</a>
-									</li>
-								</ul>
-							</div>
-
+							<!-- Menu dropdown -->
+							<ul class="dropdown-menu">
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('Task', '#1a73e8', 'icofont-book-mark')" data-value="Task">
+										<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+											<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+										</span> Task
+									</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('Bug', '#dc3545', 'icofont-bug')" data-value="Bug">
+										<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+											<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+										</span> Bug
+									</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('User story', '#ffc107', 'icofont-ui-messaging')" data-value="User story">
+										<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+											<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+										</span> User story
+									</a>
+								</li>
+							</ul>
 						</div>
-
 						<div class="col-md-4">
-							<input type="text" class="form-control" id="issueName" name="issueName" placeholder="Issue Name">
+							<input type="text" class="form-control" id="issueName" name="issueName" placeholder="Issue Name" onkeypress="handleKeyPress(event)">
 						</div>
-
 						<div class="col-md-3">
-							<select class="form-select" id="epicDropdown">
-								<option value="" selected> None </option>
+							<select class="form-select" id="epicDropdown" onchange="updateIssueEpic()">
+								<option value="None">None</option>
 								@foreach (var epic in ViewBag.ProjectEpics as List<Epics>)
 								{
 									<option value="@epic.Id">@epic.Name</option>
 								}
 							</select>
 						</div>
-
 						<div class="col-md-3">
-							<select class="form-select" id="statusSelect" onchange="setStatus()">
+							<select class="form-select" id="statusSelect" onchange="updateIssueStatus()">
 								<option value="Todo">Todo</option>
 								<option value="In Progress">In Progress</option>
 								<option value="Completed">Completed</option>
 							</select>
 						</div>
 
+						<!-- description -->
+						<div class="col-md-10">
+							<label class="form-label">Description</label>
+							<textarea type="text" class="form-control" id="issueDescrtiption" name="issueDescrtiption"></textarea>
+						</div>
+						<div class="col-md-2" style="margin-top: 45px;">
+							<button type="button" class="btn btn-success" style="width: 80px; margin-bottom: 5px;" onclick="updateIssueDescription()">Save</button><br>
+							<button type="button" class="btn btn-danger" style="width: 80px;" onclick="cancelUpdate()">Cancel</button>
+						</div>
+
+						<!-- startdate, endate -->
 						<div class="col-md-6">
-							<label class="form-label">Phone Number</label>
-							<input type="text" class="form-control" id="phonenumber" required="">
+							<label for="issueStartDate" class="form-label">Start Date</label>
+							<input type="date" class="form-control" id="issueStartDate" name="issueStartDate">
 						</div>
 						<div class="col-md-6">
-							<label for="emailaddress" class="form-label">Email Address</label>
-							<input type="email" class="form-control" id="emailaddress" required="">
+							<label for="issueEndDate" class="form-label">End Date</label>
+							<input type="date" class="form-control" id="issueEndDate" name="issueEndDate">
 						</div>
-						<div class="col-md-6">
-							<label for="admitdate" class="form-label">Date</label>
-							<input type="date" class="form-control" id="admitdate" required="">
+
+						<!-- assignee, reporter, story point -->
+						<div class="col-md-2 d-flex align-items-center justify-content-center">
+							<label class="form-label">Assignee</label>
 						</div>
-						<div class="col-md-6">
-							<label for="admittime" class="form-label">Time</label>
-							<input type="time" class="form-control" id="admittime" required="">
+						<div class="col-md-2">
+							<span class="p-2 me-1" id="assigneeImageContainer">
+								<img id="assigneeImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" onclick="showAssigneeList()">
+							</span>
 						</div>
-						<div class="col-md-6">
-							<label for="formFileMultiple" class="form-label"> File Upload</label>
-							<input class="form-control" type="file" id="formFileMultiple" multiple="" required="">
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Reporter</label>
 						</div>
-						<div class="col-md-6">
-							<label class="form-label">Gender</label>
-							<div class="row">
-								<div class="col-md-6">
-									<div class="form-check">
-										<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios11" value="option1" checked="">
-										<label class="form-check-label" for="exampleRadios11">
-											Male
-										</label>
-									</div>
-								</div>
-								<div class="col-md-6">
-									<div class="form-check">
-										<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios22" value="option2">
-										<label class="form-check-label" for="exampleRadios22">
-											Female
-										</label>
-									</div>
-								</div>
-							</div>
+						<div class="col-md-2">
+							<span class="p-2 me-1">
+								<img id="reporterImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+							</span>
 						</div>
-						<div class="col-md-12">
-							<label for="addnote" class="form-label">Add Note</label>
-							<textarea class="form-control" id="addnote" rows="3"></textarea>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Story point</label>
+						</div>
+						<div class="col-md-2">
+							<input type="number" class="form-control" id="issueStoryPoint" name="issueStoryPoint" min="0">
+						</div>
+
+						<!-- Sprint, prority -->
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label class="form-label">Sprint</label>
+						</div>
+						<div class="col-md-4">
+							<select class="form-select" id="sprintDropdown" onchange="updateIssueSprint()">
+
+								@foreach (var sprint in ViewBag.ListSprints as List<Sprints>)
+								{
+									<option value="@sprint.Id">@sprint.Name</option>
+								}
+							</select>
+						</div>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label class="form-label">Priority</label>
+						</div>
+						<div class="col-md-4">
+							<select class="form-select" id="prioritySelect" onchange="updateIssuePriority()">
+								<option value="Highest">Highest</option>
+								<option value="High">High</option>
+								<option value="Medium">Medium</option>
+								<option value="Low">Low</option>
+								<option value="Lowest">Lowest</option>
+							</select>
 						</div>
 					</div>
 				</form>
-
 			</div>
 		</div>
 	</div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="assigneeModal" tabindex="-1" aria-labelledby="assigneeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="assigneeModalLabel">Select Assignee</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="assigneeList" class="list-group">
+					@foreach (var user in ViewBag.ProjectTeamMembers)
+					{
+						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center">
+							<img src="@user.Image" class="rounded-circle me-3" alt="Avatar" width="50" height="50">
+							<div>
+								<h5 class="mb-0">@user.UserName</h5>
+							</div>
+						</a>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <!-- Modal popup chỉnh sửa sprint -->
 <div class="modal fade" id="editSprintModal" tabindex="-1" aria-labelledby="editSprintModalLabel" aria-hidden="true">
@@ -911,7 +947,6 @@
 </script>
 
 <!-- #endregion -->
-
 <!-- Epic -->
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
@@ -954,44 +989,156 @@
 
 <script>
 	var id;
+
+	$(document).ready(function () {
+		// Bắt sự kiện click vào nút đóng modal và đóng modal tương ứng
+		$('.close').click(function () {
+			$('#editIssueModal').modal('hide');
+			location.reload();
+		});
+	});
+
 	function openEditModal(issueId) {
 		$.ajax({
 			url: '/Admin/Issues/Edit',
 			method: 'GET',
 			data: { issueId: issueId },
 			success: function (response) {
+				originalDescription = response.Description;
+				id = response.id;
+
+				console.log(response);
+
 				// Xử lý phản hồi từ máy chủ và điền thông tin vào form chỉnh sửa
+				// id, name, type, epic, status, documents, description, startDate, endDate, assignee.image, assignee.fullName,
+				// reporter.image, reporter.fullName, storyPoint, sprint, priority, comment, history
 				$('#issueId').val(response.id);
 				$('#issueName').val(response.name);
-				$('#issueEpic').val(response.epic);
 				$('#issueType').val(response.type);
-				$('#issueStartDate').val(response.startDate);
-				$('#issueEndDate').val(response.endDate);
 				$('#issueDescrtiption').val(response.description);
 				$('#issueStatus').val(response.status);
 				$('#priority').val(response.priority);
 				$('#issueIsFlag').val(response.isFlag);
-				$('#storyPoint').val(response.storyPoint);
-				$('#assignee').val(response.assigneeID);
-				$('#reporter').val(response.reporterID);
-				$('#issueDocument').val(response.issueDocument);
-				$('#issueComments').val(response.comments);
+				$('#issueStoryPoint').val(response.storyPoint);
 
-				id = response.id;
-				@* console.log(id);
-				console.log(response.name);
-				console.log(response.type);
-				console.log(response.startDate);
-				console.log(response.endDate);
-				console.log(response.description);
-				console.log(response.status);
-				console.log(response.priority);
-				console.log(response.isFlag);
-				console.log(response.storyPoint);
-				console.log(response.assigneeID);
-				console.log(response.reporterID);
-				console.log(response.issueDocument);
-				console.log(response.comments); *@
+				// Function để cập nhật kiểu issue
+				function IssueTypeDropdownBtn(type, backgroundColor, iconClass) {
+					// Cập nhật kiểu issue trên giao diện
+					document.getElementById('selectedIcon').innerHTML = '<i class="' + iconClass + ' text-white" style="vertical-align: middle;"></i>';
+					document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
+				}
+				// Xử lý phản hồi từ máy chủ và cập nhật kiểu issue tương ứng
+				switch (response.type) {
+					case 0:
+						IssueTypeDropdownBtn('User story', '#ffc107', 'icofont-ui-messaging');
+						break;
+					case 1:
+						IssueTypeDropdownBtn('Task', '#1a73e8', 'icofont-book-mark');
+						break;
+					case 2:
+						IssueTypeDropdownBtn('Bug', '#dc3545', 'icofont-bug');
+						break;
+					default:
+						break;
+				}
+
+				var startDateValue = new Date(response.startDate);
+				startDateValue.setDate(startDateValue.getDate() + 1);
+
+				// Kiểm tra nếu startDateValue là một đối tượng Date hợp lệ
+				if (!isNaN(startDateValue.getTime())) {
+					// Nếu hợp lệ, gán giá trị vào ô input
+					var inputValue = startDateValue.toISOString().split('T')[0];
+					$('#issueStartDate').val(inputValue);
+				} else {
+					console.error('Invalid start date:', response.startDate);
+				}
+
+				// Kiểm tra nếu response.endDate là null, thì gán giá trị mặc định cho ô input
+				if (response.startDate === null) {
+					$('#issueStartDate').val('');
+				}
+
+				var endDateValue = new Date(response.endDate);
+				endDateValue.setDate(endDateValue.getDate() + 1);
+
+				// Kiểm tra nếu startDateValue là một đối tượng Date hợp lệ
+				if (!isNaN(endDateValue.getTime())) {
+					// Nếu hợp lệ, gán giá trị vào ô input
+					var inputValue = endDateValue.toISOString().split('T')[0];
+					$('#issueEndDate').val(inputValue);
+				} else {
+					console.error('Invalid end date:', response.endDate);
+				}
+				if (response.endDate === null) {
+					$('#issueEndDate').val('');
+				}
+
+				// Lấy đường dẫn hình ảnh của assignee từ response
+				var assigneeImageSrc = response.assignee !== null && response.assignee.image !== null
+					? response.assignee.image // Nếu có giá trị, sử dụng giá trị đó
+					: '/defaultuser.png';
+
+				var assigneeImageElement = document.getElementById('assigneeImage');
+				if (assigneeImageElement) {
+					assigneeImageElement.src = assigneeImageSrc;
+				} else {
+					console.error("Assignee image element not found");
+				}
+
+				// Lấy đường dẫn hình ảnh của reporter từ response
+				var reporterImageSrc = response.reporter !== null && response.reporter.image !== null
+					? response.reporter.image // Nếu có giá trị, sử dụng giá trị đó
+					: '/defaultuser.png';
+
+				var reporterImageElement = document.getElementById('reporterImage');
+				if (reporterImageElement) {
+					reporterImageElement.src = reporterImageSrc;
+				} else {
+					console.error("Reporter image element not found");
+				}
+
+				function selectElement(id, valueToSelect) {
+					let element = document.getElementById(id);
+					element.value = valueToSelect;
+				}
+				selectElement('sprintDropdown', response.sprintId);
+				selectElement('epicDropdown', response.epicId === null ? 'None' : response.epicId);
+				switch (response.status) {
+					case 0:
+						document.getElementById("statusSelect").value = "Todo";
+						break;
+					case 1:
+						document.getElementById("statusSelect").value = "In Progress";
+						break;
+					case 4:
+						document.getElementById("statusSelect").value = "Completed";
+						break;
+					default:
+						break;
+				}
+
+				switch (response.priority) {
+					case 0:
+						document.getElementById("prioritySelect").value = "Lowest";
+						break;
+					case 1:
+						document.getElementById("prioritySelect").value = "Low";
+						break;
+					case 2:
+						document.getElementById("prioritySelect").value = "Medium";
+						break;
+					case 3:
+						document.getElementById("prioritySelect").value = "High";
+						break;
+					case 4:
+						document.getElementById("prioritySelect").value = "Highest";
+						break;
+					default:
+						break;
+				}
+
+
 				// Hiển thị modal popup
 				$('#editIssueModal').modal('show');
 			},
@@ -1000,6 +1147,14 @@
 				console.error(error);
 			}
 		});
+	}
+	function showAssigneeList() {
+		// Mở modal
+		$('#assigneeModal').modal('show');
+	}
+
+	function updateAssignee(assigneeId) {
+		// Thực hiện logic cập nhật người được gán
 	}
 
 	function saveIssueChanges() {
@@ -1095,7 +1250,7 @@
 		$.ajax({
 			url: '/Admin/Issues/updateIssueSprint',
 			method: 'POST',
-			data: { issueId: issueId, sId: sId },
+			data: { issueId: issueId, sprintId: sId },
 			success: function (response) {
 				location.reload();
 			},
@@ -1212,7 +1367,7 @@
 
 		epicName.addEventListener('contextmenu', function (event) {
 			event.preventDefault();
-			showContextMenu(event); 
+			showContextMenu(event);
 		});
 	});
 
@@ -1221,7 +1376,7 @@
 		$.ajax({
 			url: '/Admin/Issues/UnlinkEpic',
 			method: 'POST',
-			data: { issueId: issueId},
+			data: { issueId: issueId },
 			success: function (response) {
 				location.reload();
 			},
@@ -1231,6 +1386,238 @@
 		});
 
 		xhr.send(JSON.stringify({ issueId: issueId }));
+	}
+</script>
+
+<!-- update issue -->
+<script>
+	// update issue type
+	function updateIssueType(type, color, iconClass) {
+		var issueId = id;
+		console.log("id = " + id)
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueType',
+			method: 'POST',
+			data: { issueId: issueId, type: type },
+			success: function (response) {
+				//location.reload();
+				updateButton2(type, color, iconClass);
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+	function updateButton2(type, backgroundColor, iconClass) {
+		// Cập nhật màu nền của nút
+		document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
+
+		// Cập nhật icon
+		var iconElement = document.getElementById('selectedIcon');
+		iconElement.innerHTML = ''; // Xóa nội dung cũ
+		var icon = document.createElement('i');
+		icon.classList.add(iconClass, 'text-white');
+		icon.style.verticalAlign = 'middle';
+		iconElement.appendChild(icon);
+	}
+
+	// update issue status
+	function updateIssueStatus() {
+		var selectedStatus = document.getElementById("statusSelect").value;
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStatus',
+			method: 'POST',
+			data: { issueId: id, status: selectedStatus },
+			success: function (response) {
+				//location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+
+	// update issue epic
+	function updateIssueEpic() {
+		var selectedEpicId = document.getElementById("epicDropdown").value;
+
+		// Gửi request đến action updateIssueEpic với issueId và selectedEpicId
+		fetch('/Admin/Issues/UpdateIssueEpic?issueId=' + encodeURIComponent(id) + '&epicId=' + encodeURIComponent(selectedEpicId), {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+				// Các header khác nếu cần
+			},
+		})
+			.then(response => {
+				// Xử lý response nếu cần
+				console.log(response);
+			})
+			.catch(error => {
+				// Xử lý lỗi nếu có
+				console.error('Error:', error);
+			});
+	}
+
+	// update issue sprint
+	function updateIssueSprint() {
+		var selectedSprintId = document.getElementById("sprintDropdown").value;
+
+		// Gửi request đến action updateIssueSprint với issueId và selectedSprintId
+		fetch('/Admin/Issues/updateIssueSprint?issueId=' + encodeURIComponent(id) + '&sprintId=' + encodeURIComponent(selectedSprintId), {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+				// Các header khác nếu cần
+			},
+		})
+			.then(response => {
+				// Xử lý response nếu cần
+				console.log(response);
+			})
+			.catch(error => {
+				// Xử lý lỗi nếu có
+				console.error('Error:', error);
+			});
+	}
+
+	// update issue priority
+	function updateIssuePriority() {
+		var selectedPrority = document.getElementById("prioritySelect").value;
+
+		// Gửi request đến action updateIssueSprint với issueId và selectedSprintId
+		fetch('/Admin/Issues/updateIssuePriority?issueId=' + encodeURIComponent(id) + '&priority=' + encodeURIComponent(selectedPrority), {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+				// Các header khác nếu cần
+			},
+		})
+			.then(response => {
+				// Xử lý response nếu cần
+				console.log(response);
+			})
+			.catch(error => {
+				// Xử lý lỗi nếu có
+				console.error('Error:', error);
+			});
+	}
+
+	// update issue name
+	function handleKeyPress(event) {
+		if (event.keyCode === 13) {
+			// Lấy giá trị của trường input
+			var inputValue = document.getElementById("issueName").value;
+			if (inputValue == '') {
+				alert('Issue name cannot be NULL');
+			} else {
+				$.ajax({
+					url: '/Admin/Issues/UpdateIssueName',
+					method: 'POST',
+					data: { issueId: id, name: inputValue },
+					success: function (response) {
+						//location.reload();
+					},
+					error: function (xhr, status, error) {
+						console.error(error);
+					}
+				});
+			}
+
+		}
+	}
+
+	// update issue description
+	var originalDescription = ''; // Biến tạm để lưu trữ nội dung ban đầu
+	function updateIssueDescription() {
+		var description = document.getElementById("issueDescrtiption").value;
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueDescription',
+			method: 'POST',
+			data: { issueId: id, description: description },
+			success: function (response) {
+				originalDescription = description;
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+
+	// Hàm gọi khi click nút "Cancel"
+	function cancelUpdate() {
+		// Thiết lập lại nội dung của textarea bằng giá trị ban đầu
+		document.getElementById("issueDescrtiption").value = originalDescription;
+	}
+
+	// update issue startDate
+	var startDateInput = document.getElementById("issueStartDate");
+	startDateInput.addEventListener("blur", function () {
+		var startDateValue = startDateInput.value;
+		console.log(startDateValue); // Kiểm tra xem giá trị ngày đã được lấy đúng chưa
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStartDate',
+			method: 'POST',
+			data: { issueId: id, date: startDateValue },
+			success: function (response) {
+				//location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	});
+
+	// update issue endDate
+	var endDateInput = document.getElementById("issueEndDate");
+	endDateInput.addEventListener("blur", function () {
+		var endDateValue = endDateInput.value;
+		console.log(endDateValue);
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueEndDate',
+			method: 'POST',
+			data: { issueId: id, date: endDateValue },
+			success: function (response) {
+				//location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	});
+
+	// update issue story point
+	$('#issueStoryPoint').blur(function () {
+		var storyPoint = $(this).val();
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStoryPoint',
+			method: 'POST',
+			data: { issueId: id, storyPoint: storyPoint },
+			success: function (response) {
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	});
+
+	function updateAssignee(userId){
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueAssignee',
+			method: 'POST',
+			data: { issueId: id, userId: userId },
+			success: function (response) {
+				
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
 	}
 </script>
 
