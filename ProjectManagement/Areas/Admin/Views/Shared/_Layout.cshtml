@@ -74,7 +74,7 @@
 					</li>
 
 					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#tikit-Components" href="#">
+						<a class="m-link" id="boardLink" href="#">
 							<i class="icofont-leaflet"></i> <span>Board</span>
 						</a>
 					</li>
@@ -380,8 +380,9 @@
 		</div>
 	</div>
 
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-Km2BrFfMj3zehrlZlR/4DUAJ4HqXk8DtIeay4Hoj6g8=" crossorigin="anonymous"></script>
-
+	@* <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-Km2BrFfMj3zehrlZlR/4DUAJ4HqXk8DtIeay4Hoj6g8=" crossorigin="anonymous"></script> *@
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 	<!-- Bắt sự kiện nút Create project -->
 	<script>
 		// Bắt sự kiện click vào nút "Create"
@@ -538,18 +539,39 @@
 		});
 	</script>
 
+	<!-- Tạo link cho nút board ở sidebar theo id của project đang được chọn trên dropdown button -->
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+			var boardLink = document.getElementById('boardLink');
+
+			boardLink.addEventListener('click', function (event) {
+				event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
+
+				var projectDropdown = document.getElementById('myProjectTable');
+				var selectedProject = projectDropdown.value;
+				console.log(selectedProject);
+				if (selectedProject !== 'create') {
+					var url = '/Admin/Board/Index/' + selectedProject;
+					window.location.href = url;
+				} else {
+					// Xử lý tạo dự án mới
+				}
+			});
+		});
+	</script>
+
 
 	<!-- Jquery Core Js -->
-	<script src="~/User/assets/bundles/libscripts.bundle.js"></script>
+	<script src="~/user/assets/bundles/libscripts.bundle.js"></script>
 
 	<!-- Plugin Js-->
-	<script src="~/User/assets/bundles/apexcharts.bundle.js"></script>
+	<script src="~/user/assets/bundles/apexcharts.bundle.js"></script>
 
 	<!-- Jquery Page Js -->
-	@* <script src="~/user/assets/js/template.js"></script>
-	<script src="~/user/assets/js/page/hr.js"></script> *@
-	<script src="../js/template.js"></script> 
-	<script src="../js/page/hr.js"></script>
+	<script src="~/user/assets/js/template.js"></script>
+	<script src="~/user/assets/js/page/hr.js"></script>
+	@* <script src="../js/template.js"></script> 
+	<script src="../js/page/hr.js"></script> *@
 	@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

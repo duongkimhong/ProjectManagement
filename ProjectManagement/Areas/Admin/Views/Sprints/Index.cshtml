@@ -1,15 +1,16 @@
 ﻿@model IEnumerable<ProjectManagement.Models.Sprints>
-
+@inject ApplicationDbContext _context
 @{
 	ViewData["Title"] = "Index";
 	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
 }
 
 <style>
 	body {
 		font-family: Arial, sans-serif;
 		background-color: #f4f4f4;
-		padding: 20px;
+		/* padding: 20px; */
 	}
 
 	.issue {
@@ -27,11 +28,50 @@
 	}
 
 	.epic-item {
-		width: 100%; /* Chiếm hết chiều ngang của thẻ cha */
-		border: 1px solid #ccc; /* Viền màu xám */
-		border-radius: 5px; /* Bo góc */
-		padding: 10px; /* Khoảng cách nội dung với viền */
-		margin-bottom: 5px; /* Khoảng cách giữa các mục */
+		width: 100%;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+		padding: 10px;
+		margin-bottom: 5px;
+	}
+
+	.custom-menu {
+		display: none;
+		position: absolute;
+		background-color: white;
+		border: 1px solid #ccc;
+		padding: 5px 0;
+		z-index: 1000;
+	}
+
+		.custom-menu ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+
+			.custom-menu ul li {
+				padding: 8px 20px;
+				cursor: pointer;
+			}
+
+				.custom-menu ul li:hover {
+					background-color: #f0f0f0;
+				}
+
+	.assignee-row {
+		display: flex;
+		align-items: center;
+		padding: 5px;
+		cursor: pointer;
+	}
+
+	.avatar {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		object-fit: cover;
+		margin-right: 10px;
 	}
 </style>
 
@@ -53,8 +93,7 @@
 		</div> <!-- Row end  -->
 		<div class="row-content">
 			<div class="mb-4">
-				@* <div class="card mb-3" ondrop="drop(event, '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId"> *@
-				<div class="card mb-3" ondrop="drop(event, '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId">
+				<div class="card mb-3" ondrop="drop(event, 'sprint', '@ViewBag.BacklogSprintId')" ondragover="allowDrop(event)" data-sprint-id="@ViewBag.BacklogSprintId">
 					<div class="card-header py-3 bg-transparent border-bottom-0">
 						<div class="row align-items-center">
 							<div class="col-sm-8">
@@ -75,9 +114,8 @@
 						{
 							@foreach (var item in ViewBag.BacklogIssues as List<Issues>)
 							{
-								@* <input type="hidden" data-issueId="@item.Id" name="ID" /> *@
 								<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" id="@item.Id" draggable="true" ondragstart="drag(event)">
-								
+
 									<div>
 										@if (item.Type == IssueType.Task)
 										{
@@ -103,7 +141,19 @@
 									<div class="d-flex align-items-center">
 										@if (item.EpicID != null)
 										{
-											<span class="badge bg-primary me-2" style="font-size: 14px;">@item.EpicID</span>
+											var epic = _context.Epics.FirstOrDefault(e => e.Id == item.EpicID);
+											if (epic != null)
+											{
+												<span class="badge bg-primary me-2" style="font-size: 14px; position: relative;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+
+												<!-- Menu popup -->
+												<div id="contextMenu" class="custom-menu">
+													<ul>
+														<li id="unlinkEpic" onclick="handleClick('@item.Id')">Unlink Epic</li>
+														<li id="viewDetail">View Detail</li>
+													</ul>
+												</div>
+											}
 										}
 
 										<div class="dropdown">
@@ -169,11 +219,6 @@
 					</div>
 
 					<div class="card-body">
-						<div id="issueButtonWrapper">
-							<button id="createIssueButton" class="btn btn-transparent">
-								<i class="icofont-ui-add fs-5"></i>Create Issue
-							</button>
-						</div>
 						<form id="issueForm" method="post" asp-area="Admin" asp-controller="Issues" asp-action="Create">
 							<div class="input-group">
 								<button id="selectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -203,7 +248,7 @@
 									</li>
 								</ul>
 								<input type="hidden" id="typeInput" name="Type" />
-								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter your issue" onkeypress="handleKeyPress(event)" />
+								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter new issue name" onkeypress="handleKeyPress(event)" />
 							</div>
 						</form>
 					</div>
@@ -211,18 +256,35 @@
 
 				@foreach (var item in ViewBag.ProjectSprints as List<Sprints>)
 				{
-					<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
+					<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@item.Id')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
 						<div class="card-header py-3 bg-transparent border-bottom-0">
 							<div class="row align-items-center">
-								<div class="col-sm-8">
+								<div class="col-sm-8 edit-sprint"
+									 style="display: flex; align-items: center;"
+									 data-id="@item.Id"
+									 data-name="@item.Name"
+									 data-start-date="@item.StartDate"
+									 data-end-date="@item.EndDate">
 									<h6 class="mb-0 fw-bold">@item.Name</h6>
+									<span style="color: gray; margin-left: 10px;">(@($"{item.StartDate:dd/MM/yyyy} - {item.EndDate:dd/MM/yyyy}"))</span>
 								</div>
 								<div class="col-sm-4 d-flex align-items-center justify-content-end">
 									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">0</span>
 									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">0</span>
 									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">0</span>
 									<span>
-										<button class="btn btn-primary" onclick="startSprint('@item.Id')">Start Sprint</button>
+										@if (item.Status == null)
+										{
+											<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Start')">Start Sprint</button>
+										}
+										else if (item.Status == SprintStatus.Start)
+										{
+											<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Complete')">Complete Sprint</button>
+										}
+										else
+										{
+											<button class="btn btn-primary">Sprint completed</button>
+										}
 									</span>
 								</div>
 							</div>
@@ -262,7 +324,19 @@
 											<div class="d-flex align-items-center">
 												@if (issue.EpicID != null)
 												{
-													<span class="badge bg-primary me-2" style="font-size: 14px;">@issue.EpicID</span>
+													var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+													if (epic != null)
+													{
+														<span class="badge bg-primary me-2" style="font-size: 14px; position: relative;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+
+														<!-- Menu popup -->
+														<div id="contextMenu" class="custom-menu">
+															<ul>
+																<li id="unlinkEpic" onclick="handleClick('@issue.Id')">Unlink Epic</li>
+																<li id="viewDetail">View Detail</li>
+															</ul>
+														</div>
+													}
 												}
 
 												<div class="dropdown">
@@ -342,17 +416,17 @@
 
 						@foreach (var item in ViewBag.ProjectEpics as List<Epics>)
 						{
-							<div class="epic-item" style="background-color: @item.Color;" ondragover="allowDrop(event)" ondrop="drop(event, 'epic')" data-type="epic" data-epic-id="@item.Id">
+							<div class="epic-item" style="background-color: @item.Color;" ondragover="allowDrop(event)" ondrop="drop(event, 'epic', '@item.Id')" data-type="epic" data-epic-id="@item.Id">
 								@item.Name
 							</div>
 						}
 						<div>
-							<button type="button" class="btn btn-dark btn-set-task w-sm-100 me-2" id="createEpicBtn">
-								<i class="icofont-plus-circle me-2 fs-6"></i>Create Epic
-							</button>
+							@* <button type="button" class="btn btn-dark btn-set-task w-sm-100 me-2" id="createEpicBtn">
+							<i class="icofont-plus-circle me-2 fs-6"></i>Create Epic
+							</button> *@
 							<form id="epicForm" method="post" asp-area="Admin" asp-controller="Epics" asp-action="Create">
 								<input type="hidden" id="projectIdInput" name="projectId" />
-								<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter your Epic" onkeypress="handleEpicKeyPress(event)" />
+								<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter new epic name" onkeypress="handleEpicKeyPress(event)" />
 							</form>
 						</div>
 					</div>
@@ -426,138 +500,195 @@
 			<div class="modal-body">
 				<!-- Form để chỉnh sửa issue -->
 				<form id="editIssueForm">
-					@* 
-					<!-- Hàng 2 -->
-					<div class="form-group row">
-					<label for="issueType" class="col-sm-3 col-form-label">Issue Type</label>
-					<div class="col-sm-9">
-					<input type="text" class="form-control" id="issueType" name="issueType">
-					</div>
-					</div>
-
-					<!-- Hàng 3 -->
-					<div class="form-group row">
-					<label for="priority" class="col-sm-3 col-form-label">Priority</label>
-					<div class="col-sm-9">
-					<input type="text" class="form-control" id="priority" name="priority">
-					</div>
-					</div>
-
-					<!-- Hàng 4 -->
-					<!-- Thêm các hàng tương tự cho các trường khác --> *@
+					<!-- Thêm các hàng tương tự cho các trường khác -->
 					<div class="row g-3 align-items-center">
+						<!-- type, name, epic, status -->
 						<div class="col-md-2">
-							<div class="dropdown">
-								<button id="newSelectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-									<!-- Hiển thị icon tương ứng với loại issue -->
-									<span id="selectedIcon" style="display: inline-block;"></span>
-								</button>
+							<button id="newSelectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+								<span id="selectedIcon" style="display: inline-block;"></span>
+							</button>
 
-								<!-- Menu dropdown -->
-								<ul class="dropdown-menu">
-									<li>
-										<a class="dropdown-item" href="#" onclick="updateNewButton('Task')" data-value="Task">
-											<!-- Icon và tên cho loại Task -->
-											<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
-												<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
-											</span> Task
-										</a>
-									</li>
-									<li>
-										<a class="dropdown-item" href="#" onclick="updateNewButton('Bug')" data-value="Bug">
-											<!-- Icon và tên cho loại Bug -->
-											<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
-												<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
-											</span> Bug
-										</a>
-									</li>
-									<li>
-										<a class="dropdown-item" href="#" onclick="updateNewButton('User story')" data-value="User story">
-											<!-- Icon và tên cho loại User story -->
-											<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
-												<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
-											</span> User story
-										</a>
-									</li>
-								</ul>
-							</div>
-
+							<!-- Menu dropdown -->
+							<ul class="dropdown-menu">
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('Task', '#1a73e8', 'icofont-book-mark')" data-value="Task">
+										<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+											<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+										</span> Task
+									</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('Bug', '#dc3545', 'icofont-bug')" data-value="Bug">
+										<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+											<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+										</span> Bug
+									</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('User story', '#ffc107', 'icofont-ui-messaging')" data-value="User story">
+										<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+											<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+										</span> User story
+									</a>
+								</li>
+							</ul>
 						</div>
-
 						<div class="col-md-4">
-							<input type="text" class="form-control" id="issueName" name="issueName" placeholder="Issue Name">
+							<input type="text" class="form-control" id="issueName" name="issueName" placeholder="Issue Name" onkeypress="handleKeyPress(event)">
 						</div>
-
 						<div class="col-md-3">
-							<select class="form-select" id="epicDropdown">
-								<option value="" selected> None </option>
+							<select class="form-select" id="epicDropdown" onchange="updateIssueEpic()">
+								<option value="None">None</option>
 								@foreach (var epic in ViewBag.ProjectEpics as List<Epics>)
 								{
 									<option value="@epic.Id">@epic.Name</option>
 								}
 							</select>
 						</div>
-
 						<div class="col-md-3">
-							<select class="form-select" id="statusSelect" onchange="setStatus()">
+							<select class="form-select" id="statusSelect" onchange="updateIssueStatus()">
 								<option value="Todo">Todo</option>
 								<option value="In Progress">In Progress</option>
 								<option value="Completed">Completed</option>
 							</select>
 						</div>
 
+						<!-- description -->
+						<div class="col-md-10">
+							<label class="form-label">Description</label>
+							<textarea type="text" class="form-control" id="issueDescrtiption" name="issueDescrtiption"></textarea>
+						</div>
+						<div class="col-md-2" style="margin-top: 45px;">
+							<button type="button" class="btn btn-success" style="width: 80px; margin-bottom: 5px;" onclick="updateIssueDescription()">Save</button><br>
+							<button type="button" class="btn btn-danger" style="width: 80px;" onclick="cancelUpdate()">Cancel</button>
+						</div>
+
+						<!-- startdate, endate -->
 						<div class="col-md-6">
-							<label class="form-label">Phone Number</label>
-							<input type="text" class="form-control" id="phonenumber" required="">
+							<label for="issueStartDate" class="form-label">Start Date</label>
+							<input type="date" class="form-control" id="issueStartDate" name="issueStartDate">
 						</div>
 						<div class="col-md-6">
-							<label for="emailaddress" class="form-label">Email Address</label>
-							<input type="email" class="form-control" id="emailaddress" required="">
+							<label for="issueEndDate" class="form-label">End Date</label>
+							<input type="date" class="form-control" id="issueEndDate" name="issueEndDate">
 						</div>
-						<div class="col-md-6">
-							<label for="admitdate" class="form-label">Date</label>
-							<input type="date" class="form-control" id="admitdate" required="">
+
+						<!-- assignee, reporter, story point -->
+						<div class="col-md-2 d-flex align-items-center justify-content-center">
+							<label class="form-label">Assignee</label>
 						</div>
-						<div class="col-md-6">
-							<label for="admittime" class="form-label">Time</label>
-							<input type="time" class="form-control" id="admittime" required="">
+						<div class="col-md-2">
+							<span class="p-2 me-1" id="assigneeImageContainer">
+								<img id="assigneeImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" onclick="showAssigneeList()">
+							</span>
 						</div>
-						<div class="col-md-6">
-							<label for="formFileMultiple" class="form-label"> File Upload</label>
-							<input class="form-control" type="file" id="formFileMultiple" multiple="" required="">
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Reporter</label>
 						</div>
-						<div class="col-md-6">
-							<label class="form-label">Gender</label>
-							<div class="row">
-								<div class="col-md-6">
-									<div class="form-check">
-										<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios11" value="option1" checked="">
-										<label class="form-check-label" for="exampleRadios11">
-											Male
-										</label>
-									</div>
-								</div>
-								<div class="col-md-6">
-									<div class="form-check">
-										<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios22" value="option2">
-										<label class="form-check-label" for="exampleRadios22">
-											Female
-										</label>
-									</div>
-								</div>
-							</div>
+						<div class="col-md-2">
+							<span class="p-2 me-1">
+								<img id="reporterImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+							</span>
 						</div>
-						<div class="col-md-12">
-							<label for="addnote" class="form-label">Add Note</label>
-							<textarea class="form-control" id="addnote" rows="3"></textarea>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Story point</label>
+						</div>
+						<div class="col-md-2">
+							<input type="number" class="form-control" id="issueStoryPoint" name="issueStoryPoint" min="0">
+						</div>
+
+						<!-- Sprint, prority -->
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label class="form-label">Sprint</label>
+						</div>
+						<div class="col-md-4">
+							<select class="form-select" id="sprintDropdown" onchange="updateIssueSprint()">
+
+								@foreach (var sprint in ViewBag.ListSprints as List<Sprints>)
+								{
+									<option value="@sprint.Id">@sprint.Name</option>
+								}
+							</select>
+						</div>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label class="form-label">Priority</label>
+						</div>
+						<div class="col-md-4">
+							<select class="form-select" id="prioritySelect" onchange="updateIssuePriority()">
+								<option value="Highest">Highest</option>
+								<option value="High">High</option>
+								<option value="Medium">Medium</option>
+								<option value="Low">Low</option>
+								<option value="Lowest">Lowest</option>
+							</select>
 						</div>
 					</div>
 				</form>
-
 			</div>
 		</div>
 	</div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="assigneeModal" tabindex="-1" aria-labelledby="assigneeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="assigneeModalLabel">Select Assignee</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="assigneeList" class="list-group">
+					@foreach (var user in ViewBag.ProjectTeamMembers)
+					{
+						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center">
+							<img src="@user.Image" class="rounded-circle me-3" alt="Avatar" width="50" height="50">
+							<div>
+								<h5 class="mb-0">@user.UserName</h5>
+							</div>
+						</a>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Modal popup chỉnh sửa sprint -->
+<div class="modal fade" id="editSprintModal" tabindex="-1" aria-labelledby="editSprintModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editSprintModalLabel">Edit Sprint</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="editSprintForm" method="post" enctype="multipart/form-data">
+					<input type="hidden" id="sprintIdInput" name="Id" />
+					<div class="mb-3">
+						<label for="sprintNameInput" class="form-label">Sprint Name</label>
+						<input type="text" class="form-control" id="sprintNameInput" name="Name">
+					</div>
+					<div class="mb-3">
+						<label for="startDateInput" class="form-label">Start Date</label>
+						<input type="date" class="form-control" id="startDateInput" name="StartDate">
+					</div>
+					<div class="mb-3">
+						<label for="endDateInput" class="form-label">End Date</label>
+						<input type="date" class="form-control" id="endDateInput" name="EndDate">
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" id="saveChangesBtn">Save changes</button>
+					</div>
+				</form>
+			</div>
+
+		</div>
+	</div>
+</div>
+
 
 <!-- #endregion -->
 <!-- #region <script> -->
@@ -635,7 +766,7 @@
 		// Append the hidden input element to the form
 		issueForm.appendChild(projectIdInput);
 
-		console.log(projectIdInput);
+		//console.log(projectIdInput);
 	});
 </script>
 
@@ -666,7 +797,7 @@
 		// Append the hidden input element to the form
 		sprintForm.appendChild(projectIdInput);
 
-		console.log(projectIdInput);
+		//console.log(projectIdInput);
 	});
 </script>
 
@@ -764,7 +895,7 @@
 		var issueId = event.dataTransfer.getData("issueId");
 
 		// Lấy ID của sprint mới
-		var sprintId = event.target.getAttribute("data-sprint-id");
+		var sprintId = event.target.getAttribute("data-sprintId");
 
 		// Gửi request AJAX để cập nhật ID của sprint trong bảng issue
 		fetch('/Admin/Issues/UpdateIssueSprint', {
@@ -779,7 +910,7 @@
 		})
 			.then(response => response.json())
 			.then(data => {
-				console.log('Issue sprint updated successfully');
+				//console.log('Issue sprint updated successfully');
 			})
 			.catch(error => {
 				console.error('Error updating issue sprint:', error);
@@ -813,46 +944,9 @@
 		var projectId = segments.pop() || segments.pop(); // Extract the last segment
 		return projectId;
 	}
-
 </script>
 
 <!-- #endregion -->
-
-
-<script>
-	// $(document).ready(function () {
-	// 	$('.dropdown-item').on('click', function () {
-	// 		var issueId = $(this).closest('.issue').find('input[name="ID"]').data('issueId');
-	// 		var status = $(this).data('status');
-	// 		console.log(issueId);
-	// 		console.log(issueId);
-	// 		$.ajax({
-	// 			url: '/Admin/Issues/UpdateIssueStatus',
-	// 			type: 'POST',
-	// 			data: { issueId: issueId, status: status },
-	// 			success: function (response) {
-	// 				console.log(response);
-	// 			},
-	// 			error: function (xhr, status, error) {
-	// 				console.error(error);
-	// 			}
-	// 		});
-	// 	});
-	// });
-
-	// Đăng ký sự kiện click cho tất cả các phần tử có lớp là 'dropdown-item'
-	// $('.dropdown-item').on('click', function () {
-	// 	// Lấy giá trị của thuộc tính data-issueId từ phần tử được click
-	// 	var issueId = $(this).data('issueId');
-
-	// 	// Thực hiện các xử lý với issueId ở đây
-	// 	console.log('Clicked on issue with ID:', issueId);
-
-	// 	// Ngăn chặn hành vi mặc định của thẻ <a> (chẳng hạn chuyển hướng trang)
-	// 	return false;
-	// });
-</script>
-
 <!-- Epic -->
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
@@ -895,44 +989,156 @@
 
 <script>
 	var id;
+
+	$(document).ready(function () {
+		// Bắt sự kiện click vào nút đóng modal và đóng modal tương ứng
+		$('.close').click(function () {
+			$('#editIssueModal').modal('hide');
+			location.reload();
+		});
+	});
+
 	function openEditModal(issueId) {
 		$.ajax({
 			url: '/Admin/Issues/Edit',
 			method: 'GET',
 			data: { issueId: issueId },
 			success: function (response) {
+				originalDescription = response.Description;
+				id = response.id;
+
+				console.log(response);
+
 				// Xử lý phản hồi từ máy chủ và điền thông tin vào form chỉnh sửa
+				// id, name, type, epic, status, documents, description, startDate, endDate, assignee.image, assignee.fullName,
+				// reporter.image, reporter.fullName, storyPoint, sprint, priority, comment, history
 				$('#issueId').val(response.id);
 				$('#issueName').val(response.name);
-				$('#issueEpic').val(response.epic);
 				$('#issueType').val(response.type);
-				$('#issueStartDate').val(response.startDate);
-				$('#issueEndDate').val(response.endDate);
 				$('#issueDescrtiption').val(response.description);
 				$('#issueStatus').val(response.status);
 				$('#priority').val(response.priority);
 				$('#issueIsFlag').val(response.isFlag);
-				$('#storyPoint').val(response.storyPoint);
-				$('#assignee').val(response.assigneeID);
-				$('#reporter').val(response.reporterID);
-				$('#issueDocument').val(response.issueDocument);
-				$('#issueComments').val(response.comments);
+				$('#issueStoryPoint').val(response.storyPoint);
 
-				id = response.id;
-				console.log('hello '+ id);
-				console.log(response.name);
-				console.log(response.type);
-				console.log(response.startDate);
-				console.log(response.endDate);
-				console.log(response.description);
-				console.log(response.status);
-				console.log(response.priority);
-				console.log(response.isFlag);
-				console.log(response.storyPoint);
-				console.log(response.assigneeID);
-				console.log(response.reporterID);
-				console.log(response.issueDocument);
-				console.log(response.comments);
+				// Function để cập nhật kiểu issue
+				function IssueTypeDropdownBtn(type, backgroundColor, iconClass) {
+					// Cập nhật kiểu issue trên giao diện
+					document.getElementById('selectedIcon').innerHTML = '<i class="' + iconClass + ' text-white" style="vertical-align: middle;"></i>';
+					document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
+				}
+				// Xử lý phản hồi từ máy chủ và cập nhật kiểu issue tương ứng
+				switch (response.type) {
+					case 0:
+						IssueTypeDropdownBtn('User story', '#ffc107', 'icofont-ui-messaging');
+						break;
+					case 1:
+						IssueTypeDropdownBtn('Task', '#1a73e8', 'icofont-book-mark');
+						break;
+					case 2:
+						IssueTypeDropdownBtn('Bug', '#dc3545', 'icofont-bug');
+						break;
+					default:
+						break;
+				}
+
+				var startDateValue = new Date(response.startDate);
+				startDateValue.setDate(startDateValue.getDate() + 1);
+
+				// Kiểm tra nếu startDateValue là một đối tượng Date hợp lệ
+				if (!isNaN(startDateValue.getTime())) {
+					// Nếu hợp lệ, gán giá trị vào ô input
+					var inputValue = startDateValue.toISOString().split('T')[0];
+					$('#issueStartDate').val(inputValue);
+				} else {
+					console.error('Invalid start date:', response.startDate);
+				}
+
+				// Kiểm tra nếu response.endDate là null, thì gán giá trị mặc định cho ô input
+				if (response.startDate === null) {
+					$('#issueStartDate').val('');
+				}
+
+				var endDateValue = new Date(response.endDate);
+				endDateValue.setDate(endDateValue.getDate() + 1);
+
+				// Kiểm tra nếu startDateValue là một đối tượng Date hợp lệ
+				if (!isNaN(endDateValue.getTime())) {
+					// Nếu hợp lệ, gán giá trị vào ô input
+					var inputValue = endDateValue.toISOString().split('T')[0];
+					$('#issueEndDate').val(inputValue);
+				} else {
+					console.error('Invalid end date:', response.endDate);
+				}
+				if (response.endDate === null) {
+					$('#issueEndDate').val('');
+				}
+
+				// Lấy đường dẫn hình ảnh của assignee từ response
+				var assigneeImageSrc = response.assignee !== null && response.assignee.image !== null
+					? response.assignee.image // Nếu có giá trị, sử dụng giá trị đó
+					: '/defaultuser.png';
+
+				var assigneeImageElement = document.getElementById('assigneeImage');
+				if (assigneeImageElement) {
+					assigneeImageElement.src = assigneeImageSrc;
+				} else {
+					console.error("Assignee image element not found");
+				}
+
+				// Lấy đường dẫn hình ảnh của reporter từ response
+				var reporterImageSrc = response.reporter !== null && response.reporter.image !== null
+					? response.reporter.image // Nếu có giá trị, sử dụng giá trị đó
+					: '/defaultuser.png';
+
+				var reporterImageElement = document.getElementById('reporterImage');
+				if (reporterImageElement) {
+					reporterImageElement.src = reporterImageSrc;
+				} else {
+					console.error("Reporter image element not found");
+				}
+
+				function selectElement(id, valueToSelect) {
+					let element = document.getElementById(id);
+					element.value = valueToSelect;
+				}
+				selectElement('sprintDropdown', response.sprintId);
+				selectElement('epicDropdown', response.epicId === null ? 'None' : response.epicId);
+				switch (response.status) {
+					case 0:
+						document.getElementById("statusSelect").value = "Todo";
+						break;
+					case 1:
+						document.getElementById("statusSelect").value = "In Progress";
+						break;
+					case 4:
+						document.getElementById("statusSelect").value = "Completed";
+						break;
+					default:
+						break;
+				}
+
+				switch (response.priority) {
+					case 0:
+						document.getElementById("prioritySelect").value = "Lowest";
+						break;
+					case 1:
+						document.getElementById("prioritySelect").value = "Low";
+						break;
+					case 2:
+						document.getElementById("prioritySelect").value = "Medium";
+						break;
+					case 3:
+						document.getElementById("prioritySelect").value = "High";
+						break;
+					case 4:
+						document.getElementById("prioritySelect").value = "Highest";
+						break;
+					default:
+						break;
+				}
+
+
 				// Hiển thị modal popup
 				$('#editIssueModal').modal('show');
 			},
@@ -942,8 +1148,14 @@
 			}
 		});
 	}
+	function showAssigneeList() {
+		// Mở modal
+		$('#assigneeModal').modal('show');
+	}
 
-	
+	function updateAssignee(assigneeId) {
+		// Thực hiện logic cập nhật người được gán
+	}
 
 	function saveIssueChanges() {
 		// Xử lý lưu các thay đổi của issue
@@ -951,8 +1163,6 @@
 		// Sau khi lưu, đóng modal popup
 		$('#editIssueModal').modal('hide');
 	}
-
-	
 
 	// Hàm trả về class của icon dựa trên loại được chọn
 	function getIconClass(value) {
@@ -1002,14 +1212,13 @@
 	function updateNewButton(type) {
 		var issueId = id;
 		console.log('update new button');
-		console.log(issueId);
+		//console.log(issueId);
 		$.ajax({
 			url: '/Admin/Issues/Edit',
 			method: 'POST',
-			data: { id: issueId},
+			data: { id: issueId },
 			//data: { issueId: issueId, type: type },
 			success: function (response) {
-				// Xử lý phản hồi từ máy chủ nếu cần
 			},
 			error: function (xhr, status, error) {
 				// Xử lý lỗi nếu có
@@ -1017,12 +1226,6 @@
 			}
 		});
 	}
-
-	// function drop(event, epicId) {
-	// 	event.preventDefault();
-	// 	var issueId = event.dataTransfer.getData("text");
-	// 	updateEpic(issueId, epicId);
-	// }
 
 	function allowDrop(event) {
 		event.preventDefault();
@@ -1032,54 +1235,393 @@
 		event.dataTransfer.setData("issueId", event.target.id);
 	}
 
-	function drop(event, targetType) {
-		// Lấy dữ liệu issue được kéo
+	function drop(event, targetType, id) {
 		var issueId = event.dataTransfer.getData("issueId");
-
-		// Lấy sprintId từ data attribute
-		// var sprintId = event.target.getAttribute('data-sprint-id');
-		var sprintId = $('#sprintId').data('sprint-id');
-		console.log(sprintId);
-		// Lấy epicId từ data attribute
 		var epicId = event.target.getAttribute('data-epic-id');
 
 		if (targetType === 'sprint') {
-			updateSprint(issueId, sprintId);
+			updateSprint(issueId, id);
 		} else if (targetType === 'epic') {
 			updateEpic(issueId, epicId);
 		}
 	}
 
-	function updateSprint(issueId, sprintId) {
+	function updateSprint(issueId, sId) {
 		$.ajax({
 			url: '/Admin/Issues/updateIssueSprint',
 			method: 'POST',
-			data: { issueId: issueId, sprintId: sprintId },
+			data: { issueId: issueId, sprintId: sId },
 			success: function (response) {
-				// Xử lý phản hồi từ máy chủ nếu cần
+				location.reload();
 			},
 			error: function (xhr, status, error) {
-				// Xử lý lỗi nếu có
 				console.error(error);
 			}
 		});
 	}
 
 	function updateEpic(issueId, epicId) {
-		// Gọi controller để cập nhật Epic
 		$.ajax({
 			url: '/Admin/Issues/UpdateEpic',
 			method: 'POST',
-			data: { issueId: issueId, epicId: epicId }, // Truyền epicId vào dữ liệu của yêu cầu
+			data: { issueId: issueId, epicId: epicId },
 			success: function (response) {
-				// Xử lý phản hồi từ máy chủ nếu cần
+				location.reload();
 			},
 			error: function (xhr, status, error) {
-				// Xử lý lỗi nếu có
 				console.error(error);
 			}
 		});
 	}
 </script>
+
+<!-- update sprint -->
+<script>
+	$(document).ready(function () {
+		$('.edit-sprint').on('click', function () {
+			var sprintID = $(this).data('id');
+			var pj_id = extractProjectIdFromUrl().toString();
+			var name = $(this).data('name');
+			var startDate = new Date($(this).data('start-date'));
+			var endDate = new Date($(this).data('end-date'));
+
+			startDate.setDate(startDate.getDate() + 1);
+			endDate.setDate(endDate.getDate() + 1);
+
+			$('#sprintIdInput').val(sprintID);
+			$('#projectIdInput').val(pj_id);
+			$('#sprintNameInput').val(name);
+			$('#startDateInput').val(startDate.toISOString().split('T')[0]);
+			$('#endDateInput').val(endDate.toISOString().split('T')[0]); // Chuyển đổi về định dạng YYYY-MM-DD
+			//console.log(pj_id);
+			// Show modal
+			$('#editSprintModal').modal('show');
+		});
+
+		$('#saveChangesBtn').on('click', function () {
+			$('#editSprintModal').modal('hide');
+		});
+	});
+
+	$(document).ready(function () {
+		$('#saveChangesBtn').click(function () {
+			var formData = $('#editSprintForm').serialize();
+
+			$.ajax({
+				url: '/Admin/Sprints/Edit',
+				method: 'POST',
+				data: formData,
+				success: function (response) {
+					window.location.reload();
+				},
+				error: function (xhr, status, error) {
+					console.log(error);
+				}
+			});
+		});
+	});
+
+	function startSprint(sprintId, status) {
+		$.ajax({
+			type: "POST",
+			url: "/Admin/Sprints/UpdateSprintStatus",
+			data: { sprintId: sprintId, status: status },
+			success: function (response) {
+
+			},
+			error: function () {
+
+			}
+		});
+	}
+</script>
+
+<!-- Hiện context menu khi nhấn chuột phải vào epic name -->
+<script>
+	function showContextMenu(event) {
+		event.preventDefault();
+
+		const epicSpan = event.target;
+		const rect = epicSpan.getBoundingClientRect();
+
+		// Hiển thị menu popup tại vị trí chuột
+		const contextMenu = document.getElementById('contextMenu');
+		contextMenu.style.display = 'block';
+		contextMenu.style.left = (rect.left - 350) + 'px';
+		contextMenu.style.top = (rect.top + epicSpan.offsetHeight - 230) + 'px';
+
+		// Thêm một event listener để ẩn menu khi click bên ngoài nó
+		document.addEventListener('click', hideContextMenu);
+	}
+
+	function hideContextMenu() {
+		const contextMenu = document.getElementById('contextMenu');
+		contextMenu.style.display = 'none';
+
+		// Gỡ bỏ event listener sau khi menu đã ẩn
+		document.removeEventListener('click', hideContextMenu);
+	}
+
+	document.addEventListener('DOMContentLoaded', function () {
+		const epicName = document.querySelector('.badge.bg-primary');
+
+		epicName.addEventListener('contextmenu', function (event) {
+			event.preventDefault();
+			showContextMenu(event);
+		});
+	});
+
+	function handleClick(issueId) {
+		console.log("Click event with issueId:", issueId);
+		$.ajax({
+			url: '/Admin/Issues/UnlinkEpic',
+			method: 'POST',
+			data: { issueId: issueId },
+			success: function (response) {
+				location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+
+		xhr.send(JSON.stringify({ issueId: issueId }));
+	}
+</script>
+
+<!-- update issue -->
+<script>
+	// update issue type
+	function updateIssueType(type, color, iconClass) {
+		var issueId = id;
+		console.log("id = " + id)
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueType',
+			method: 'POST',
+			data: { issueId: issueId, type: type },
+			success: function (response) {
+				//location.reload();
+				updateButton2(type, color, iconClass);
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+	function updateButton2(type, backgroundColor, iconClass) {
+		// Cập nhật màu nền của nút
+		document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
+
+		// Cập nhật icon
+		var iconElement = document.getElementById('selectedIcon');
+		iconElement.innerHTML = ''; // Xóa nội dung cũ
+		var icon = document.createElement('i');
+		icon.classList.add(iconClass, 'text-white');
+		icon.style.verticalAlign = 'middle';
+		iconElement.appendChild(icon);
+	}
+
+	// update issue status
+	function updateIssueStatus() {
+		var selectedStatus = document.getElementById("statusSelect").value;
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStatus',
+			method: 'POST',
+			data: { issueId: id, status: selectedStatus },
+			success: function (response) {
+				//location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+
+	// update issue epic
+	function updateIssueEpic() {
+		var selectedEpicId = document.getElementById("epicDropdown").value;
+
+		// Gửi request đến action updateIssueEpic với issueId và selectedEpicId
+		fetch('/Admin/Issues/UpdateIssueEpic?issueId=' + encodeURIComponent(id) + '&epicId=' + encodeURIComponent(selectedEpicId), {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+				// Các header khác nếu cần
+			},
+		})
+			.then(response => {
+				// Xử lý response nếu cần
+				console.log(response);
+			})
+			.catch(error => {
+				// Xử lý lỗi nếu có
+				console.error('Error:', error);
+			});
+	}
+
+	// update issue sprint
+	function updateIssueSprint() {
+		var selectedSprintId = document.getElementById("sprintDropdown").value;
+
+		// Gửi request đến action updateIssueSprint với issueId và selectedSprintId
+		fetch('/Admin/Issues/updateIssueSprint?issueId=' + encodeURIComponent(id) + '&sprintId=' + encodeURIComponent(selectedSprintId), {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+				// Các header khác nếu cần
+			},
+		})
+			.then(response => {
+				// Xử lý response nếu cần
+				console.log(response);
+			})
+			.catch(error => {
+				// Xử lý lỗi nếu có
+				console.error('Error:', error);
+			});
+	}
+
+	// update issue priority
+	function updateIssuePriority() {
+		var selectedPrority = document.getElementById("prioritySelect").value;
+
+		// Gửi request đến action updateIssueSprint với issueId và selectedSprintId
+		fetch('/Admin/Issues/updateIssuePriority?issueId=' + encodeURIComponent(id) + '&priority=' + encodeURIComponent(selectedPrority), {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+				// Các header khác nếu cần
+			},
+		})
+			.then(response => {
+				// Xử lý response nếu cần
+				console.log(response);
+			})
+			.catch(error => {
+				// Xử lý lỗi nếu có
+				console.error('Error:', error);
+			});
+	}
+
+	// update issue name
+	function handleKeyPress(event) {
+		if (event.keyCode === 13) {
+			// Lấy giá trị của trường input
+			var inputValue = document.getElementById("issueName").value;
+			if (inputValue == '') {
+				alert('Issue name cannot be NULL');
+			} else {
+				$.ajax({
+					url: '/Admin/Issues/UpdateIssueName',
+					method: 'POST',
+					data: { issueId: id, name: inputValue },
+					success: function (response) {
+						//location.reload();
+					},
+					error: function (xhr, status, error) {
+						console.error(error);
+					}
+				});
+			}
+
+		}
+	}
+
+	// update issue description
+	var originalDescription = ''; // Biến tạm để lưu trữ nội dung ban đầu
+	function updateIssueDescription() {
+		var description = document.getElementById("issueDescrtiption").value;
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueDescription',
+			method: 'POST',
+			data: { issueId: id, description: description },
+			success: function (response) {
+				originalDescription = description;
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+
+	// Hàm gọi khi click nút "Cancel"
+	function cancelUpdate() {
+		// Thiết lập lại nội dung của textarea bằng giá trị ban đầu
+		document.getElementById("issueDescrtiption").value = originalDescription;
+	}
+
+	// update issue startDate
+	var startDateInput = document.getElementById("issueStartDate");
+	startDateInput.addEventListener("blur", function () {
+		var startDateValue = startDateInput.value;
+		console.log(startDateValue); // Kiểm tra xem giá trị ngày đã được lấy đúng chưa
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStartDate',
+			method: 'POST',
+			data: { issueId: id, date: startDateValue },
+			success: function (response) {
+				//location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	});
+
+	// update issue endDate
+	var endDateInput = document.getElementById("issueEndDate");
+	endDateInput.addEventListener("blur", function () {
+		var endDateValue = endDateInput.value;
+		console.log(endDateValue);
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueEndDate',
+			method: 'POST',
+			data: { issueId: id, date: endDateValue },
+			success: function (response) {
+				//location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	});
+
+	// update issue story point
+	$('#issueStoryPoint').blur(function () {
+		var storyPoint = $(this).val();
+
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStoryPoint',
+			method: 'POST',
+			data: { issueId: id, storyPoint: storyPoint },
+			success: function (response) {
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	});
+
+	function updateAssignee(userId){
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueAssignee',
+			method: 'POST',
+			data: { issueId: id, userId: userId },
+			success: function (response) {
+				
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+</script>
+
+
+
 
 

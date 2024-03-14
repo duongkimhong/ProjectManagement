@@ -1,0 +1,446 @@
+﻿@* @model IEnumerable<ProjectManagement.Models.Issues> *@
+@inject ApplicationDbContext _context
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+<style>
+	.taskboard .progress_task .dd-item:before {
+		background-color: #a0d9b4 !important;
+	}
+</style>
+<div class="body d-flex py-lg-3 py-md-2">
+	<div class="container-xxl">
+		<div class="row align-items-center">
+			<div class="border-0 mb-4">
+				<div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
+					<h3 class="fw-bold mb-0">Task Management</h3>
+					<div class="col-auto d-flex w-sm-100">
+						<button type="button" class="btn btn-dark btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#createtask"><i class="icofont-plus-circle me-2 fs-6"></i>Create Task</button>
+					</div>
+				</div>
+			</div>
+		</div> <!-- Row end  -->
+		<div class="row clearfix  g-3">
+			<div class="col-lg-12 col-md-12 flex-column">
+				<div class="row taskboard g-3 py-xxl-4">
+					@if (ViewBag.BoardSprints != null)
+					{
+						@foreach (var sprint in ViewBag.BoardSprints as List<Sprints>)
+						{
+							<h4 class="fw-bold">@sprint.Name</h4>
+							<div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12 mt-xxl-4 mt-xl-4 mt-lg-4 mt-md-4 mt-sm-4 mt-4" ondrop="drop(event, 'Todo')" ondragover="allowDrop(event)">
+								<h6 class="fw-bold py-3 mb-0" style="margin-left: 30px;">To do</h6>
+								<div class="progress_task">
+									<ol class="dd-list" data-status="Todo">
+										@foreach (var issue in sprint.Issues)
+										{
+											if (issue.Status == IssueStatus.Todo)
+											{
+												<li class="dd-item" id="@issue.Id" data-id="@issue.Id" draggable="true" ondragstart="drag(event)" data-status="Todo">
+													<div class="dd-handle">
+														<div class="task-info d-flex align-items-center justify-content-between">
+															<h6 class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">
+																@issue.Name
+															</h6>
+															<div class="task-priority d-flex flex-column align-items-center justify-content-center">
+																<div class="avatar-list avatar-list-stacked m-0">
+																	@if (issue.AssigneeID == null)
+																	{
+																		<img class="avatar rounded-circle small-avt" src="/defaultuser.png" alt="" style="background-color: white;">
+																	}
+																	else
+																	{
+																		<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
+																	}
+																</div>
+																@if (issue.Priority == Priorities.Lowest)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Low)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Medium)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.High)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Highest)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																}
+
+															</div>
+														</div>
+														<p class="py-2 mb-0">
+															Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id
+															nec scelerisque massa.
+														</p>
+														<div class="tikit-info row g-3 align-items-center">
+															<div class="col-sm">
+																<ul class="d-flex list-unstyled align-items-center flex-wrap">
+																	<li class="me-2">
+																		<div class="d-flex align-items-center">
+																			<i class="icofont-flag"></i>
+																			<span class="ms-1">@issue.EndDate</span>
+																		</div>
+																	</li>
+																	<li class="me-2">
+																		<div class="d-flex align-items-center">
+
+																			<i class="icofont-ui-text-chat"></i>
+																			<span class="ms-1">5</span>
+
+																		</div>
+																	</li>
+																	<li>
+																		<div class="d-flex align-items-center">
+																			<i class="icofont-paper-clip"></i>
+																			<span class="ms-1">5</span>
+																		</div>
+																	</li>
+																	<li>
+																		<div class="d-flex align-items-center" style="margin-left: 5px;">
+																			@if (issue.Type == IssueType.Task)
+																			{
+																				<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																			else if (issue.Type == IssueType.Bug)
+																			{
+																				<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																			else
+																			{
+																				<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																		</div>
+																	</li>
+																</ul>
+															</div>
+															<div class="col-sm text-end">
+																@if (issue.EpicID != null)
+																{
+																	var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+																	<div class="small text-truncate light-danger-bg py-1 px-2 rounded-1 d-inline-block fw-bold small"> @epic.Name </div>
+																}
+																else
+																{
+
+																}
+															</div>
+														</div>
+													</div>
+
+												</li>
+											}
+										}
+									</ol>
+								</div>
+							</div>
+
+							<div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12 mt-xxl-4 mt-xl-4 mt-lg-4 mt-md-4 mt-sm-4 mt-4" ondrop="drop(event, 'InProgress')" ondragover="allowDrop(event)">
+								<h6 class="fw-bold py-3 mb-0" style="margin-left: 30px;">In Progress</h6>
+								<div class="progress_task">
+									<ol class="dd-list" data-status="InProgress">
+										@foreach (var issue in sprint.Issues)
+										{
+											if (issue.Status == IssueStatus.InProgress)
+											{
+												<li class="dd-item" id="@issue.Id" data-id="@issue.Id" draggable="true" ondragstart="drag(event)" data-status="InProgress">
+													<div class="dd-handle">
+														<div class="task-info d-flex align-items-center justify-content-between">
+															<h6 class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">
+																@issue.Name
+															</h6>
+															<div class="task-priority d-flex flex-column align-items-center justify-content-center">
+																<div class="avatar-list avatar-list-stacked m-0">
+																	@if (issue.AssigneeID == null)
+																	{
+																		<img class="avatar rounded-circle small-avt" src="/defaultuser.png" alt="" style="background-color: white;">
+																	}
+																	else
+																	{
+																		<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
+																	}
+																</div>
+																@if (issue.Priority == Priorities.Lowest)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Low)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Medium)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.High)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Highest)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																}
+
+															</div>
+														</div>
+														<p class="py-2 mb-0">
+															Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id
+															nec scelerisque massa.
+														</p>
+														<div class="tikit-info row g-3 align-items-center">
+															<div class="col-sm">
+																<ul class="d-flex list-unstyled align-items-center flex-wrap">
+																	<li class="me-2">
+																		<div class="d-flex align-items-center">
+																			<i class="icofont-flag"></i>
+																			<span class="ms-1">@issue.EndDate</span>
+																		</div>
+																	</li>
+																	<li class="me-2">
+																		<div class="d-flex align-items-center">
+
+																			<i class="icofont-ui-text-chat"></i>
+																			<span class="ms-1">5</span>
+
+																		</div>
+																	</li>
+																	<li>
+																		<div class="d-flex align-items-center">
+																			<i class="icofont-paper-clip"></i>
+																			<span class="ms-1">5</span>
+																		</div>
+																	</li>
+																	<li>
+																		<div class="d-flex align-items-center" style="margin-left: 5px;">
+																			@if (issue.Type == IssueType.Task)
+																			{
+																				<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																			else if (issue.Type == IssueType.Bug)
+																			{
+																				<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																			else
+																			{
+																				<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																		</div>
+																	</li>
+																</ul>
+															</div>
+															<div class="col-sm text-end">
+																@if (issue.EpicID != null)
+																{
+																	var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+																	<div class="small text-truncate light-danger-bg py-1 px-2 rounded-1 d-inline-block fw-bold small"> @epic.Name </div>
+																}
+																else
+																{
+
+																}
+															</div>
+														</div>
+													</div>
+
+												</li>
+
+											}
+										}
+									</ol>
+								</div>
+							</div>
+
+							<div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12 mt-xxl-4 mt-xl-4 mt-lg-4 mt-md-4 mt-sm-4 mt-4" ondrop="drop(event, 'Complete')" ondragover="allowDrop(event)">
+								<h6 class="fw-bold py-3 mb-0" style="margin-left: 30px;">Complete</h6>
+								<div class="progress_task">
+									<ol class="dd-list" data-status="Complete">
+										@foreach (var issue in sprint.Issues)
+										{
+											if (issue.Status == IssueStatus.Done)
+											{
+												<li class="dd-item" id="@issue.Id" data-id="@issue.Id" draggable="true" ondragstart="drag(event)" data-status="Complete">
+													<div class="dd-handle">
+														<div class="task-info d-flex align-items-center justify-content-between">
+															<h6 class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">
+																@issue.Name
+															</h6>
+															<div class="task-priority d-flex flex-column align-items-center justify-content-center">
+																<div class="avatar-list avatar-list-stacked m-0">
+																	@if (issue.AssigneeID == null)
+																	{
+																		<img class="avatar rounded-circle small-avt" src="/defaultuser.png" alt="" style="background-color: white;">
+																	}
+																	else
+																	{
+																		<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
+																	}
+																</div>
+																@if (issue.Priority == Priorities.Lowest)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Low)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Medium)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.High)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																}
+																else if (issue.Priority == Priorities.Highest)
+																{
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																}
+
+															</div>
+														</div>
+														<p class="py-2 mb-0">
+															Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id
+															nec scelerisque massa.
+														</p>
+														<div class="tikit-info row g-3 align-items-center">
+															<div class="col-sm">
+																<ul class="d-flex list-unstyled align-items-center flex-wrap">
+																	<li class="me-2">
+																		<div class="d-flex align-items-center">
+																			<i class="icofont-flag"></i>
+																			<span class="ms-1">@issue.EndDate</span>
+																		</div>
+																	</li>
+																	<li class="me-2">
+																		<div class="d-flex align-items-center">
+
+																			<i class="icofont-ui-text-chat"></i>
+																			<span class="ms-1">5</span>
+
+																		</div>
+																	</li>
+																	<li>
+																		<div class="d-flex align-items-center">
+																			<i class="icofont-paper-clip"></i>
+																			<span class="ms-1">5</span>
+																		</div>
+																	</li>
+																	<li>
+																		<div class="d-flex align-items-center" style="margin-left: 5px;">
+																			@if (issue.Type == IssueType.Task)
+																			{
+																				<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																			else if (issue.Type == IssueType.Bug)
+																			{
+																				<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																			else
+																			{
+																				<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+																					<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+																				</span>
+																			}
+																		</div>
+																	</li>
+																</ul>
+															</div>
+															<div class="col-sm text-end">
+																@if (issue.EpicID != null)
+																{
+																	var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+																	<div class="small text-truncate light-danger-bg py-1 px-2 rounded-1 d-inline-block fw-bold small"> @epic.Name </div>
+																}
+																else
+																{
+
+																}
+															</div>
+														</div>
+													</div>
+
+												</li>
+											}
+										}
+									</ol>
+								</div>
+							</div>
+						}
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+@* <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> *@
+
+<!-- Kéo thả -->
+<script>
+	function allowDrop(event) {
+		event.preventDefault();
+	}
+
+	function drag(event) {
+		event.dataTransfer.setData("text", event.target.id);
+	}
+
+	function drop(event) {
+		event.preventDefault();
+		var data = event.dataTransfer.getData("text");
+		event.target.appendChild(document.getElementById(data));
+	}
+
+	function allowDrop(event) {
+		event.preventDefault();
+	}
+
+	function drag(event) {
+		event.dataTransfer.setData("issueId", event.target.id);
+	}
+
+	function drop(event, status) {
+		var issueId = event.dataTransfer.getData("issueId");
+		updateSprint(issueId, status);
+	}
+
+	function updateSprint(issueId, status) {
+		$.ajax({
+			url: '/Admin/Issues/UpdateIssueStatus',
+			method: 'POST',
+			data: { issueId: issueId, status: status },
+			success: function (response) {
+				location.reload();
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+</script>

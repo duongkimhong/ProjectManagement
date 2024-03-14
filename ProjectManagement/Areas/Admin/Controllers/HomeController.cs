@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Models;
 
 namespace ProjectManagement.Areas.Admin.Controllers
 {
     [Area("Admin")]
+	[Authorize]
     public class HomeController : Controller
     {
 		private readonly ApplicationDbContext _context;
