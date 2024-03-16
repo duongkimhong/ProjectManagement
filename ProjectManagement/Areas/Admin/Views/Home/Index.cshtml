@@ -70,19 +70,12 @@
 									</div>
 								</td>
 								<td>@project.Name</td>
-								<td>@project.StartDate</td>
-								<td>@project.EndDate</td>
+								<td>@(project.StartDate.HasValue ? project.StartDate.Value.ToString("dd/MM/yyyy") : "")</td>
+								<td>@(project.EndDate.HasValue ? project.EndDate.Value.ToString("dd/MM/yyyy") : "")</td>
 								<td>@project.Status</td>
 								<td>
 									<div class="btn-group" role="group" aria-label="Basic outlined example">
-										<button type="button" 
-											class="btn btn-outline-secondary editButton" 
-											data-id="@project.Id" 
-											data-name="@project.Name" 
-											data-image="@project.Image" 
-											data-startdate="@project.StartDate" 
-											data-enddate="@project.EndDate" 
-											data-description="@project.Description")">
+										<button type="button" class="btn btn-outline-secondary editButton" onclick="openEditModal('@project.Id')">
 											<i class="icofont-edit text-success"></i>
 										</button>
 										<button type="button" class="btn btn-outline-secondary deleterow" data-toggle="modal" data-target="#deleteConfirmationModal" data-id="@project.Id"><i class="icofont-ui-delete text-danger"></i></button>
@@ -100,67 +93,70 @@
 
 
 <!-- Modal -->
-<!-- Modal Popup for Edit -->
-<div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<!-- Modal popup để chỉnh sửa Project -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" role="dialog" aria-labelledby="editProjectModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
-		<div class="modal-content">
+		<div class="modal-content" style="width: 600px;">
 			<div class="modal-header">
-				<h5 class="modal-title" id="editholidayLabel">Chỉnh sửa</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				<h5 class="modal-title" id="editIssueModalLabel">Edit Issue</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
 			<div class="modal-body">
-				<!-- Form chỉnh sửa -->
-				<form method="post" asp-area="Admin" asp-controller="Projects" asp-action="Edit" enctype="multipart/form-data">
-					<div asp-validation-summary="All" class="text-danger"></div>
-					<input type="hidden" id="editId" name="Id" />
-					<div class="mb-3">
-						<label for="editProjectName" class="form-label">Project Name</label>
-						<input type="text" class="form-control" id="editProjectName" name="Name" required>
-					</div>
-					@* <p>Giá trị ASP.NET: @projectID</p>
+				<!-- Form để chỉnh sửa issue -->
+				<form id="editProjectForm">
+					<div class="row g-3 align-items-center">
+						<div class="mb-3">
+							<label for="projectName" class="form-label">Project Name</label>
+							<input type="text" class="form-control" id="projectName" name="projectName" required>
+						</div>
 
-					<div class="mb-3">
-						<label for="editProjectName" class="form-label">Tên dự án</label>
-						<input type="text" class="form-control" id="editProjectName" value="@ProjectInfo(projectID)" name="Name" required>
-					</div> *@
-
-					<div class="form-group">
-						<label for="CoverImage" class="control-label">Hình ảnh</label>
-						<div class="input-group">
-							<input type="file" class="form-control" id="editFileInput" style="visibility: hidden; position: absolute;" />
-							<input type="text" class="form-control" name="CoverImage" id="editCurrentImagePath" readonly />
-							<div class="input-group-append">
-								<button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('editFileInput').click();">Chọn tệp</button>
+						<div class="form-group">
+							<label for="CoverImage" class="control-label">Hình ảnh</label>
+							<div class="input-group">
+								<input type="file" class="form-control" id="editFileInput" style="visibility: hidden; position: absolute;" />
+								<input type="text" class="form-control" name="CoverImage" id="editCurrentImagePath" readonly />
+								<div class="input-group-append">
+									<button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('editFileInput').click();">Chọn tệp</button>
+								</div>
+							</div>
+							<div class="text-center mt-2">
+								<img id="editCurrentImage" src="" style="max-width: 100px; max-height: 100px;" />
 							</div>
 						</div>
-						<div class="text-center mt-2">
-							<img id="editCurrentImage" src="" style="max-width: 100px; max-height: 100px;" />
-						</div>
-					</div>
 
-					<div class="mb-3">
-						<label for="editStartDate" class="form-label">Start Date</label>
-						<input type="date" class="form-control" id="editStartDate" name="StartDate">
-					</div>
-					<div class="mb-3">
-						<label for="editEndDate" class="form-label">End Date</label>
-						<input type="date" class="form-control" id="editEndDate" name="EndDate">
-					</div>
-					<div class="mb-3">
-						<label for="editDescription" class="form-label">Description</label>
-						<textarea class="form-control" id="editDescription" name="Description"></textarea>
-					</div>
-					<div class="mb-3">
-						<label for="documents" class="form-label">Documents</label>
-						<input type="file" class="form-control" id="documents" name="Documents" multiple>
-					</div>
-					<div class="mb-3">
-						<label>Team Members</label>
-						<input type="hidden" id="editSelectedUsersInput" name="editSelectedUsers" />
-						<button type="button" class="btn btn-primary" id="editInviteButton">Invite</button>
+						<!-- description -->
+						<div class="col-md-10">
+							<label class="form-label">Description</label>
+							<textarea type="text" class="form-control" id="projectDescrtiption" name="projectDescrtiption"></textarea>
+						</div>
+						<div class="col-md-2" style="margin-top: 45px;">
+							<button type="button" class="btn btn-success" style="width: 80px; margin-bottom: 5px;" onclick="updateProjectDescription()">Save</button><br>
+							<button type="button" class="btn btn-danger" style="width: 80px;" onclick="cancelUpdate()">Cancel</button>
+						</div>
+
+						<!-- startdate endate -->
+						<div class="col-md-6">
+							<label for="projectStartDate" class="form-label">Start Date</label>
+							<input type="date" class="form-control" id="projectStartDate" name="projectStartDate">
+						</div>
+						<div class="col-md-6">
+							<label for="projectEndDate" class="form-label">End Date</label>
+							<input type="date" class="form-control" id="projectEndDate" name="projectEndDate">
+						</div>
+
+						@* <div class="mb-3">
+							<label for="documents" class="form-label">Documents</label>
+							<input type="file" class="form-control" id="documents" name="Documents" multiple>
+						</div> *@
+						@* <div class="mb-3">
+							<label>Team Members</label>
+							<input type="hidden" id="editSelectedUsersInput" name="editSelectedUsers" />
+							<button type="button" class="btn btn-primary" id="editInviteButton">Invite</button>
+						</div> *@
 					</div>
 				</form>
-
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
@@ -169,6 +165,7 @@
 		</div>
 	</div>
 </div>
+
 
 <!-- Modal Popup for Invite -->
 <div class="modal fade" id="editInviteModal" tabindex="-1" aria-labelledby="editInviteModalLabel" aria-hidden="true">
@@ -234,7 +231,6 @@
 	});
 </script>
 
-
 <!-- Modal Popup for Delete Confirmation -->
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -262,100 +258,5 @@
 <!-- Bootstrap JS -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-<script>
-	var id;
-	// JavaScript for handling delete confirmation
-	$(document).ready(function () {
-		$('.deleterow').on('click', function () {
-			id = $(this).data('id');
-			console.log(id);
-			$('#confirmDelete').data('id', id); // Set data-id attribute for the delete button
-		});
+<script src="~/js/home_script.js"></script>
 
-		// Xóa nhà hàng khi nhấn nút "Xóa" trên modal
-		$('#confirmDelete').click(function () {
-			var url = '/Admin/Projects/Delete/' + id;
-
-			$.ajax({
-				type: "POST",
-				url: url,
-				headers: {
-					RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-				},
-				success: function (data) {
-					alert("Đã xóa thành công");
-					location.reload();
-				},
-				error: function (data) {
-					alert("Xóa thất bại");
-				}
-			});
-		});
-	});
-</script>
-
-<script>
-	$(document).ready(function () {
-
-		$('.editButton').click(function () {
-			var id = $(this).data('id');
-			var name = $(this).data('name');
-			var currentImage = $(this).data('image');
-			var startDateString = $(this).data('startdate');
-			var endDateString = $(this).data('enddate');
-			var description = $(this).data('description');
-			
-			$('#editId').val(id);
-			$('#editProjectName').val(name);
-			$('#currentImage').attr('src', currentImage);
-			$('#currentImagePath').val(currentImage);
-			$('#editDescription').val(description);
-
-			$('#editCategoryModal').modal('show');
-		}); 
-
-
-		function displaySelectedImage() {
-			var fileInput = $('#fileInput')[0];
-			var currentImage = document.getElementById('currentImage');
-			var currentImagePath = document.getElementById('currentImagePath');
-			var selectedFile = fileInput.files[0];
-			if (selectedFile) {
-				var reader = new FileReader();
-				reader.onload = function (e) {
-					currentImage.src = e.target.result;
-				};
-				reader.readAsDataURL(selectedFile);
-
-				currentImagePath.value = selectedFile.name;
-			}
-		}
-
-		$('#fileInput').change(displaySelectedImage);
-
-		$('#editCategoryForm').submit(function (e) {
-			e.preventDefault();
-
-			var formData = new FormData(this);
-
-			$.ajax({
-				type: 'POST',
-				url: '/Admin/Projects/Edit/' + $('#editId').val(),
-				data: formData,
-				contentType: false,
-				processData: false,
-				success: function (data) {
-					$('#editCategoryModal').modal('hide');
-					location.reload();
-				},
-				error: function (xhr, status, error) {
-					console.error(xhr.responseText);
-				}
-			});
-		});
-	});
-</script>
-
-<script>
-	
-</script>

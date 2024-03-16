@@ -40,7 +40,7 @@
 												<li class="dd-item" id="@issue.Id" data-id="@issue.Id" draggable="true" ondragstart="drag(event)" data-status="Todo">
 													<div class="dd-handle">
 														<div class="task-info d-flex align-items-center justify-content-between">
-															<h6 class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">
+															<h6 style="cursor: pointer;" class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0" onclick="openEditModal('@issue.Id')">
 																@issue.Name
 															</h6>
 															<div class="task-priority d-flex flex-column align-items-center justify-content-center">
@@ -56,23 +56,23 @@
 																</div>
 																@if (issue.Priority == Priorities.Lowest)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Low)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Medium)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.High)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Highest)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
 																}
 
 															</div>
@@ -82,12 +82,23 @@
 															nec scelerisque massa.
 														</p>
 														<div class="tikit-info row g-3 align-items-center">
-															<div class="col-sm">
+															<div class="col-sm-8">
 																<ul class="d-flex list-unstyled align-items-center flex-wrap">
 																	<li class="me-2">
 																		<div class="d-flex align-items-center">
-																			<i class="icofont-flag"></i>
-																			<span class="ms-1">@issue.EndDate</span>
+																			@if (issue.IsFlag == false)
+																			{
+																				<i class="icofont-flag" style="font-size: 25px;"></i>
+																			}
+																			else
+																			{
+																				<i class="icofont-flag" style="color: red; font-size: 25px;"></i>
+																			}
+																			@if (issue.EndDate.HasValue)
+																			{
+																				<span>@issue.EndDate.Value.ToString("dd/MM")</span>
+																			}
+																			else { }
 																		</div>
 																	</li>
 																	<li class="me-2">
@@ -149,7 +160,7 @@
 								</div>
 							</div>
 
-							<div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12 mt-xxl-4 mt-xl-4 mt-lg-4 mt-md-4 mt-sm-4 mt-4" ondrop="drop(event, 'InProgress')" ondragover="allowDrop(event)">
+							<div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12 mt-xxl-4 mt-xl-4 mt-lg-4 mt-md-4 mt-sm-4 mt-4" ondrop="drop(event, 'In Progress')" ondragover="allowDrop(event)">
 								<h6 class="fw-bold py-3 mb-0" style="margin-left: 30px;">In Progress</h6>
 								<div class="progress_task">
 									<ol class="dd-list" data-status="InProgress">
@@ -160,7 +171,7 @@
 												<li class="dd-item" id="@issue.Id" data-id="@issue.Id" draggable="true" ondragstart="drag(event)" data-status="InProgress">
 													<div class="dd-handle">
 														<div class="task-info d-flex align-items-center justify-content-between">
-															<h6 class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">
+															<h6 style="cursor: pointer;" class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0" onclick="openEditModal('@issue.Id')">
 																@issue.Name
 															</h6>
 															<div class="task-priority d-flex flex-column align-items-center justify-content-center">
@@ -176,23 +187,23 @@
 																</div>
 																@if (issue.Priority == Priorities.Lowest)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Low)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Medium)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.High)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Highest)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
 																}
 
 															</div>
@@ -202,12 +213,23 @@
 															nec scelerisque massa.
 														</p>
 														<div class="tikit-info row g-3 align-items-center">
-															<div class="col-sm">
+															<div class="col-sm-8">
 																<ul class="d-flex list-unstyled align-items-center flex-wrap">
 																	<li class="me-2">
 																		<div class="d-flex align-items-center">
-																			<i class="icofont-flag"></i>
-																			<span class="ms-1">@issue.EndDate</span>
+																			@if (issue.IsFlag == false)
+																			{
+																				<i class="icofont-flag" style="font-size: 25px;"></i>
+																			}
+																			else
+																			{
+																				<i class="icofont-flag" style="color: red; font-size: 25px;"></i>
+																			}
+																			@if (issue.EndDate.HasValue)
+																			{
+																				<span>@issue.EndDate.Value.ToString("dd/MM")</span>
+																			}
+																			else { }
 																		</div>
 																	</li>
 																	<li class="me-2">
@@ -276,12 +298,12 @@
 									<ol class="dd-list" data-status="Complete">
 										@foreach (var issue in sprint.Issues)
 										{
-											if (issue.Status == IssueStatus.Done)
+											if (issue.Status == IssueStatus.Completed)
 											{
 												<li class="dd-item" id="@issue.Id" data-id="@issue.Id" draggable="true" ondragstart="drag(event)" data-status="Complete">
 													<div class="dd-handle">
 														<div class="task-info d-flex align-items-center justify-content-between">
-															<h6 class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">
+															<h6 style="cursor: pointer;" class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0" onclick="openEditModal('@issue.Id')">
 																@issue.Name
 															</h6>
 															<div class="task-priority d-flex flex-column align-items-center justify-content-center">
@@ -292,28 +314,29 @@
 																	}
 																	else
 																	{
+																		
 																		<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
 																	}
 																</div>
 																@if (issue.Priority == Priorities.Lowest)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Low)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Medium)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.High)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
 																}
 																else if (issue.Priority == Priorities.Highest)
 																{
-																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313;">@issue.Priority</span>
+																	<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
 																}
 
 															</div>
@@ -323,12 +346,23 @@
 															nec scelerisque massa.
 														</p>
 														<div class="tikit-info row g-3 align-items-center">
-															<div class="col-sm">
+															<div class="col-sm-8">
 																<ul class="d-flex list-unstyled align-items-center flex-wrap">
 																	<li class="me-2">
 																		<div class="d-flex align-items-center">
-																			<i class="icofont-flag"></i>
-																			<span class="ms-1">@issue.EndDate</span>
+																			@if (issue.IsFlag == false)
+																			{
+																				<i class="icofont-flag" style="font-size: 25px;"></i>
+																			}
+																			else
+																			{
+																				<i class="icofont-flag" style="color: red; font-size: 25px;"></i>
+																			}
+																			@if (issue.EndDate.HasValue)
+																			{
+																				<span>@issue.EndDate.Value.ToString("dd/MM")</span>
+																			}
+																			else { }
 																		</div>
 																	</li>
 																	<li class="me-2">
@@ -398,49 +432,223 @@
 </div>
 
 
+<!-- Modal -->
+<!-- Modal popup để chỉnh sửa issue -->
+<div class="modal fade" id="editIssueModal" tabindex="-1" role="dialog" aria-labelledby="editIssueModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content" style="width: 600px;">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editIssueModalLabel">Edit Issue</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<!-- Form để chỉnh sửa issue -->
+				<form id="editIssueForm">
+					<!-- Thêm các hàng tương tự cho các trường khác -->
+					<div class="row g-3 align-items-center">
+						<!-- type, name, epic, status -->
+						<div class="col-md-2">
+							<button id="newSelectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+								<span id="selectedIcon" style="display: inline-block;"></span>
+							</button>
+
+							<!-- Menu dropdown -->
+							<ul class="dropdown-menu">
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('Task', '#1a73e8', 'icofont-book-mark')" data-value="Task">
+										<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+											<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+										</span> Task
+									</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('Bug', '#dc3545', 'icofont-bug')" data-value="Bug">
+										<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+											<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+										</span> Bug
+									</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="#" onclick="updateIssueType('User story', '#ffc107', 'icofont-ui-messaging')" data-value="User story">
+										<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+											<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+										</span> User story
+									</a>
+								</li>
+							</ul>
+						</div>
+						<div class="col-md-4">
+							<input type="text" class="form-control" id="issueName" name="issueName" placeholder="Issue Name" onkeypress="handleKeyPress(event)">
+						</div>
+						<div class="col-md-3">
+							<select class="form-select" id="epicDropdown" onchange="updateIssueEpic()">
+								<option value="None">None</option>
+								@* @foreach (var epic in ViewBag.ProjectEpics as List<Epics>)
+								{
+									<option value="@epic.Id">@epic.Name</option>
+								} *@
+							</select>
+						</div>
+						<div class="col-md-3">
+							<select class="form-select" id="statusSelect" onchange="updateIssueStatus()">
+								<option value="Todo">Todo</option>
+								<option value="In Progress">In Progress</option>
+								<option value="Completed">Completed</option>
+							</select>
+						</div>
+
+						<!-- description -->
+						<div class="col-md-10">
+							<label class="form-label">Description</label>
+							<textarea type="text" class="form-control" id="issueDescrtiption" name="issueDescrtiption"></textarea>
+						</div>
+						<div class="col-md-2" style="margin-top: 45px;">
+							<button type="button" class="btn btn-success" style="width: 80px; margin-bottom: 5px;" onclick="updateIssueDescription()">Save</button><br>
+							<button type="button" class="btn btn-danger" style="width: 80px;" onclick="cancelUpdate()">Cancel</button>
+						</div>
+
+						<!-- startdate endate -->
+						<div class="col-md-6">
+							<label for="issueStartDate" class="form-label">Start Date</label>
+							<input type="date" class="form-control" id="issueStartDate" name="issueStartDate">
+						</div>
+						<div class="col-md-6">
+							<label for="issueEndDate" class="form-label">End Date</label>
+							<input type="date" class="form-control" id="issueEndDate" name="issueEndDate">
+						</div>
+
+						<!-- assignee, reporter, story point -->
+						<div class="col-md-2 d-flex align-items-center justify-content-center">
+							<label class="form-label">Assignee</label>
+						</div>
+						<div class="col-md-2">
+							<span class="p-2 me-1" id="assigneeImageContainer">
+								<img id="assigneeImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" onclick="showAssigneeList()">
+							</span>
+						</div>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Reporter</label>
+						</div>
+						<div class="col-md-2">
+							<span class="p-2 me-1">
+								<img id="reporterImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+							</span>
+						</div>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Story point</label>
+						</div>
+						<div class="col-md-2">
+							<input type="number" class="form-control" id="issueStoryPoint" name="issueStoryPoint" min="0">
+						</div>
+
+						<!-- Sprint, prority -->
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label class="form-label">Sprint</label>
+						</div>
+						<div class="col-md-4">
+							<select class="form-select" id="sprintDropdown" onchange="updateIssueSprint()">
+
+								@* @foreach (var sprint in ViewBag.ListSprints as List<Sprints>)
+								{
+									<option value="@sprint.Id">@sprint.Name</option>
+								} *@
+							</select>
+						</div>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label class="form-label">Priority</label>
+						</div>
+						<div class="col-md-4">
+							<select class="form-select" id="prioritySelect" onchange="updateIssuePriority()">
+								<option value="Highest">Highest</option>
+								<option value="High">High</option>
+								<option value="Medium">Medium</option>
+								<option value="Low">Low</option>
+								<option value="Lowest">Lowest</option>
+							</select>
+						</div>
+
+						<div class="row mt-2">
+							<div class="col-md-2">Show:</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-toggle" id="commentsToggle" onclick="toggleContent('comments')">Comments</button>
+								
+							</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-toggle" id="historyToggle" onclick="toggleContent('history')">History</button>
+								
+							</div>
+						</div>
+						<div class="row" id="commentsContent" style="display: none;">
+							<!-- Comment input -->
+							<div class="col-md-12 mb-3">
+								<textarea class="form-control" id="commentInput" rows="3" placeholder="Enter your comment"></textarea>
+							</div>
+
+							<!-- Save and Cancel buttons -->
+							<div class="col-md-12 mb-3">
+								<button type="button" class="btn btn-primary" onclick="saveComment()">Save</button>
+								<button type="button" class="btn btn-secondary" onclick="cancelComment()">Cancel</button>
+							</div>
+							<!-- Comment items -->
+							@* <div class="col-md-12 comment-item">
+								<div class="row align-items-center">
+									<div class="col-md-1">
+										<img id="assigneeImage" src="/DefaultUser.png" class="rounded-circle" alt="Avatar" width="30" height="30">
+									</div>
+									<div class="col-md-10">
+										<p class="mb-1">This is a comment.</p>
+										<p class="text-muted mb-1">Posted on: March 11, 2024</p>
+									</div>
+								</div>
+							</div> *@
+						</div>
+						<div class="row" id="historyContent" style="display: none;">
+							<div class="row align-items-center">
+								<div class="col-md-1">
+									<img id="assigneeImage" src="/DefaultUser.png" class="rounded-circle" alt="Avatar" width="30" height="30">
+								</div>
+								<div class="col-md-10">
+									<p class="mb-1">This is a history</p>
+									<p class="text-muted mb-1">From -> To</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal select team member-->
+<div class="modal fade" id="assigneeModal" tabindex="-1" aria-labelledby="assigneeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="assigneeModalLabel">Select Assignee</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="assigneeList" class="list-group">
+					@* @foreach (var user in ViewBag.ProjectTeamMembers)
+					{
+						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center">
+							<img src="@user.Image" class="rounded-circle me-3" alt="Avatar" width="50" height="50">
+							<div>
+								<h5 class="mb-0">@user.UserName</h5>
+							</div>
+						</a>
+					} *@
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 @* <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> *@
 
-<!-- Kéo thả -->
-<script>
-	function allowDrop(event) {
-		event.preventDefault();
-	}
-
-	function drag(event) {
-		event.dataTransfer.setData("text", event.target.id);
-	}
-
-	function drop(event) {
-		event.preventDefault();
-		var data = event.dataTransfer.getData("text");
-		event.target.appendChild(document.getElementById(data));
-	}
-
-	function allowDrop(event) {
-		event.preventDefault();
-	}
-
-	function drag(event) {
-		event.dataTransfer.setData("issueId", event.target.id);
-	}
-
-	function drop(event, status) {
-		var issueId = event.dataTransfer.getData("issueId");
-		updateSprint(issueId, status);
-	}
-
-	function updateSprint(issueId, status) {
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueStatus',
-			method: 'POST',
-			data: { issueId: issueId, status: status },
-			success: function (response) {
-				location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-</script>
+<script src="~/js/board_script.js"></script>

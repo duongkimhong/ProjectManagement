@@ -9,6 +9,7 @@ using Microsoft.Build.Evaluation;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using ProjectManagement.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -19,10 +20,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 	public class IssuesController : Controller
 	{
 		private readonly ApplicationDbContext _context;
+		private readonly IWebHostEnvironment _environment;
 
-		public IssuesController(ApplicationDbContext context)
+		public IssuesController(ApplicationDbContext context, IWebHostEnvironment environment)
 		{
 			_context = context;
+			_environment = environment;
 		}
 
 		// GET: Admin/Issues
@@ -64,21 +67,29 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		// To protect from overposting attacks, enable the specific properties you want to bind to.
 		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Create([FromForm] Issues issues, [FromForm] string projectId)
+		//[ValidateAntiForgeryToken]
+		//public async Task<IActionResult> Create([FromForm] Issues issues, [FromForm] string projectId)
+		public async Task<IActionResult> Create(string name, string type, string projectId)
 		{
 			Guid id = Guid.Parse(projectId);
 			var project = await _context.Projects.FindAsync(id);
 			var backlogSprint = await _context.Sprints.FirstOrDefaultAsync(s => s.Name == "Backlog" && s.ProjectID == id);
-
-			issues.Id = Guid.NewGuid();
-			issues.ReporterID = User.Identity.Name;
-			issues.Reporter = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
-			issues.Status = IssueStatus.Todo;
-			issues.Priority = Priorities.Medium;
-			issues.SprintID = backlogSprint.Id;
-			issues.Sprints = backlogSprint;
-			issues.StoryPoint = 0;
+			var issues = new Issues
+			{
+				Id = Guid.NewGuid(),
+				Name = name,
+				ReporterID = User.Identity.Name,
+				Reporter = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name),
+				Status = IssueStatus.Todo,
+				Priority = Priorities.Medium,
+				SprintID = backlogSprint.Id,
+				Sprints = backlogSprint,
+				StoryPoint = 0
+			};
+			if(type == "Task") { issues.Type = IssueType.Task; }
+			else if(type == "Bug") { issues.Type = IssueType.Bug; }
+			else { issues.Type = IssueType.UserStory; }
+			
 			_context.Add(issues);
 			await _context.SaveChangesAsync();
 			return RedirectToAction("Index", "Sprints", new { area = "Admin", id = projectId });
@@ -97,6 +108,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				.Include(i => i.Assignee)
 				.Include(i => i.Reporter) 
 				.Include(i => i.Epics)
+				.Include(i => i.Comments)
 				//.Include(i => i.Sprints)
 				.FirstOrDefaultAsync(i => i.Id == issueId);
 			if (issue == null)
@@ -138,7 +150,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				{
 					FullName = reporterFullName,
 					Image = reporterImage
-				}
+				},
+				Comments = issue.Comments.Select(c => new
+				{
+					Id = c.Id,
+					Content = c.Content,
+					Timestamp = c.Timestamp,
+					UserId = c.UserID					
+				})
 			});
 		}
 
@@ -212,6 +231,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				// Thực hiện logic cập nhật ở đây, ví dụ:
 				issue.EpicID = epicId;
+				issue.Epics = epic;
 				_context.SaveChanges();
 
 				return Json(new { success = true });
@@ -222,29 +242,10 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-		// GET: Admin/Issues/Delete/5
-		public async Task<IActionResult> Delete(Guid? id)
-		{
-			if (id == null || _context.Issues == null)
-			{
-				return NotFound();
-			}
-
-			var issues = await _context.Issues
-				.Include(i => i.Assignee)
-				.Include(i => i.Reporter)
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (issues == null)
-			{
-				return NotFound();
-			}
-
-			return View(issues);
-		}
 
 		// POST: Admin/Issues/Delete/5
-		[HttpPost, ActionName("Delete")]
-		[ValidateAntiForgeryToken]
+		[HttpPost]
+		//[ValidateAntiForgeryToken]
 		public async Task<IActionResult> DeleteConfirmed(Guid id)
 		{
 			if (_context.Issues == null)
@@ -252,13 +253,44 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				return Problem("Entity set 'ApplicationDbContext.Issues'  is null.");
 			}
 			var issues = await _context.Issues.FindAsync(id);
+
+			// Lấy danh sách các tài liệu thuộc dự án
+			var issueDocuments = _context.IssueDocument.Where(pd => pd.IssueID == issues.Id).ToList();
+
+			if (issueDocuments.Any())
+			{
+				_context.IssueDocument.RemoveRange(issueDocuments);
+
+				var documents = _context.Documents.Where(d => issueDocuments.Select(pd => pd.DocumentID).Contains(d.Id)).ToList();
+
+				if (documents.Any())
+				{
+					_context.Documents.RemoveRange(documents);
+
+					foreach (var document in documents)
+					{
+						// Xóa tệp vật lý từ hệ thống tệp
+						var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+						if (System.IO.File.Exists(filePath))
+						{
+							System.IO.File.Delete(filePath);
+						}
+					}
+				}
+			}
+
+			if (issues.Comments != null)
+			{
+				_context.Comments.RemoveRange(issues.Comments);
+			}
+
 			if (issues != null)
 			{
 				_context.Issues.Remove(issues);
 			}
 
-			await _context.SaveChangesAsync();
-			return RedirectToAction(nameof(Index));
+			_context.SaveChangesAsync();
+			return Json(new { success = true });
 		}
 
 		private bool IssuesExists(Guid id)
@@ -325,7 +357,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				}
 				else
 				{
-					issue.Status = IssueStatus.Done;
+					issue.Status = IssueStatus.Completed;
 				}
 				_context.SaveChanges();
 				return Json(new { success = true });

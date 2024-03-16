@@ -10,7 +10,6 @@
 	body {
 		font-family: Arial, sans-serif;
 		background-color: #f4f4f4;
-		/* padding: 20px; */
 	}
 
 	.issue {
@@ -73,6 +72,18 @@
 		object-fit: cover;
 		margin-right: 10px;
 	}
+
+	#contextDelete,
+	#contextDeleteEpic {
+		--mouse-x: 0;
+		--mouse-y: 0;
+		display: none;
+		position: fixed;
+		margin: 0;
+		left: 0;
+		top: 0;
+		transform: translateX(min(var(--mouse-x), calc(100vw - 100%))) translateY(min(var(--mouse-y), calc(100vh - 100%)));
+	}
 </style>
 
 <div class="body d-flex py-lg-3 py-md-2">
@@ -100,9 +111,17 @@
 								<h5 class="mb-0 fw-bold">Backlog</h5>
 							</div>
 							<div class="col-sm-4 d-flex align-items-center justify-content-end">
-								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">0</span>
-								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">0</span>
-								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">0</span>
+								@{
+									var backlogSprintId = (Guid)ViewBag.BacklogSprintId;
+									var blIssues = _context.Issues.Where(i => i.SprintID == backlogSprintId).ToList();
+									var blTodoStoryPoints = blIssues.Where(issue => issue.Status == IssueStatus.Todo).Sum(issue => issue.StoryPoint);
+									var blInProgressStoryPoints = blIssues.Where(issue => issue.Status == IssueStatus.InProgress).Sum(issue => issue.StoryPoint);
+									var blCompletedStoryPoints = blIssues.Where(issue => issue.Status == IssueStatus.Completed).Sum(issue => issue.StoryPoint);
+								}
+
+								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">@blTodoStoryPoints</span>
+								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">@blInProgressStoryPoints</span>
+								<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">@blCompletedStoryPoints</span>
 								<span>
 									<button id="createSprintButton" class="btn btn-primary">Create Sprint</button>
 								</span>
@@ -114,7 +133,7 @@
 						{
 							@foreach (var item in ViewBag.BacklogIssues as List<Issues>)
 							{
-								<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" id="@item.Id" draggable="true" ondragstart="drag(event)">
+								<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" data-issue-id="@item.Id" id="@item.Id" draggable="true" ondragstart="drag(event)">
 
 									<div>
 										@if (item.Type == IssueType.Task)
@@ -136,7 +155,7 @@
 											</span>
 										}
 
-										<span style="margin-left: 8px;">@item.Name</span>
+										<span style="margin-left: 8px; cursor: pointer;" onclick="openEditModal('@item.Id')" oncontextmenu="showContextDelete(event, '@item.Id')">@item.Name</span>
 									</div>
 									<div class="d-flex align-items-center">
 										@if (item.EpicID != null)
@@ -144,7 +163,7 @@
 											var epic = _context.Epics.FirstOrDefault(e => e.Id == item.EpicID);
 											if (epic != null)
 											{
-												<span class="badge bg-primary me-2" style="font-size: 14px; position: relative;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+												<span class="badge me-2" style="font-size: 14px; position: relative; background-color: @epic.Color !important;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
 
 												<!-- Menu popup -->
 												<div id="contextMenu" class="custom-menu">
@@ -156,17 +175,18 @@
 											}
 										}
 
-										<div class="dropdown">
-											@* <a class="dropdown-item" href="#" data-issueId="@item.Id">Action</a> *@
-											<button class="btn btn-secondary btn-sm dropdown-toggle me-2" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-												@item.Status
-											</button>
-											<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-												<a class="dropdown-item" href="#" data-status="Todo">Todo</a>
-												<a class="dropdown-item" href="#" data-status="InProgress">In Progress</a>
-												<a class="dropdown-item" href="#" data-status="Completed">Completed</a>
-											</div>
-										</div>
+										@if (item.Status == IssueStatus.Todo)
+										{
+											<span class="badge me-2" style="font-size: 14px; background-color: #D8D8D8 !important;">@item.Status</span>
+										}
+										else if (item.Status == IssueStatus.InProgress)
+										{
+											<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #39B5E0 !important;">@item.Status</span>
+										}
+										else
+										{
+											<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #1A5D1A !important;">@item.Status</span>
+										}
 
 										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: black !important; background-color:#D8D8D8 !important; border-radius: 50%;">
 											<span style="font-size: 19px;">@item.StoryPoint</span>
@@ -174,13 +194,13 @@
 
 										@if (item.Priority == Priorities.Lowest)
 										{
-											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
 												<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
 											</span>
 										}
 										else if (item.Priority == Priorities.Low)
 										{
-											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+											<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
 												<i class="icofont-curved-left" style="font-size: 20px;"></i>
 											</span>
 										}
@@ -209,7 +229,14 @@
 										}
 
 										<span class="p-2 me-1">
-											<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+											@if (item.AssigneeID == null)
+											{
+												<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+											}
+											else
+											{
+												<img src="@item.Assignee.Image" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+											}
 										</span>
 
 									</div>
@@ -222,7 +249,7 @@
 						<form id="issueForm" method="post" asp-area="Admin" asp-controller="Issues" asp-action="Create">
 							<div class="input-group">
 								<button id="selectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-									<a class="dropdown-item" href="#" onclick="updateButton('Task')" data-value="Task"></a>
+									<span id="selectedItem">Task</span>
 								</button>
 								<ul class="dropdown-menu">
 									<li>
@@ -248,7 +275,7 @@
 									</li>
 								</ul>
 								<input type="hidden" id="typeInput" name="Type" />
-								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter new issue name" onkeypress="handleKeyPress(event)" />
+								<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter new issue name" onkeypress="handleKeyPressCreate(event)" />
 							</div>
 						</form>
 					</div>
@@ -269,9 +296,16 @@
 									<span style="color: gray; margin-left: 10px;">(@($"{item.StartDate:dd/MM/yyyy} - {item.EndDate:dd/MM/yyyy}"))</span>
 								</div>
 								<div class="col-sm-4 d-flex align-items-center justify-content-end">
-									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">0</span>
-									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">0</span>
-									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">0</span>
+									@{
+										var issues = item.Issues;
+										var todoStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Todo).Sum(issue => issue.StoryPoint);
+										var inProgressStoryPoints = issues.Where(issue => issue.Status == IssueStatus.InProgress).Sum(issue => issue.StoryPoint);
+										var completedStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Completed).Sum(issue => issue.StoryPoint);
+									}
+
+									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">@todoStoryPoints</span>
+									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">@inProgressStoryPoints</span>
+									<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">@completedStoryPoints</span>
 									<span>
 										@if (item.Status == null)
 										{
@@ -294,10 +328,10 @@
 							@if (item.Issues != null && item.Issues.Any())
 							{
 								<ul style="padding: 0px;">
+
 									@foreach (var issue in item.Issues)
 									{
-										@* <input type="hidden" data-issueId="@issue.Id" /> *@
-										<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" id="@issue.Id" draggable="true" ondragstart="drag(event)">
+										<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" data-issue-id="@issue.Id" id="@issue.Id" draggable="true" ondragstart="drag(event)">
 											<div>
 												@if (issue.Type == IssueType.Task)
 												{
@@ -318,7 +352,7 @@
 													</span>
 												}
 
-												<span style="margin-left: 8px; cursor: pointer;" onclick="openEditModal('@issue.Id')">@issue.Name</span>
+												<span style="margin-left: 8px; cursor: pointer;" onclick="openEditModal('@issue.Id')" oncontextmenu="showContextDelete(event, '@issue.Id')">@issue.Name</span>
 											</div>
 
 											<div class="d-flex align-items-center">
@@ -327,7 +361,7 @@
 													var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
 													if (epic != null)
 													{
-														<span class="badge bg-primary me-2" style="font-size: 14px; position: relative;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+														<span class="badge me-2" style="font-size: 14px; position: relative; background-color: @epic.Color !important;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
 
 														<!-- Menu popup -->
 														<div id="contextMenu" class="custom-menu">
@@ -339,16 +373,18 @@
 													}
 												}
 
-												<div class="dropdown">
-													<button class="btn btn-secondary btn-sm dropdown-toggle me-2" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-														@issue.Status
-													</button>
-													<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-														<a class="dropdown-item" href="#">Todo</a>
-														<a class="dropdown-item" href="#">In Progress</a>
-														<a class="dropdown-item" href="#">Completed</a>
-													</div>
-												</div>
+												@if (issue.Status == IssueStatus.Todo)
+												{
+													<span class="badge me-2" style="font-size: 14px; background-color: #D8D8D8 !important;">@issue.Status</span>
+												}
+												else if (issue.Status == IssueStatus.InProgress)
+												{
+													<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #39B5E0 !important;">@issue.Status</span>
+												}
+												else
+												{
+													<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #1A5D1A !important;">@issue.Status</span>
+												}
 
 												<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: black !important; background-color:#D8D8D8 !important; border-radius: 50%;">
 													<span style="font-size: 19px;">@issue.StoryPoint</span>
@@ -356,13 +392,13 @@
 
 												@if (issue.Priority == Priorities.Lowest)
 												{
-													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
 														<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
 													</span>
 												}
 												else if (issue.Priority == Priorities.Low)
 												{
-													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(180deg); color: #0D1282 !important">
+													<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
 														<i class="icofont-curved-left" style="font-size: 20px;"></i>
 													</span>
 												}
@@ -391,11 +427,25 @@
 												}
 
 												<span class="p-2 me-1">
-													<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+													@if (issue.AssigneeID == null)
+													{
+														<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+													}
+													else
+													{
+														<img src="@Url.Content(issue.Assignee.Image)" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+													}
 												</span>
 											</div>
 										</div>
 									}
+
+									<!-- Context menu -->
+									<div id="contextDelete" class="custom-menu" style="display: none;">
+										<ul>
+											<li onclick="confirmDeleteIssue()">Delete Issue</li>
+										</ul>
+									</div>
 								</ul>
 							}
 							else
@@ -416,18 +466,22 @@
 
 						@foreach (var item in ViewBag.ProjectEpics as List<Epics>)
 						{
-							<div class="epic-item" style="background-color: @item.Color;" ondragover="allowDrop(event)" ondrop="drop(event, 'epic', '@item.Id')" data-type="epic" data-epic-id="@item.Id">
+							<div class="epic-item" style="color: white; background-color: @item.Color; cursor: pointer;" 
+							onclick="openEditEpicModal('@item.Id')" oncontextmenu="showContextDeleteEpic(event, '@item.Id')"
+								 data-type="epic" ondrop="drop(event, 'epic', '@item.Id')" ondragover="allowDrop(event)" data-epic-id="@item.Id">
 								@item.Name
 							</div>
 						}
+						<!-- Context menu -->
+						<div id="contextDeleteEpic" class="custom-menu" style="display: none;">
+							<ul>
+								<li onclick="confirmDeleteEpic()">Delete Epic</li>
+							</ul>
+						</div>
 						<div>
-							@* <button type="button" class="btn btn-dark btn-set-task w-sm-100 me-2" id="createEpicBtn">
-							<i class="icofont-plus-circle me-2 fs-6"></i>Create Epic
-							</button> *@
-							<form id="epicForm" method="post" asp-area="Admin" asp-controller="Epics" asp-action="Create">
-								<input type="hidden" id="projectIdInput" name="projectId" />
-								<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter new epic name" onkeypress="handleEpicKeyPress(event)" />
-							</form>
+							
+								@* <input type="hidden" id="projectIdInput" name="projectId" /> *@
+							<input type="text" id="epicInputWrapper" name="Name" class="form-control" placeholder="Enter new epic name" onkeypress="handleEpicKeyPress(event)" />
 						</div>
 					</div>
 				</div>
@@ -500,7 +554,6 @@
 			<div class="modal-body">
 				<!-- Form để chỉnh sửa issue -->
 				<form id="editIssueForm">
-					<!-- Thêm các hàng tương tự cho các trường khác -->
 					<div class="row g-3 align-items-center">
 						<!-- type, name, epic, status -->
 						<div class="col-md-2">
@@ -563,7 +616,7 @@
 							<button type="button" class="btn btn-danger" style="width: 80px;" onclick="cancelUpdate()">Cancel</button>
 						</div>
 
-						<!-- startdate, endate -->
+						<!-- startdate endate -->
 						<div class="col-md-6">
 							<label for="issueStartDate" class="form-label">Start Date</label>
 							<input type="date" class="form-control" id="issueStartDate" name="issueStartDate">
@@ -622,6 +675,50 @@
 								<option value="Lowest">Lowest</option>
 							</select>
 						</div>
+
+						<div class="row">
+							<div class="col-md-2">Show:</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-toggle" id="commentsToggle" onclick="toggleContent('comments')">Comments</button>
+							</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-toggle" id="historyToggle" onclick="toggleContent('history')">History</button>
+							</div>
+						</div>
+
+						<div class="row" id="commentsContent" style="display: none;">
+							<!-- Comment input -->
+							<div class="col-md-12 mb-3">
+								<textarea class="form-control" id="commentInput" rows="3" placeholder="Enter your comment"></textarea>
+							</div>
+
+							<!-- Save and Cancel buttons -->
+							<div class="col-md-12 mb-3">
+								<button type="button" class="btn btn-primary" onclick="saveComment()">Save</button>
+								<button type="button" class="btn btn-secondary" onclick="cancelComment()">Cancel</button>
+							</div>
+
+							<!-- Comment items -->
+							<div class="col-md-12 comment-item">
+								<div class="row align-items-center">
+									<div class="col-md-2">
+										<img src="avatar.jpg" class="rounded-circle" alt="Avatar" width="50" height="50">
+									</div>
+									<div class="col-md-10">
+										<p>This is a comment.</p>
+										<p class="text-muted">Posted on: March 11, 2024</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Add more comment items as needed -->
+						</div>
+						<div class="row" id="historyContent" style="display: none;">
+							<!-- Place your history content here -->
+							<div class="col-md-12">
+								<p>This is the history section.</p>
+							</div>
+						</div>
 					</div>
 				</form>
 			</div>
@@ -653,7 +750,6 @@
 		</div>
 	</div>
 </div>
-
 
 <!-- Modal popup chỉnh sửa sprint -->
 <div class="modal fade" id="editSprintModal" tabindex="-1" aria-labelledby="editSprintModalLabel" aria-hidden="true">
@@ -689,939 +785,126 @@
 	</div>
 </div>
 
+<!-- Xác nhận xóa issue -->
+<div id="confirmDeleteModal" class="modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Confirm Delete</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				Are you sure you want to delete this issue?
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button id="deleteIssueButton" type="button" class="btn btn-danger">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal popup for editing epic -->
+<div class="modal" id="editEpicModal">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header">
+				<h4 class="modal-title">Edit Epic</h4>
+				<button type="button" class="btn-close" onclick="closeEditModal()"></button>
+			</div>
+
+			<!-- Modal Body -->
+			<div class="modal-body">
+				<form id="editEpicForm">
+					<div class="row g-3 align-items-center">
+						<!-- name, color -->
+						<div class="col-md-1">
+							<label for="epicName" class="form-label">Name:</label>
+						</div>
+						<div class="col-md-2">
+							<input type="text" class="form-control" id="epicName" name="epicName" onkeypress="epicHandleKeyPress(event)">
+						</div>
+						<div class="col-md-1">
+							<label for="epicColor" class="form-label">Color:</label>
+						</div>
+						<div class="col-md-2">
+							<input type="text" class="form-control" id="epicColor" name="epicColor" onkeypress="epicHandleColorKeyPress(event)">
+						</div>
+						<div class="col-md-2">
+							<div id="epicColorDisplay" style="width: 30px; height: 30px; border: 1px solid #ccc;"></div>
+						</div>
+						<div class="col-md-2  d-flex align-items-center justify-content-center">
+							<label>Reporter</label>
+						</div>
+						<div class="col-md-2">
+							<span class="p-2 me-1">
+								<img id="epicReporterImage" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+							</span>
+						</div>
+
+						<!-- description -->
+						<div class="col-md-10">
+							<label class="form-label">Description</label>
+							<textarea type="text" class="form-control" id="epicDescrtiption" name="epicDescrtiption"></textarea>
+						</div>
+						<div class="col-md-2" style="margin-top: 45px;">
+							<button type="button" class="btn btn-success" style="width: 80px; margin-bottom: 5px;" onclick="updateEpicDescription()">Save</button><br>
+							<button type="button" class="btn btn-danger" style="width: 80px;" onclick="cancelEpicUpdate()">Cancel</button>
+						</div>
+
+						<!-- startdate endate -->
+						<div class="col-md-6">
+							<label for="epicStartDate" class="form-label">Start Date</label>
+							<input type="date" class="form-control" id="epicStartDate" name="epicStartDate">
+						</div>
+						<div class="col-md-6">
+							<label for="epicEndDate" class="form-label">End Date</label>
+							<input type="date" class="form-control" id="epicEndDate" name="epicEndDate">
+						</div>
+						
+						<!-- history -->
+						<div class="row">
+							<div class="col-md-2">Show:</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-toggle" id="epicHistoryToggle" onclick="epicToggleContent('history')">History</button>
+							</div>
+						</div>
+
+						<div class="row" id="epicHistoryContent" style="display: none;">
+							<!-- Place your history content here -->
+							<div class="col-md-12">
+								<p>This is the history section.</p>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<!-- Xác nhận xóa epic -->
+<div id="confirmDeleteEpicModal" class="modal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Confirm Delete</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				Are you sure you want to delete this epic?
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button id="deleteEpicButton" type="button" class="btn btn-danger">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <!-- #endregion -->
-<!-- #region <script> -->
-<!-- Hiện textbox khi click vào Create Issue và trở về trạng thái ban đầu khi click ra ngoài -->
-<script>
-	// Lắng nghe sự kiện click vào nút "Create Issue"
-	document.getElementById('createIssueButton').addEventListener('click', function (event) {
-		event.stopPropagation(); // Ngăn chặn sự kiện click từ lan rộng
-
-		// Ẩn nút "Create Issue"
-		document.getElementById('issueButtonWrapper').style.display = 'none';
-		// Hiển thị input textbox
-		document.getElementById('issueInputWrapper').style.display = 'block';
-	});
-
-	// Lắng nghe sự kiện click trên trang
-	document.addEventListener('click', function (event) {
-		// Kiểm tra xem người dùng đã click vào nút "Create Issue" hay ô textbox không
-		if (event.target.id !== 'createIssueButton' && event.target.id !== 'issueInput' && event.target.id !== 'selectedItemButton') {
-			// Kiểm tra xem ô textbox có rỗng không
-			var issueInput = document.getElementById('issueInput');
-			if (issueInput.value.trim() === '') {
-				// Nếu ô textbox rỗng, hiển thị lại nút "Create Issue" và ẩn textbox
-				document.getElementById('issueButtonWrapper').style.display = 'block';
-				document.getElementById('issueInputWrapper').style.display = 'none';
-			}
-		}
-	});
-
-	// hiển thị loại issue lên nút dropdown
-	function updateButton(itemName) {
-		document.getElementById('selectedItemButton').innerText = itemName;
-	}
-</script>
-
-<!-- Xử lí nhấn enter để tạo issue -->
-<script>
-	function handleKeyPress(event) {
-		if (event.key === 'Enter') {
-			event.preventDefault(); // Ngăn chặn hành động mặc định của Enter
-			document.getElementById('issueForm').submit(); // Submit form
-		}
-	}
-
-	function updateButton(type) {
-		document.getElementById('selectedItemButton').textContent = type;
-		document.getElementById('typeInput').value = type;
-	}
-</script>
-
-<!-- Lấy id của project từ URL (issue form) -->
-<script>
-	// Function to extract project ID from URL
-	function extractProjectIdFromUrl() {
-		var url = window.location.href;
-		var segments = url.split('/');
-		var projectId = segments.pop() || segments.pop(); // Extract the last segment
-		return projectId;
-	}
-
-	// Wait for the document to be fully loaded
-	document.addEventListener("DOMContentLoaded", function () {
-		// Get the form element
-		var issueForm = document.getElementById("issueForm");
-
-		// Get the hidden input element for project ID
-		var projectIdInput = document.createElement("input");
-		projectIdInput.setAttribute("type", "hidden");
-		projectIdInput.setAttribute("name", "projectId");
-		projectIdInput.setAttribute("id", "projectId");
-
-		// Set the value of the hidden input element to the project ID extracted from the URL
-		projectIdInput.value = extractProjectIdFromUrl();
-
-		// Append the hidden input element to the form
-		issueForm.appendChild(projectIdInput);
-
-		//console.log(projectIdInput);
-	});
-</script>
-
-<!-- Lấy id của project từ URL (create sprint form) -->
-<script>
-	// Function to extract project ID from URL
-	function extractProjectIdFromUrl() {
-		var url = window.location.href;
-		var segments = url.split('/');
-		var projectId = segments.pop() || segments.pop(); // Extract the last segment
-		return projectId;
-	}
-
-	// Wait for the document to be fully loaded
-	document.addEventListener("DOMContentLoaded", function () {
-		// Get the form element
-		var sprintForm = document.getElementById("createSprintForm");
-
-		// Get the hidden input element for project ID
-		var projectIdInput = document.createElement("input");
-		projectIdInput.setAttribute("type", "hidden");
-		projectIdInput.setAttribute("name", "projectId");
-		projectIdInput.setAttribute("id", "projectId");
-
-		// Set the value of the hidden input element to the project ID extracted from the URL
-		projectIdInput.value = extractProjectIdFromUrl();
-
-		// Append the hidden input element to the form
-		sprintForm.appendChild(projectIdInput);
-
-		//console.log(projectIdInput);
-	});
-</script>
-
-<!-- Kéo thả -->
-<script>
-	// Hàm để xử lý sự kiện kéo và thả
-	function allowDrop(event) {
-		event.preventDefault();
-	}
-
-	function drag(event) {
-		event.dataTransfer.setData("text", event.target.id);
-	}
-
-	function drop(event) {
-		event.preventDefault();
-		var data = event.dataTransfer.getData("text");
-		event.target.appendChild(document.getElementById(data));
-	}
-</script>
-
-<!-- Hiển thị modal tạo sprint -->
-<script>
-	document.addEventListener('DOMContentLoaded', function () {
-		document.getElementById('createSprintButton').addEventListener('click', function () {
-			var myModal = new bootstrap.Modal(document.getElementById('createSprintModal'));
-			myModal.show();
-		});
-	});
-</script>
-
-<!-- Xử lý sự kiện chọn thời gian của sprint -->
-<script>
-	function handleWeekSelect() {
-		var weekSelect = document.getElementById('weekSelect');
-		var endDateInput = document.getElementById('endDate');
-
-		if (weekSelect.value === 'custom') {
-			endDateInput.disabled = false;
-		} else {
-			var startDateValue = document.getElementById('startDate').value;
-			var startDate = new Date(startDateValue);
-			var endDate = new Date(startDate);
-			endDate.setDate(startDate.getDate() + (7 * parseInt(weekSelect.value)));
-
-			endDateInput.value = endDate.toISOString().split('T')[0];
-			endDateInput.disabled = true;
-		}
-	}
-</script>
-
-<!-- Load ngày hiện tại khi hiện ngày  -->
-<script>
-	document.addEventListener("DOMContentLoaded", function () {
-		// Get current date
-		var today = new Date();
-
-		// Format the date as "YYYY-MM-DD" for the date input
-		var formattedDate = today.toISOString().split('T')[0];
-
-		// Set the default value for the start date and end date input fields
-		document.getElementById('startDate').value = formattedDate;
-		document.getElementById('endDate').value = formattedDate;
-	});
-</script>
-
-<!-- Mở trường endate khi submit -->
-<script>
-	function enableEndDateBeforeSubmit() {
-		// Enable trường EndDate
-		document.getElementById('endDate').disabled = false;
-	}
-
-	document.getElementById('createSprintForm').addEventListener('submit', enableEndDateBeforeSubmit);
-</script>
-
-<!-- cập nhật sprint - issue -->
-<script>
-	function allowDrop(event) {
-		event.preventDefault();
-	}
-
-	function drag(event) {
-		event.dataTransfer.setData("text", event.target.id);
-		// Lưu trữ ID của Issue
-		event.dataTransfer.setData("issueId", event.target.getAttribute("data-issue-id"));
-	}
-
-	function drop(event) {
-		event.preventDefault();
-		var data = event.dataTransfer.getData("text");
-		var draggedIssue = document.getElementById(data);
-
-		// Lấy ID của Issue được kéo
-		var issueId = event.dataTransfer.getData("issueId");
-
-		// Lấy ID của sprint mới
-		var sprintId = event.target.getAttribute("data-sprintId");
-
-		// Gửi request AJAX để cập nhật ID của sprint trong bảng issue
-		fetch('/Admin/Issues/UpdateIssueSprint', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				issueId: issueId,
-				sprintId: sprintId
-			})
-		})
-			.then(response => response.json())
-			.then(data => {
-				//console.log('Issue sprint updated successfully');
-			})
-			.catch(error => {
-				console.error('Error updating issue sprint:', error);
-			});
-
-		// Di chuyển vấn đề vào sprint mới
-		event.target.appendChild(draggedIssue);
-	}
-
-	function drop(event, sprintId) {
-		event.preventDefault();
-		var issueId = event.dataTransfer.getData("text");
-		var issueElement = document.getElementById(issueId);
-
-		$.ajax({
-			type: "POST",
-			url: "/Admin/Issues/updateIssueSprint",
-			data: { issueId: issueId, sprintId: sprintId },
-			success: function (response) {
-				location.reload();
-			},
-			error: function (error) {
-				console.error("Error updating issue sprintId:", error);
-			}
-		});
-	}
-
-	function getProjectIdFromUrl() {
-		var url = window.location.href;
-		var segments = url.split('/');
-		var projectId = segments.pop() || segments.pop(); // Extract the last segment
-		return projectId;
-	}
-</script>
-
-<!-- #endregion -->
-<!-- Epic -->
-<script>
-	document.addEventListener('DOMContentLoaded', function () {
-		const createEpicBtn = document.getElementById('createEpicBtn');
-		const epicNameInput = document.getElementById('epicNameInput');
-		projectIdInput.value = extractProjectIdFromUrl();
-
-		createEpicBtn.addEventListener('click', function () {
-			createEpicBtn.style.display = 'none';
-			epicNameInput.style.display = 'block';
-			epicNameInput.focus();
-		});
-
-		epicNameInput.addEventListener('keypress', function (e) {
-			if (e.key === 'Enter') {
-				function handleEpicKeyPress(event) {
-					if (event.key === 'Enter') {
-						event.preventDefault();
-						document.getElementById('epicForm').submit();
-					}
-				}
-				const epicName = epicNameInput.value.trim();
-				if (epicName !== '') {
-					console.log('Creating epic:', epicName);
-					epicNameInput.value = '';
-					epicNameInput.style.display = 'none';
-					createEpicBtn.style.display = 'block';
-				}
-			}
-		});
-
-		document.addEventListener('click', function (e) {
-			if (!epicNameInput.contains(e.target) && e.target !== createEpicBtn) {
-				epicNameInput.style.display = 'none';
-				createEpicBtn.style.display = 'block';
-			}
-		});
-	});
-</script>
-
-<script>
-	var id;
-
-	$(document).ready(function () {
-		// Bắt sự kiện click vào nút đóng modal và đóng modal tương ứng
-		$('.close').click(function () {
-			$('#editIssueModal').modal('hide');
-			location.reload();
-		});
-	});
-
-	function openEditModal(issueId) {
-		$.ajax({
-			url: '/Admin/Issues/Edit',
-			method: 'GET',
-			data: { issueId: issueId },
-			success: function (response) {
-				originalDescription = response.Description;
-				id = response.id;
-
-				console.log(response);
-
-				// Xử lý phản hồi từ máy chủ và điền thông tin vào form chỉnh sửa
-				// id, name, type, epic, status, documents, description, startDate, endDate, assignee.image, assignee.fullName,
-				// reporter.image, reporter.fullName, storyPoint, sprint, priority, comment, history
-				$('#issueId').val(response.id);
-				$('#issueName').val(response.name);
-				$('#issueType').val(response.type);
-				$('#issueDescrtiption').val(response.description);
-				$('#issueStatus').val(response.status);
-				$('#priority').val(response.priority);
-				$('#issueIsFlag').val(response.isFlag);
-				$('#issueStoryPoint').val(response.storyPoint);
-
-				// Function để cập nhật kiểu issue
-				function IssueTypeDropdownBtn(type, backgroundColor, iconClass) {
-					// Cập nhật kiểu issue trên giao diện
-					document.getElementById('selectedIcon').innerHTML = '<i class="' + iconClass + ' text-white" style="vertical-align: middle;"></i>';
-					document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
-				}
-				// Xử lý phản hồi từ máy chủ và cập nhật kiểu issue tương ứng
-				switch (response.type) {
-					case 0:
-						IssueTypeDropdownBtn('User story', '#ffc107', 'icofont-ui-messaging');
-						break;
-					case 1:
-						IssueTypeDropdownBtn('Task', '#1a73e8', 'icofont-book-mark');
-						break;
-					case 2:
-						IssueTypeDropdownBtn('Bug', '#dc3545', 'icofont-bug');
-						break;
-					default:
-						break;
-				}
-
-				var startDateValue = new Date(response.startDate);
-				startDateValue.setDate(startDateValue.getDate() + 1);
-
-				// Kiểm tra nếu startDateValue là một đối tượng Date hợp lệ
-				if (!isNaN(startDateValue.getTime())) {
-					// Nếu hợp lệ, gán giá trị vào ô input
-					var inputValue = startDateValue.toISOString().split('T')[0];
-					$('#issueStartDate').val(inputValue);
-				} else {
-					console.error('Invalid start date:', response.startDate);
-				}
-
-				// Kiểm tra nếu response.endDate là null, thì gán giá trị mặc định cho ô input
-				if (response.startDate === null) {
-					$('#issueStartDate').val('');
-				}
-
-				var endDateValue = new Date(response.endDate);
-				endDateValue.setDate(endDateValue.getDate() + 1);
-
-				// Kiểm tra nếu startDateValue là một đối tượng Date hợp lệ
-				if (!isNaN(endDateValue.getTime())) {
-					// Nếu hợp lệ, gán giá trị vào ô input
-					var inputValue = endDateValue.toISOString().split('T')[0];
-					$('#issueEndDate').val(inputValue);
-				} else {
-					console.error('Invalid end date:', response.endDate);
-				}
-				if (response.endDate === null) {
-					$('#issueEndDate').val('');
-				}
-
-				// Lấy đường dẫn hình ảnh của assignee từ response
-				var assigneeImageSrc = response.assignee !== null && response.assignee.image !== null
-					? response.assignee.image // Nếu có giá trị, sử dụng giá trị đó
-					: '/defaultuser.png';
-
-				var assigneeImageElement = document.getElementById('assigneeImage');
-				if (assigneeImageElement) {
-					assigneeImageElement.src = assigneeImageSrc;
-				} else {
-					console.error("Assignee image element not found");
-				}
-
-				// Lấy đường dẫn hình ảnh của reporter từ response
-				var reporterImageSrc = response.reporter !== null && response.reporter.image !== null
-					? response.reporter.image // Nếu có giá trị, sử dụng giá trị đó
-					: '/defaultuser.png';
-
-				var reporterImageElement = document.getElementById('reporterImage');
-				if (reporterImageElement) {
-					reporterImageElement.src = reporterImageSrc;
-				} else {
-					console.error("Reporter image element not found");
-				}
-
-				function selectElement(id, valueToSelect) {
-					let element = document.getElementById(id);
-					element.value = valueToSelect;
-				}
-				selectElement('sprintDropdown', response.sprintId);
-				selectElement('epicDropdown', response.epicId === null ? 'None' : response.epicId);
-				switch (response.status) {
-					case 0:
-						document.getElementById("statusSelect").value = "Todo";
-						break;
-					case 1:
-						document.getElementById("statusSelect").value = "In Progress";
-						break;
-					case 4:
-						document.getElementById("statusSelect").value = "Completed";
-						break;
-					default:
-						break;
-				}
-
-				switch (response.priority) {
-					case 0:
-						document.getElementById("prioritySelect").value = "Lowest";
-						break;
-					case 1:
-						document.getElementById("prioritySelect").value = "Low";
-						break;
-					case 2:
-						document.getElementById("prioritySelect").value = "Medium";
-						break;
-					case 3:
-						document.getElementById("prioritySelect").value = "High";
-						break;
-					case 4:
-						document.getElementById("prioritySelect").value = "Highest";
-						break;
-					default:
-						break;
-				}
-
-
-				// Hiển thị modal popup
-				$('#editIssueModal').modal('show');
-			},
-			error: function (xhr, status, error) {
-				// Xử lý lỗi nếu có
-				console.error(error);
-			}
-		});
-	}
-	function showAssigneeList() {
-		// Mở modal
-		$('#assigneeModal').modal('show');
-	}
-
-	function updateAssignee(assigneeId) {
-		// Thực hiện logic cập nhật người được gán
-	}
-
-	function saveIssueChanges() {
-		// Xử lý lưu các thay đổi của issue
-
-		// Sau khi lưu, đóng modal popup
-		$('#editIssueModal').modal('hide');
-	}
-
-	// Hàm trả về class của icon dựa trên loại được chọn
-	function getIconClass(value) {
-		switch (value) {
-			case 'Task':
-				return 'icofont-book-mark text-white';
-			case 'Bug':
-				return 'icofont-bug text-white';
-			case 'User story':
-				return 'icofont-ui-messaging text-white';
-			default:
-				return 'icofont-ui-messaging text-white';
-		}
-	}
-
-	// Hàm trả về màu nền dựa trên loại được chọn
-	function getBackgroundColor(value) {
-		switch (value) {
-			case 'Task':
-				return '#1a73e8';
-			case 'Bug':
-				return '#dc3545';
-			case 'User story':
-				return '#ffc107';
-			default:
-				return '#ffffff'; // Mặc định là trắng
-		}
-	}
-
-	function setStatus() {
-		var selectElement = document.getElementById('statusSelect');
-		var selectedStatus = selectElement.options[selectElement.selectedIndex].value;
-		// Thực hiện các hành động khác tùy thuộc vào trạng thái được chọn
-	}
-
-	// Hàm JavaScript để cập nhật nút dropdown
-	function updateNewButton(value) {
-		// Lấy icon tương ứng với loại được chọn
-		var iconClass = getIconClass(value);
-		var backgroundColor = getBackgroundColor(value);
-
-		// Cập nhật icon và màu nền trên nút dropdown
-		document.getElementById('selectedIcon').className = iconClass;
-		document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
-	}
-
-	function updateNewButton(type) {
-		var issueId = id;
-		console.log('update new button');
-		//console.log(issueId);
-		$.ajax({
-			url: '/Admin/Issues/Edit',
-			method: 'POST',
-			data: { id: issueId },
-			//data: { issueId: issueId, type: type },
-			success: function (response) {
-			},
-			error: function (xhr, status, error) {
-				// Xử lý lỗi nếu có
-				console.error(error);
-			}
-		});
-	}
-
-	function allowDrop(event) {
-		event.preventDefault();
-	}
-
-	function drag(event) {
-		event.dataTransfer.setData("issueId", event.target.id);
-	}
-
-	function drop(event, targetType, id) {
-		var issueId = event.dataTransfer.getData("issueId");
-		var epicId = event.target.getAttribute('data-epic-id');
-
-		if (targetType === 'sprint') {
-			updateSprint(issueId, id);
-		} else if (targetType === 'epic') {
-			updateEpic(issueId, epicId);
-		}
-	}
-
-	function updateSprint(issueId, sId) {
-		$.ajax({
-			url: '/Admin/Issues/updateIssueSprint',
-			method: 'POST',
-			data: { issueId: issueId, sprintId: sId },
-			success: function (response) {
-				location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-
-	function updateEpic(issueId, epicId) {
-		$.ajax({
-			url: '/Admin/Issues/UpdateEpic',
-			method: 'POST',
-			data: { issueId: issueId, epicId: epicId },
-			success: function (response) {
-				location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-</script>
-
-<!-- update sprint -->
-<script>
-	$(document).ready(function () {
-		$('.edit-sprint').on('click', function () {
-			var sprintID = $(this).data('id');
-			var pj_id = extractProjectIdFromUrl().toString();
-			var name = $(this).data('name');
-			var startDate = new Date($(this).data('start-date'));
-			var endDate = new Date($(this).data('end-date'));
-
-			startDate.setDate(startDate.getDate() + 1);
-			endDate.setDate(endDate.getDate() + 1);
-
-			$('#sprintIdInput').val(sprintID);
-			$('#projectIdInput').val(pj_id);
-			$('#sprintNameInput').val(name);
-			$('#startDateInput').val(startDate.toISOString().split('T')[0]);
-			$('#endDateInput').val(endDate.toISOString().split('T')[0]); // Chuyển đổi về định dạng YYYY-MM-DD
-			//console.log(pj_id);
-			// Show modal
-			$('#editSprintModal').modal('show');
-		});
-
-		$('#saveChangesBtn').on('click', function () {
-			$('#editSprintModal').modal('hide');
-		});
-	});
-
-	$(document).ready(function () {
-		$('#saveChangesBtn').click(function () {
-			var formData = $('#editSprintForm').serialize();
-
-			$.ajax({
-				url: '/Admin/Sprints/Edit',
-				method: 'POST',
-				data: formData,
-				success: function (response) {
-					window.location.reload();
-				},
-				error: function (xhr, status, error) {
-					console.log(error);
-				}
-			});
-		});
-	});
-
-	function startSprint(sprintId, status) {
-		$.ajax({
-			type: "POST",
-			url: "/Admin/Sprints/UpdateSprintStatus",
-			data: { sprintId: sprintId, status: status },
-			success: function (response) {
-
-			},
-			error: function () {
-
-			}
-		});
-	}
-</script>
-
-<!-- Hiện context menu khi nhấn chuột phải vào epic name -->
-<script>
-	function showContextMenu(event) {
-		event.preventDefault();
-
-		const epicSpan = event.target;
-		const rect = epicSpan.getBoundingClientRect();
-
-		// Hiển thị menu popup tại vị trí chuột
-		const contextMenu = document.getElementById('contextMenu');
-		contextMenu.style.display = 'block';
-		contextMenu.style.left = (rect.left - 350) + 'px';
-		contextMenu.style.top = (rect.top + epicSpan.offsetHeight - 230) + 'px';
-
-		// Thêm một event listener để ẩn menu khi click bên ngoài nó
-		document.addEventListener('click', hideContextMenu);
-	}
-
-	function hideContextMenu() {
-		const contextMenu = document.getElementById('contextMenu');
-		contextMenu.style.display = 'none';
-
-		// Gỡ bỏ event listener sau khi menu đã ẩn
-		document.removeEventListener('click', hideContextMenu);
-	}
-
-	document.addEventListener('DOMContentLoaded', function () {
-		const epicName = document.querySelector('.badge.bg-primary');
-
-		epicName.addEventListener('contextmenu', function (event) {
-			event.preventDefault();
-			showContextMenu(event);
-		});
-	});
-
-	function handleClick(issueId) {
-		console.log("Click event with issueId:", issueId);
-		$.ajax({
-			url: '/Admin/Issues/UnlinkEpic',
-			method: 'POST',
-			data: { issueId: issueId },
-			success: function (response) {
-				location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-
-		xhr.send(JSON.stringify({ issueId: issueId }));
-	}
-</script>
-
-<!-- update issue -->
-<script>
-	// update issue type
-	function updateIssueType(type, color, iconClass) {
-		var issueId = id;
-		console.log("id = " + id)
-
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueType',
-			method: 'POST',
-			data: { issueId: issueId, type: type },
-			success: function (response) {
-				//location.reload();
-				updateButton2(type, color, iconClass);
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-	function updateButton2(type, backgroundColor, iconClass) {
-		// Cập nhật màu nền của nút
-		document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
-
-		// Cập nhật icon
-		var iconElement = document.getElementById('selectedIcon');
-		iconElement.innerHTML = ''; // Xóa nội dung cũ
-		var icon = document.createElement('i');
-		icon.classList.add(iconClass, 'text-white');
-		icon.style.verticalAlign = 'middle';
-		iconElement.appendChild(icon);
-	}
-
-	// update issue status
-	function updateIssueStatus() {
-		var selectedStatus = document.getElementById("statusSelect").value;
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueStatus',
-			method: 'POST',
-			data: { issueId: id, status: selectedStatus },
-			success: function (response) {
-				//location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-
-	// update issue epic
-	function updateIssueEpic() {
-		var selectedEpicId = document.getElementById("epicDropdown").value;
-
-		// Gửi request đến action updateIssueEpic với issueId và selectedEpicId
-		fetch('/Admin/Issues/UpdateIssueEpic?issueId=' + encodeURIComponent(id) + '&epicId=' + encodeURIComponent(selectedEpicId), {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-				// Các header khác nếu cần
-			},
-		})
-			.then(response => {
-				// Xử lý response nếu cần
-				console.log(response);
-			})
-			.catch(error => {
-				// Xử lý lỗi nếu có
-				console.error('Error:', error);
-			});
-	}
-
-	// update issue sprint
-	function updateIssueSprint() {
-		var selectedSprintId = document.getElementById("sprintDropdown").value;
-
-		// Gửi request đến action updateIssueSprint với issueId và selectedSprintId
-		fetch('/Admin/Issues/updateIssueSprint?issueId=' + encodeURIComponent(id) + '&sprintId=' + encodeURIComponent(selectedSprintId), {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-				// Các header khác nếu cần
-			},
-		})
-			.then(response => {
-				// Xử lý response nếu cần
-				console.log(response);
-			})
-			.catch(error => {
-				// Xử lý lỗi nếu có
-				console.error('Error:', error);
-			});
-	}
-
-	// update issue priority
-	function updateIssuePriority() {
-		var selectedPrority = document.getElementById("prioritySelect").value;
-
-		// Gửi request đến action updateIssueSprint với issueId và selectedSprintId
-		fetch('/Admin/Issues/updateIssuePriority?issueId=' + encodeURIComponent(id) + '&priority=' + encodeURIComponent(selectedPrority), {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-				// Các header khác nếu cần
-			},
-		})
-			.then(response => {
-				// Xử lý response nếu cần
-				console.log(response);
-			})
-			.catch(error => {
-				// Xử lý lỗi nếu có
-				console.error('Error:', error);
-			});
-	}
-
-	// update issue name
-	function handleKeyPress(event) {
-		if (event.keyCode === 13) {
-			// Lấy giá trị của trường input
-			var inputValue = document.getElementById("issueName").value;
-			if (inputValue == '') {
-				alert('Issue name cannot be NULL');
-			} else {
-				$.ajax({
-					url: '/Admin/Issues/UpdateIssueName',
-					method: 'POST',
-					data: { issueId: id, name: inputValue },
-					success: function (response) {
-						//location.reload();
-					},
-					error: function (xhr, status, error) {
-						console.error(error);
-					}
-				});
-			}
-
-		}
-	}
-
-	// update issue description
-	var originalDescription = ''; // Biến tạm để lưu trữ nội dung ban đầu
-	function updateIssueDescription() {
-		var description = document.getElementById("issueDescrtiption").value;
-
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueDescription',
-			method: 'POST',
-			data: { issueId: id, description: description },
-			success: function (response) {
-				originalDescription = description;
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-
-	// Hàm gọi khi click nút "Cancel"
-	function cancelUpdate() {
-		// Thiết lập lại nội dung của textarea bằng giá trị ban đầu
-		document.getElementById("issueDescrtiption").value = originalDescription;
-	}
-
-	// update issue startDate
-	var startDateInput = document.getElementById("issueStartDate");
-	startDateInput.addEventListener("blur", function () {
-		var startDateValue = startDateInput.value;
-		console.log(startDateValue); // Kiểm tra xem giá trị ngày đã được lấy đúng chưa
-
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueStartDate',
-			method: 'POST',
-			data: { issueId: id, date: startDateValue },
-			success: function (response) {
-				//location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	});
-
-	// update issue endDate
-	var endDateInput = document.getElementById("issueEndDate");
-	endDateInput.addEventListener("blur", function () {
-		var endDateValue = endDateInput.value;
-		console.log(endDateValue);
-
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueEndDate',
-			method: 'POST',
-			data: { issueId: id, date: endDateValue },
-			success: function (response) {
-				//location.reload();
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	});
-
-	// update issue story point
-	$('#issueStoryPoint').blur(function () {
-		var storyPoint = $(this).val();
-
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueStoryPoint',
-			method: 'POST',
-			data: { issueId: id, storyPoint: storyPoint },
-			success: function (response) {
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	});
-
-	function updateAssignee(userId){
-		$.ajax({
-			url: '/Admin/Issues/UpdateIssueAssignee',
-			method: 'POST',
-			data: { issueId: id, userId: userId },
-			success: function (response) {
-				
-			},
-			error: function (xhr, status, error) {
-				console.error(error);
-			}
-		});
-	}
-</script>
-
-
-
-
-
+<script src="~/js/Sprint_script.js"></script>
