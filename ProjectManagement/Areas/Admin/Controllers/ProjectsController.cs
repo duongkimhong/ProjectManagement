@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Build.Evaluation;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -103,8 +105,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
                 var team = new Teams
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Default Team", // Đặt tên cho team mặc định
-                    ProjectID = projects.Id, // Liên kết team với project
+                    Name = "Team " + projects.Name,
+                    ProjectID = projects.Id, 
                     Projects = projects
                 };
                 _context.Add(team);
@@ -193,19 +195,20 @@ namespace ProjectManagement.Areas.Admin.Controllers
         }
 
         // GET: Admin/Projects/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
+        public async Task<IActionResult> Edit(Guid? projectId)
         {
-            if (id == null || _context.Projects == null)
+            if (projectId == null || _context.Projects == null)
             {
                 return NotFound();
             }
 
-            var projects = await _context.Projects.FindAsync(id);
+            var projects = await _context.Projects.FindAsync(projectId);
+
             if (projects == null)
             {
                 return NotFound();
             }
-            return View(projects);
+            return Json(projects);
         }
 
 
@@ -298,6 +301,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
                     _context.Sprints.RemoveRange(project.Sprints);
                 }
 
+                //Xóa các epic
+                if(project.Epics != null)
+                {
+                    _context.Epics.RemoveRange(project.Epics);
+                }
+
                 // Xóa dự án chính thức
                 _context.Projects.Remove(project);
 
@@ -343,5 +352,77 @@ namespace ProjectManagement.Areas.Admin.Controllers
         {
             return (_context.Projects?.Any(e => e.Id == id)).GetValueOrDefault();
         }
-    }
+
+		public async Task<IActionResult> UpdateProjectName(Guid projectId, string name)
+		{
+			try
+			{
+				var project = await _context.Projects.FindAsync(projectId);
+				if (project != null)
+				{
+					project.Name = name;
+				}
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateProjectDescription(Guid projectId, string description)
+		{
+			try
+			{
+				var project = await _context.Projects.FindAsync(projectId);
+				if (project != null)
+				{
+					project.Description = description;
+				}
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateProjectStartDate(Guid projectId, DateTime date)
+		{
+			try
+			{
+				var project = await _context.Projects.FindAsync(projectId);
+				if (project != null)
+				{
+					project.StartDate = date;
+				}
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateProjectEndDate(Guid projectId, DateTime date)
+		{
+			try
+			{
+				var project = await _context.Projects.FindAsync(projectId);
+				if (project != null)
+				{
+					project.EndDate = date;
+				}
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+	}
 }

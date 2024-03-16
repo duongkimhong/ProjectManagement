@@ -17,7 +17,7 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<title>:: My-Task:: Employee Dashboard </title>
+	<title>:: Viettel:: ProjectManagement </title>
 	<link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon-->
 	<!-- project css file  -->
 	<link rel="stylesheet" href="~/User/assets/css/my-task.style.min.css">
@@ -32,6 +32,23 @@
 		.selected > .bi-check-square {
 			display: inline;
 		}
+
+		.brand-icon {
+			display: flex;
+			align-items: center;
+		}
+
+		.logo-column {
+			display: flex;
+			flex-direction: column;
+			margin-left: 8px; 
+		}
+
+		.logo-subtext {
+			font-size: smaller;
+			margin-top: 2px;
+			color: white;
+		}
 	</style>
 
 </head>
@@ -43,14 +60,15 @@
 		<div class="sidebar px-4 py-4 py-md-5 me-0">
 			<div class="d-flex flex-column h-100">
 				<a href="index.html" class="mb-0 brand-icon">
-					<span class="logo-icon">
-						<svg width="35" height="35" fill="currentColor" class="bi bi-clipboard-check" viewBox="0 0 16 16">
-							<path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
-							<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
-							<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
-						</svg>
-					</span>
-					<span class="logo-text">Company</span>
+					<div class="logo-column">
+						<span class="logo-icon">
+							<img src="~/viettel_logo_2021.svg" />
+						</span>
+					</div>
+					<div class="logo-column">
+						<span class="logo-text">Viettel</span>
+						<span class="logo-subtext">Theo cách của bạn</span>
+					</div>
 				</a>
 				<!-- Menu: main ul -->
 
@@ -383,184 +401,9 @@
 	@* <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-Km2BrFfMj3zehrlZlR/4DUAJ4HqXk8DtIeay4Hoj6g8=" crossorigin="anonymous"></script> *@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-	<!-- Bắt sự kiện nút Create project -->
-	<script>
-		// Bắt sự kiện click vào nút "Create"
-		document.getElementById('myProjectTable').addEventListener('change', function () {
-			var selectedValue = this.value;
-			if (selectedValue === 'create') {
-				// Hiển thị modal khi nút "Create" được chọn
-				$('#createProjectModal').modal('show');
-			}
-		});
-	</script>
+	
 
-	<!-- Chuyển hướng khi chọn trong dropdown danh sách project -->
-	<script>
-		var projectDropdown = document.getElementById('myProjectTable');
-
-		// Lấy giá trị đã chọn từ local storage (nếu có)
-		var selectedProjectId = localStorage.getItem('selectedProjectId');
-		if (selectedProjectId) {
-			// Thiết lập giá trị đã chọn là mặc định
-			projectDropdown.value = selectedProjectId;
-		}
-
-		projectDropdown.addEventListener('change', function () {
-			var selectedProject = this.value;
-			if (selectedProject !== 'create') {
-				// Lưu giá trị đã chọn vào local storage
-				localStorage.setItem('selectedProjectId', selectedProject);
-				window.location.href = '/Admin/Sprints/Index/' + selectedProject;
-			} else {
-				// Xử lý tạo dự án mới
-			}
-		});
-	</script>
-
-	<!-- Hiển thị tên file hình ảnh -->
-	<script>
-		function displaySelectedFile() {
-			// Lấy tệp được chọn
-			var selectedFile = document.getElementById('fileInput').files[0];
-
-			// Lấy tên của tệp
-			var fileName = selectedFile.name;
-
-			// Hiển thị tên tệp trong input text
-			document.getElementById('fileName').value = fileName;
-		}
-	</script>
-
-	<!-- Hiển thị modal danh sách account để invite -->
-	<script>
-		// Function to show the invite modal
-		function showInviteModal() {
-			$('#inviteModal').modal('show'); // Show the invite modal
-		}
-
-		// Add an event listener to the Invite button
-		document.getElementById('inviteButton').addEventListener('click', function () {
-			showInviteModal(); // Call the function to show the invite modal
-		});
-	</script>
-
-	<!-- Xử lý mảng danh sách account được chọn -->
-	<script>
-		// Update selected users input when the invite button is clicked
-		$('#inviteButton').on('click', function () {
-			updateSelectedUsersInput();
-			$('#inviteModal').modal('show');
-		});
-
-		// Function to update selected users input
-		function updateSelectedUsersInput() {
-			var selectedUsers = getSelectedUsers();
-			$('#selectedUsersInput').val(JSON.stringify(selectedUsers));
-		}
-
-		// Function to get selected users
-		function getSelectedUsers() {
-			var selectedUsers = [];
-			$('.user-checkbox:checked').each(function () {
-				selectedUsers.push($(this).data('user-id'));
-			});
-			return selectedUsers;
-		}
-
-		// Function to handle invite users action
-		function inviteUsers() {
-			updateSelectedUsersInput();
-			// You can perform any further action here, such as submitting the form
-		}
-	</script>
-
-	<script>
-		$(document).ready(function () {
-			// Xử lý sự kiện khi thay đổi giá trị của dropdown
-			$('#myProjectTable').on('change', function () {
-				var selectedValue = $(this).val();
-				if (selectedValue === 'create') {
-					$('#createProjectModal').modal('show');
-				}
-			});
-
-			// Xử lý sự kiện khi click nút "Invite"
-			$('#inviteButton').on('click', function () {
-				$('#inviteModal').modal('show');
-			});
-
-			// Xử lý sự kiện khi checkbox thay đổi trạng thái
-			$('.user-checkbox').on('change', function () {
-				updateSelectedUsersInput();
-			});
-
-			// Xử lý sự kiện submit của form
-			$('#createProjectForm').on('submit', function (event) {
-				updateSelectedUsersInput();
-			});
-		});
-
-		// Hàm cập nhật trường input ẩn với danh sách các user được chọn
-		function updateSelectedUsersInput() {
-			var selectedUsers = [];
-			$('.user-checkbox:checked').each(function () {
-				selectedUsers.push($(this).data('user-id'));
-			});
-			$('#selectedUsersInput').val(JSON.stringify(selectedUsers));
-		}
-
-		// Hàm hiển thị tệp đã chọn
-		function displaySelectedFile() {
-			var selectedFile = $('#fileInput').prop('files')[0];
-			var fileName = selectedFile.name;
-			$('#fileName').val(fileName);
-		}
-	</script>
-
-	<!-- Tạo link cho nút backlog ở sidebar theo id của project đang được chọn trên dropdown button -->
-	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			var backlogLink = document.getElementById('backlogLink');
-
-			backlogLink.addEventListener('click', function (event) {
-				event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
-
-				var projectDropdown = document.getElementById('myProjectTable');
-				var selectedProject = projectDropdown.value;
-
-				if (selectedProject !== 'create') {
-					var url = '/Admin/Sprints/Index/' + selectedProject;
-					window.location.href = url;
-				} else {
-					// Xử lý tạo dự án mới
-				}
-			});
-		});
-	</script>
-
-	<!-- Tạo link cho nút board ở sidebar theo id của project đang được chọn trên dropdown button -->
-	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			var boardLink = document.getElementById('boardLink');
-
-			boardLink.addEventListener('click', function (event) {
-				event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
-
-				var projectDropdown = document.getElementById('myProjectTable');
-				var selectedProject = projectDropdown.value;
-				console.log(selectedProject);
-				if (selectedProject !== 'create') {
-					var url = '/Admin/Board/Index/' + selectedProject;
-					window.location.href = url;
-				} else {
-					// Xử lý tạo dự án mới
-				}
-			});
-		});
-	</script>
-
-
+	<script src="~/js/dashboard_script.js"></script>
 	<!-- Jquery Core Js -->
 	<script src="~/user/assets/bundles/libscripts.bundle.js"></script>
 

@@ -26,13 +26,4 @@
         public ICollection<EpicDocument>? EpicDocument { get; set; }
         public ICollection<EpicHistory>? EpicHistory { get; set;}
     }
-
-    public enum Priorities
-    {
-        Lowest,
-        Low,
-        Medium,
-        High,
-        Highest
-    }
 }

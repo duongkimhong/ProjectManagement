@@ -60,7 +60,16 @@ namespace ProjectManagement.Models
         InProgress,
         NeedReview,
         Test,
-        Done,
+        Completed,
         Cancelled
     }
+
+	public enum Priorities
+	{
+		Lowest,
+		Low,
+		Medium,
+		High,
+		Highest
+	}
 }
