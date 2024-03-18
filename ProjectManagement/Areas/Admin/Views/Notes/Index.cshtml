@@ -1,0 +1,307 @@
+﻿@model IEnumerable<ProjectManagement.Models.Notes>
+
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="body d-flex py-lg-3 py-md-2">
+	<div class="container-xxl">
+		<div class="row align-items-center">
+			<div class="border-0 mb-4">
+				<div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
+					<h3 class="fw-bold mb-0">My notes</h3>
+					<div class="col-auto d-flex w-sm-100">
+						<button type="button" class="btn btn-dark btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#createNoteModal">
+							<i class="icofont-plus-circle me-2 fs-6"></i>Create note
+						</button>
+					</div>
+				</div>
+			</div>
+		</div> <!-- Row end  -->
+		<div class="row clearfix  g-3">
+			<div class="col-lg-12 col-md-12 flex-column">
+				<div class="row taskboard g-3 py-xxl-4">
+					<div class="container">
+						<div id="notesContainer">
+							@foreach (var item in Model)
+							{
+								<div role="alert" class="alert mt-1 mb-1" style="background-color: @item.Color; font-weight: bold;">
+									@item.Title
+									<span class="float-end" style="margin-right: 15px;">
+										<i class="icofont-trash delete-note" onclick="confirmDelete('@item.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
+										<i class="icofont-edit edit-note" data-note-id="@item.Id" data-note-title="@item.Title" data-note-content="@item.NoteContent" data-note-color="@item.Color"></i>
+									</span>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal -->
+<!-- Modal Popup tạo note -->
+<div class="modal fade" id="createNoteModal" tabindex="-1" aria-labelledby="createNoteModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="createNoteModalLabel">Create Note</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+
+				<div class="mb-3">
+					<label for="title" class="form-label">Title</label>
+					<input type="text" class="form-control" id="title" name="title" required>
+				</div>
+				<div class="mb-3">
+					<label for="content" class="form-label">Content</label>
+					<textarea class="form-control" id="content" name="content" required></textarea>
+				</div>
+				<div class="mb-3">
+					<label for="color" class="form-label">Color</label>
+					<div id="colorPicker" class="d-flex">
+						<!-- 8 color options -->
+						<input type="hidden" id="selectedColor" name="selectedColor">
+						<div class="color-option" style="background-color: #cfe2ff; width: 25px; height: 25px; border-radius: 5px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #e2e3e5; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #d1e7dd; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #f8d7da; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #fff3cd; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #cff4fc; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #DFCCFB; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						<div class="color-option" style="background-color: #ced4da; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+					</div>
+				</div>
+				<button type="submit" class="btn btn-primary" onclick="createNote()">Create</button>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal Xác Nhận Xóa -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="confirmDeleteModalLabel">Xác Nhận Xóa</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				Bạn có chắc chắn muốn xóa ghi chú này?
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal sửa note -->
+<div class="modal fade" id="editNoteModal" tabindex="-1" aria-labelledby="editNoteModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editNoteModalLabel">Edit Note</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="editNoteForm">
+					<div class="mb-3">
+						<label for="editTitle" class="form-label">Title</label>
+						<input type="text" class="form-control" id="editTitle" name="editTitle" required>
+					</div>
+					<div class="mb-3">
+						<label for="editContent" class="form-label">Content</label>
+						<textarea class="form-control" id="editContent" name="editContent" required></textarea>
+					</div>
+					<div class="mb-3">
+						<label for="editColor" class="form-label">Color</label>
+						<div id="editColorPicker" class="d-flex">
+							<!-- Danh sách màu -->
+							<input type="hidden" id="editSelectedColor" name="editSelectedColor">
+							<div class="edit-color-option" style="background-color: #cfe2ff; width: 25px; height: 25px; border-radius: 5px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #e2e3e5; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #d1e7dd; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #f8d7da; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #fff3cd; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #cff4fc; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #DFCCFB; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+							<div class="edit-color-option" style="background-color: #ced4da; width: 25px; height: 25px; border-radius: 5px; margin-left: 10px; border: solid 1px;"></div>
+						</div>
+					</div>
+					<input type="hidden" id="editNoteId" name="editNoteId">
+					<button type="submit" class="btn btn-primary" onclick="saveEditedNote()">Save Changes</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Thêm note -->
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		// Lắng nghe sự kiện click trên các ô màu
+		document.querySelectorAll('.color-option').forEach(item => {
+			item.addEventListener('click', event => {
+				// Xóa dấu check từ tất cả các ô màu
+				document.querySelectorAll('.color-option').forEach(option => {
+					option.innerHTML = '';
+				});
+
+				// Lấy mã màu của ô màu được chọn
+				var color = item.style.backgroundColor;
+
+				// Hiển thị dấu check
+				var checkmark = document.createElement('i');
+				checkmark.classList.add('icofont-check');
+				checkmark.classList.add('fs-6');
+				checkmark.style.color = 'white';
+				item.appendChild(checkmark);
+
+				// Gán mã màu được chọn vào input ẩn
+				document.getElementById('selectedColor').value = color;
+			});
+		});
+	});
+
+	function createNote() {
+		event.preventDefault();
+		// Lấy mã màu được chọn
+		var selectedColor = document.getElementById('selectedColor').value;
+		var title = document.getElementById('title').value;
+		var content = document.getElementById('content').value;
+		$.ajax({
+			url: '/Admin/Notes/Create',
+			method: 'Post',
+			data: { title: title, content: content, color: selectedColor },
+			success: function (response) {
+				$('#createNoteModal').modal('hide');
+				$('#notesContainer').html(response);
+				// Xóa nội dung của form sau khi tạo thành công
+				document.getElementById('title').value = '';
+				document.getElementById('content').value = '';
+				document.getElementById('selectedColor').value = '';
+				document.querySelectorAll('.color-option').forEach(option => {
+					option.innerHTML = '';
+				});
+			},
+			error: function (xhr, status, error) {
+				// Xử lý lỗi nếu có
+				console.error(error);
+			}
+		});
+	}
+</script>
+
+<!-- Xóa note -->
+<script>
+	function confirmDelete(noteId) {
+		$('#confirmDeleteBtn').data('note-id', noteId);
+		$('#confirmDeleteModal').modal('show');
+	}
+
+	$(document).ready(function () {
+		$('#confirmDeleteBtn').click(function () {
+			var noteId = $(this).data('note-id');
+			$.ajax({
+				url: '/Admin/Notes/Delete',
+				method: 'POST',
+				data: { id: noteId },
+				success: function (response) {
+					$('#confirmDeleteModal').modal('hide');
+					$('#notesContainer').html(response);
+				},
+				error: function (xhr, status, error) {
+					// Xử lý lỗi
+					console.error(error);
+				}
+			});
+		});
+	});
+</script>
+
+<!-- Sửa note -->
+<script>
+	$(document).ready(function () {
+		$('.edit-note').click(function () {
+			var noteId = $(this).data('note-id');
+			var noteTitle = $(this).data('note-title');
+			var noteContent = $(this).data('note-content');
+			var noteColor = $(this).data('note-color');
+
+			$('#editTitle').val(noteTitle);
+			$('#editContent').val(noteContent);
+			$('#editNoteId').val(noteId);
+			$('#editSelectedColor').val(noteColor);
+
+			// Loại bỏ lớp selected từ tất cả các ô màu
+			$('.edit-color-option').removeClass('selected');
+
+			// Tìm ô màu tương ứng với màu nền của note và thêm lớp selected
+			var $selectedColorOption = $(`.edit-color-option[style="background-color: ${noteColor};"]`);
+			$selectedColorOption.addClass('selected');
+
+			// Hiển thị dấu check trên ô màu được chọn
+			$selectedColorOption.append('<i class="icofont-check"></i>');
+
+			$('#editNoteModal').modal('show');
+		});
+
+		// Xử lý sự kiện khi người dùng chọn một màu trong danh sách màu
+		$('.edit-color-option').click(function () {
+			// Loại bỏ lớp selected từ tất cả các ô màu
+			$('.edit-color-option').removeClass('selected');
+
+			// Loại bỏ dấu check từ tất cả các ô màu
+			$('.edit-color-option i.icofont-check').remove();
+
+			// Thêm lớp selected vào ô màu được chọn
+			$(this).addClass('selected');
+
+			// Hiển thị dấu check trên ô màu được chọn
+			$(this).append('<i class="icofont-check"></i>');
+
+			// Lấy màu được chọn và gán vào input ẩn
+			var selectedColor = $(this).css('background-color');
+			$('#editSelectedColor').val(selectedColor);
+		});
+	});
+
+	// Hàm gửi yêu cầu chỉnh sửa note
+	function saveEditedNote() {
+		var noteId = $('#editNoteId').val();
+		var noteTitle = $('#editTitle').val();
+		var noteContent = $('#editContent').val();
+		var noteColor = $('#editSelectedColor').val();
+
+		// Gọi phương thức chỉnh sửa note bằng Ajax
+		$.ajax({
+			url: '/Admin/Notes/Edit',
+			method: 'POST',
+			data: { id: noteId, title: noteTitle, content: noteContent, color: noteColor },
+			success: function (response) {
+				$('#editNoteModal').modal('hide');
+				$('#notesContainer').html(response);
+				
+				document.getElementById('editTitle').value = noteTitle;
+				document.getElementById('editContent').value = noteContent;
+			},
+			error: function (xhr, status, error) {
+				// Xử lý lỗi nếu có
+				console.error(error);
+			}
+		});
+	}
+</script>
+
+

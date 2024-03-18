@@ -59,7 +59,6 @@ namespace ProjectManagement.Models
         public DbSet<ProjectManagement.Models.IssueHistory> IssueHistory { get; set; } = default!;
         public DbSet<ProjectManagement.Models.Issues> Issues { get; set; } = default!;
         public DbSet<ProjectManagement.Models.Messages> Messages { get; set; } = default!;
-        public DbSet<ProjectManagement.Models.NoteCategories> NoteCategories { get; set; } = default!;
         public DbSet<ProjectManagement.Models.Notes> Notes { get; set; } = default!;
         public DbSet<ProjectManagement.Models.Notifications> Notifications { get; set; } = default!;
         public DbSet<ProjectManagement.Models.ProjectDocument> ProjectDocument { get; set; } = default!;

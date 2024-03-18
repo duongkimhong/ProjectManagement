@@ -80,11 +80,6 @@
 						</a>
 					</li>
 
-					@* <li class="collapsed">
-						<a  class="m-link" data-bs-toggle="collapse" data-bs-target="#project-Components" href="#">
-							<i class="icofont-layers"></i><span>Backlog</span>
-						</a>
-					</li> *@
 					<li class="collapsed">
 						<a id="backlogLink" class="m-link" href="#">
 							<i class="icofont-layers"></i><span>Backlog</span>
@@ -109,9 +104,15 @@
 						</a>
 					</li>
 
+					@* <li class="collapsed">
+						<a class="m-link" id="noteLink" href="#">
+							<i class="icofont-ui-note"></i> <span>Notes</span>
+						</a>
+					</li> *@
+
 					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
-							<i class="icofont-ui-note"></i> <span>Notes</span></span>
+						<a class="m-link" asp-area="Admin" asp-controller="Notes" asp-action="Index" asp-route-id="@UserManager.GetUserAsync(User)">
+							<i class="icofont-ui-note"></i> <span>Notes</span>
 						</a>
 					</li>
 

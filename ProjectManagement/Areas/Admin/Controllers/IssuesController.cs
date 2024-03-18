@@ -35,25 +35,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return View(await applicationDbContext.ToListAsync());
 		}
 
-		// GET: Admin/Issues/Details/5
-		public async Task<IActionResult> Details(Guid? id)
-		{
-			if (id == null || _context.Issues == null)
-			{
-				return NotFound();
-			}
-
-			var issues = await _context.Issues
-				.Include(i => i.Assignee)
-				.Include(i => i.Reporter)
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (issues == null)
-			{
-				return NotFound();
-			}
-
-			return View(issues);
-		}
 
 		// GET: Admin/Issues/Create
 		public IActionResult Create()

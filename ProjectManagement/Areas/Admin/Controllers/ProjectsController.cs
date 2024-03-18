@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using ProjectManagement.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProjectManagement.Areas.Admin.Controllers
 {
@@ -64,7 +65,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([FromForm] Projects projects, [FromForm] IFormFile CoverImage, [FromForm] string selectedUsers, [FromForm] List<IFormFile> documents)
+        public async Task<IActionResult> Create([FromForm] Projects projects, [FromForm] IFormFile? CoverImage, [FromForm] string? selectedUsers, [FromForm] List<IFormFile>? documents)
         {
             List<string> selectedUser = JsonConvert.DeserializeObject<List<string>>(selectedUsers);
             if (ModelState.IsValid)
@@ -194,26 +195,62 @@ namespace ProjectManagement.Areas.Admin.Controllers
             return RedirectToAction("Index", "Home", new { area = "Admin" });
         }
 
-        // GET: Admin/Projects/Edit/5
-        public async Task<IActionResult> Edit(Guid? projectId)
-        {
-            if (projectId == null || _context.Projects == null)
-            {
-                return NotFound();
-            }
+		// GET: Admin/Projects/Edit/5
+		public async Task<IActionResult> Edit(Guid? projectId)
+		{
+			if (projectId == null || _context.Projects == null)
+			{
+				return NotFound();
+			}
 
-            var projects = await _context.Projects.FindAsync(projectId);
+			// Lấy thông tin dự án và các team của nó
+			var project = await _context.Projects
+				.Include(p => p.Teams)
+					.ThenInclude(t => t.TeamMembers)
+						.ThenInclude(tm => tm.User)
+				.FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (projects == null)
-            {
-                return NotFound();
-            }
-            return Json(projects);
-        }
+			if (project == null)
+			{
+				return NotFound();
+			}
+
+			// Lấy danh sách thành viên của các team và đưa vào danh sách JSON
+			var teamMembers = new List<object>();
+			foreach (var team in project.Teams)
+			{
+				foreach (var member in team.TeamMembers)
+				{
+					var memberInfo = new
+					{
+						UserId = member.UserID,
+						UserName = member.User?.UserName,
+						Role = member.Role,
+                        Image = member.User.Image
+					};
+					teamMembers.Add(memberInfo);
+				}
+			}
+
+			// Xây dựng object JSON chứa thông tin cần thiết từ dữ liệu lấy được
+			var responseData = new
+			{
+				Id = project.Id,
+				Name = project.Name,
+				Description = project.Description,
+				StartDate = project.StartDate,
+				EndDate = project.EndDate,
+				Image = project.Image,
+				TeamMembers = teamMembers
+			};
+
+			return Json(responseData);
+		}
 
 
-        // POST: Admin/Projects/Delete/5
-        [HttpPost, ActionName("Delete")]
+
+		// POST: Admin/Projects/Delete/5
+		[HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
@@ -423,6 +460,75 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				return StatusCode(500, $"An error occurred: {ex.Message}");
 			}
+		}
+
+		public async Task<IActionResult> UpdateProjectImage(Guid projectId, IFormFile image)
+		{
+			if (image == null || image.Length == 0)
+			{
+				// Trả về BadRequest nếu không có hình ảnh được gửi lên
+				return BadRequest("No image uploaded.");
+			}
+
+			// Kiểm tra dung lượng tệp tải lên
+			if (image.Length > 10 * 1024 * 1024) // 10MB
+			{
+				// Trả về BadRequest nếu dung lượng vượt quá 10MB
+				return BadRequest("Image file size exceeds the limit (10MB).");
+			}
+
+			try
+			{
+				// Tạo thư mục để lưu hình ảnh nếu chưa tồn tại
+				string folder = "Uploads/ProjectIcon";
+				Directory.CreateDirectory(Path.Combine(_environment.WebRootPath, folder));
+
+				// Tạo tên file duy nhất cho hình ảnh
+				string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(image.FileName);
+
+				// Tạo đường dẫn đến tệp hình ảnh trên máy chủ
+				string filePath = Path.Combine(_environment.WebRootPath, folder, uniqueFileName);
+
+				// Lưu hình ảnh vào thư mục trên máy chủ
+				using (var stream = new FileStream(filePath, FileMode.Create))
+				{
+					await image.CopyToAsync(stream);
+				}
+
+				// Cập nhật đường dẫn hình ảnh trong đối tượng Projects
+				var project = await _context.Projects.FindAsync(projectId);
+				if (project != null)
+				{
+					project.Image = "/" + folder + "/" + uniqueFileName;
+					_context.Update(project);
+					await _context.SaveChangesAsync();
+
+					// Trả về success nếu cập nhật thành công
+					return Json(new { success = true, image = project.Image });
+				}
+				else
+				{
+					// Trả về NotFound nếu không tìm thấy project
+					return NotFound("Project not found.");
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về StatusCode 500 nếu có lỗi xảy ra trong quá trình xử lý
+				return StatusCode(500, $"An error occurred while updating image: {ex.Message}");
+			}
+		}
+
+        [HttpGet]
+        public async Task<IActionResult> GetListAccountsNotInProject(Guid projectId)
+        {
+			// Lấy danh sách các người dùng không thuộc dự án
+			var usersNotInProject = await _context.Users
+				.Where(u => !_context.TeamMembers.Any(tm => tm.UserID == u.Id && tm.Teams.ProjectID == projectId))
+				.ToListAsync();
+
+			// Trả về danh sách các người dùng
+			return Json(usersNotInProject);
 		}
 	}
 }
