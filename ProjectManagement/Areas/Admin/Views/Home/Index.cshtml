@@ -10,21 +10,26 @@
 	ViewData["Title"] = "Admin Index";
 	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
+<style>
+	/* Định dạng kích thước và hình dạng của hình ảnh */
+	.avatar-container {
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		overflow: hidden;
+	}
+
+	.avatar {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+</style>
 
 @{
 	var accounts = UserManager.Users.ToList();
 	var projects = _context.Projects.Where(p => p.Status != ProjectStatus.Cancelled).ToList();
-	//var projectID = "";
-	async Task<Projects> ProjectInfo(string id)
-	{
-		var code = new Guid(id);
-		var project = await _context.Projects
-			.Include(p => p.ProjectDocument).ThenInclude(t => t.Documents)
-			.Include(p => p.Teams).ThenInclude(t => t.TeamMembers)
-			.FirstOrDefaultAsync(p => p.Id == code);
-
-		return project;
-	}
+	
 }
 
 <!-- Body: Body -->
@@ -109,21 +114,16 @@
 					<div class="row g-3 align-items-center">
 						<div class="mb-3">
 							<label for="projectName" class="form-label">Project Name</label>
-							<input type="text" class="form-control" id="projectName" name="projectName" required>
+							<input type="text" class="form-control" id="projectName" name="projectName" onkeypress="handleKeyPress(event)">
 						</div>
 
 						<div class="form-group">
-							<label for="CoverImage" class="control-label">Hình ảnh</label>
-							<div class="input-group">
-								<input type="file" class="form-control" id="editFileInput" style="visibility: hidden; position: absolute;" />
-								<input type="text" class="form-control" name="CoverImage" id="editCurrentImagePath" readonly />
-								<div class="input-group-append">
-									<button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('editFileInput').click();">Chọn tệp</button>
-								</div>
-							</div>
-							<div class="text-center mt-2">
-								<img id="editCurrentImage" src="" style="max-width: 100px; max-height: 100px;" />
-							</div>
+							<label for="projectImage" class="form-label">Hình ảnh</label>
+							<input type="file" class="form-control" id="projectImageInput" accept="image/*" onchange="updateProjectImage(event)" />
+						</div>
+
+						<div class="text-center mt-2">
+							<img id="projectImagePreview" src="" style="max-width: 100px; max-height: 100px;" />
 						</div>
 
 						<!-- description -->
@@ -146,21 +146,21 @@
 							<input type="date" class="form-control" id="projectEndDate" name="projectEndDate">
 						</div>
 
-						@* <div class="mb-3">
+						<!-- document -->
+						<div class="col-md-6">
 							<label for="documents" class="form-label">Documents</label>
 							<input type="file" class="form-control" id="documents" name="Documents" multiple>
-						</div> *@
-						@* <div class="mb-3">
+						</div>
+						<div class="mb-3">
 							<label>Team Members</label>
+							<div id="teamMembersContainer">
+
+							</div>
 							<input type="hidden" id="editSelectedUsersInput" name="editSelectedUsers" />
-							<button type="button" class="btn btn-primary" id="editInviteButton">Invite</button>
-						</div> *@
+							<button type="button" class="btn btn-primary" id="editInviteButton" onclick="openInviteModal()">Invite</button>
+						</div>
 					</div>
 				</form>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-				<button type="button" class="btn btn-primary">Lưu thay đổi</button>
 			</div>
 		</div>
 	</div>
@@ -185,16 +185,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<!-- Render users dynamically here -->
-						@foreach (var account in accounts)
-						{
-							<tr>
-								<td>@account.UserName</td>
-								<td>
-									<input type="checkbox" class="user-checkbox" data-user-id="@account.Id" name="selectedUsers">
-								</td>
-							</tr>
-						}
+						
 					</tbody>
 				</table>
 			</div>
@@ -205,31 +196,6 @@
 		</div>
 	</div>
 </div>
-
-<!-- Hiển thị tên file hình ảnh -->
-<script>
-	// Lắng nghe sự kiện khi input file thay đổi
-	document.getElementById('editFileInput').addEventListener('change', function () {
-		// Lấy tên của file được chọn
-		var fileName = this.files[0].name;
-
-		// Đặt tên file vào ô input
-		document.getElementById('editCurrentImagePath').value = fileName;
-	});
-</script>
-
-<!-- Hiển thị modal danh sách account -->
-<script>
-	// Function to show the invite modal
-	function showInviteModal() {
-		$('#editInviteModal').modal('show'); // Show the invite modal
-	}
-
-	// Add an event listener to the Invite button
-	document.getElementById('editInviteButton').addEventListener('click', function () {
-		showInviteModal(); // Call the function to show the invite modal
-	});
-</script>
 
 <!-- Modal Popup for Delete Confirmation -->
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">

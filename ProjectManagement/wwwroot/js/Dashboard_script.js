@@ -158,3 +158,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+//Tạo link cho nút notes ở sidebar theo id của user đang đăng nhập
+document.addEventListener("DOMContentLoaded", function () {
+    var noteLink = document.getElementById('noteLink');
+
+    noteLink.addEventListener('click', function (event) {
+        event.preventDefault();
+
+        //var projectDropdown = document.getElementById('myProjectTable');
+        //var selectedProject = projectDropdown.value;
+        //console.log(selectedProject);
+        //if (selectedProject !== 'create') {
+            var url = '/Admin/Notes/Index';
+            window.location.href = url;
+        //} else {
+
+        //}
+    });
+});

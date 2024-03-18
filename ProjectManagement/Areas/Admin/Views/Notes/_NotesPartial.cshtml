@@ -1,0 +1,11 @@
+﻿@model IEnumerable<ProjectManagement.Models.Notes>
+
+@foreach (var note in Model)
+{
+	<div class="alert mt-1 mb-1" style="background-color: @note.Color;">
+		<span>@note.Title</span>
+		<span class="float-end">
+			<i class="icofont-trash delete-note" onclick="confirmDelete('@note.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
+		</span>
+	</div>
+}
