@@ -4,6 +4,15 @@
 	ViewData["Title"] = "Index";
 	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
+<style>
+	.pin-note {
+		display: none; /* Ẩn icon pin mặc định */
+	}
+
+	.alert:hover .pin-note {
+		display: inline-block; /* Hiển thị icon pin khi hover vào .alert */
+	}
+</style>
 
 <div class="body d-flex py-lg-3 py-md-2">
 	<div class="container-xxl">
@@ -24,16 +33,35 @@
 				<div class="row taskboard g-3 py-xxl-4">
 					<div class="container">
 						<div id="notesContainer">
-							@foreach (var item in Model)
-							{
-								<div role="alert" class="alert mt-1 mb-1" style="background-color: @item.Color; font-weight: bold;">
-									@item.Title
-									<span class="float-end" style="margin-right: 15px;">
-										<i class="icofont-trash delete-note" onclick="confirmDelete('@item.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
-										<i class="icofont-edit edit-note" data-note-id="@item.Id" data-note-title="@item.Title" data-note-content="@item.NoteContent" data-note-color="@item.Color"></i>
-									</span>
-								</div>
-							}
+							<div>
+								<h5>Ghim</h5>
+								@foreach (var item in Model.Where(x => x.IsStick))
+								{
+									<div role="alert" class="alert mt-1 mb-1" style="background-color: @item.Color; font-weight: bold;">
+										@item.Title
+										<span class="float-end pin-container" style="margin-right: 15px;">
+											<i class="icofont-tack-pin" style="color: dimgray;" onclick="unPinNote('@item.Id')"></i>
+											<i class="icofont-trash delete-note" style="margin-left: 10px;" onclick="confirmDelete('@item.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
+											<i class="icofont-edit edit-note" style="margin-left: 10px;" data-note-id="@item.Id" data-note-title="@item.Title" data-note-content="@item.NoteContent" data-note-color="@item.Color"></i>
+										</span>
+									</div>
+								}
+							</div>
+
+							<div>
+								<h5 style="margin-bottom: 20px;"></h5>
+								@foreach (var item in Model.Where(x => !x.IsStick))
+								{
+									<div role="alert" class="alert mt-1 mb-1" style="background-color: @item.Color; font-weight: bold;">
+										@item.Title
+										<span class="float-end pin-container" style="margin-right: 15px;">
+											<i class="icofont-tack-pin pin-note" onclick="pinNote('@item.Id')"></i>
+											<i class="icofont-trash delete-note" style="margin-left: 10px;" onclick="confirmDelete('@item.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
+											<i class="icofont-edit edit-note" style="margin-left: 10px;" data-note-id="@item.Id" data-note-title="@item.Title" data-note-content="@item.NoteContent" data-note-color="@item.Color"></i>
+										</span>
+									</div>
+								}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -146,6 +174,37 @@
 
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Ghim note -->
+<script>
+	function pinNote(noteId) {
+		$.ajax({
+			url: '/Admin/Notes/PinNote',
+			method: 'POST',
+			data: { noteId: noteId },
+			success: function (response) {
+				$('#notesContainer').html(response);
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+
+	function unPinNote(noteId) {
+		$.ajax({
+			url: '/Admin/Notes/UnPinNote',
+			method: 'POST',
+			data: { noteId: noteId },
+			success: function (response) {
+				$('#notesContainer').html(response);
+			},
+			error: function (xhr, status, error) {
+				console.error(error);
+			}
+		});
+	}
+</script>
 
 <!-- Thêm note -->
 <script>
@@ -292,7 +351,7 @@
 			success: function (response) {
 				$('#editNoteModal').modal('hide');
 				$('#notesContainer').html(response);
-				
+
 				document.getElementById('editTitle').value = noteTitle;
 				document.getElementById('editContent').value = noteContent;
 			},
@@ -303,5 +362,7 @@
 		});
 	}
 </script>
+
+
 
 

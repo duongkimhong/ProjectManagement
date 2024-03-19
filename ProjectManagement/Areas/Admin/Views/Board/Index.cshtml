@@ -105,10 +105,8 @@
 																	</li>
 																	<li class="me-2">
 																		<div class="d-flex align-items-center">
-
 																			<i class="icofont-ui-text-chat"></i>
 																			<span class="ms-1">5</span>
-
 																		</div>
 																	</li>
 																	<li>
@@ -487,10 +485,10 @@
 						<div class="col-md-3">
 							<select class="form-select" id="epicDropdown" onchange="updateIssueEpic()">
 								<option value="None">None</option>
-								@* @foreach (var epic in ViewBag.ProjectEpics as List<Epics>)
+								@foreach (var epic in ViewBag.ProjectEpics as List<Epics>)
 								{
 									<option value="@epic.Id">@epic.Name</option>
-								} *@
+								}
 							</select>
 						</div>
 						<div class="col-md-3">
@@ -552,10 +550,10 @@
 						<div class="col-md-4">
 							<select class="form-select" id="sprintDropdown" onchange="updateIssueSprint()">
 
-								@* @foreach (var sprint in ViewBag.ListSprints as List<Sprints>)
+								@foreach (var sprint in ViewBag.ListSprints as List<Sprints>)
 								{
 									<option value="@sprint.Id">@sprint.Name</option>
-								} *@
+								}
 							</select>
 						</div>
 						<div class="col-md-2  d-flex align-items-center justify-content-center">
@@ -593,18 +591,6 @@
 								<button type="button" class="btn btn-primary" onclick="saveComment()">Save</button>
 								<button type="button" class="btn btn-secondary" onclick="cancelComment()">Cancel</button>
 							</div>
-							<!-- Comment items -->
-							@* <div class="col-md-12 comment-item">
-								<div class="row align-items-center">
-									<div class="col-md-1">
-										<img id="assigneeImage" src="/DefaultUser.png" class="rounded-circle" alt="Avatar" width="30" height="30">
-									</div>
-									<div class="col-md-10">
-										<p class="mb-1">This is a comment.</p>
-										<p class="text-muted mb-1">Posted on: March 11, 2024</p>
-									</div>
-								</div>
-							</div> *@
 						</div>
 						<div class="row" id="historyContent" style="display: none;">
 							<div class="row align-items-center">
@@ -634,15 +620,15 @@
 			</div>
 			<div class="modal-body">
 				<div id="assigneeList" class="list-group">
-					@* @foreach (var user in ViewBag.ProjectTeamMembers)
+					@foreach (var user in ViewBag.ProjectTeamMembers)
 					{
-						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center">
+						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center" style="cursor: pointer;">
 							<img src="@user.Image" class="rounded-circle me-3" alt="Avatar" width="50" height="50">
 							<div>
 								<h5 class="mb-0">@user.UserName</h5>
 							</div>
 						</a>
-					} *@
+					}
 				</div>
 			</div>
 		</div>

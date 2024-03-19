@@ -25,77 +25,41 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		// GET: Admin/Sprints
 		public async Task<IActionResult> Index(Guid id)
 		{
-			var project = await _context.Projects
-					.Include(e => e.Epics)
-					.Include(p => p.Sprints)
-						.ThenInclude(s => s.Issues)
-					.Include(p => p.Teams)
-						.ThenInclude(t => t.TeamMembers)
-						.ThenInclude(tm => tm.User)
-						.FirstOrDefaultAsync(p => p.Id == id);
+			var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id);
 
 			if (project == null)
 			{
-				return NotFound(); // Trả về lỗi 404 nếu không tìm thấy dự án
+				return NotFound();
 			}
 
-			// Lấy sprint có tên "Backlog"
-			var backlogSprint = project.Sprints.FirstOrDefault(s => s.Name == "Backlog");
-			if (backlogSprint != null)
-			{
-				ViewBag.BacklogSprintId = backlogSprint.Id;
-			}
+			// Lấy danh sách Sprint của dự án
+			var projectSprints = await _context.Sprints.Include(i => i.Issues).ThenInclude(a => a.Assignee)
+				.Where(s => s.ProjectID == id)
+				.ToListAsync();
 
-			if (backlogSprint != null)
-			{
-				// Lấy danh sách các issue của sprint "Backlog"
-				var backlogIssues = backlogSprint.Issues.ToList();
+			// Lấy danh sách Epics của dự án
+			var projectEpics = await _context.Epics
+				.Where(e => e.ProjectID == id)
+				.ToListAsync();
 
-				// Đặt danh sách các issue vào ViewBag để sử dụng trong View
-				ViewBag.BacklogIssues = backlogIssues;
-			}
+			// lấy dánh sách các thành viên thuộc dự án
+			var teamMembers = await _context.Teams
+				.Where(t => t.ProjectID == id)
+				.SelectMany(t => t.TeamMembers)
+				.Select(tm => new
+				{
+					userId = tm.User.Id,
+					UserName = tm.User.UserName,
+					Image = tm.User.Image
+				})
+				.ToListAsync();
 
-			var projectSprint = project.Sprints.Where(s => s.Name != "Backlog").ToList();
-
-			ViewBag.ProjectSprints = projectSprint;
-
-			var projectEpics = project.Epics.ToList();
-
+			// Gán dữ liệu vào ViewBag
+			ViewBag.ProjectSprints = projectSprints;
 			ViewBag.ProjectEpics = projectEpics;
-
-			var listSprints = project.Sprints.ToList();
-			ViewBag.ListSprints = listSprints;
-
-			var teamMembers = project.Teams
-	.SelectMany(t => t.TeamMembers)
-	.Select(tm => new
-	{
-		userId = tm.User.Id,
-		UserName = tm.User.UserName,
-		Image = tm.User.Image
-	})
-	.ToList();
 			ViewBag.ProjectTeamMembers = teamMembers;
 
-			return View(project.Sprints); // Trả về danh sách Sprint của dự án
-		}
-
-		// GET: Admin/Sprints/Details/5
-		public async Task<IActionResult> Details(Guid? id)
-		{
-			if (id == null || _context.Sprints == null)
-			{
-				return NotFound();
-			}
-
-			var sprints = await _context.Sprints
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (sprints == null)
-			{
-				return NotFound();
-			}
-
-			return View(sprints);
+			return View();
 		}
 
 		// GET: Admin/Sprints/Create
@@ -142,38 +106,25 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		// POST: Admin/Sprints/Edit/5
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Status,StartDate,EndDate,ProjectID")] Sprints sprints)
+		public async Task<IActionResult> Edit(Guid id, string name, DateTime startDate, DateTime endDate)
 		{
-			if (id != sprints.Id)
-			{
-				return NotFound();
-			}
+			var sprint = await _context.Sprints.FindAsync(id);
 
-			if (ModelState.IsValid)
+			try
 			{
-				try
-				{
-					_context.Update(sprints);
-					await _context.SaveChangesAsync();
-				}
-				catch (DbUpdateConcurrencyException)
-				{
-					if (!SprintsExists(sprints.Id))
-					{
-						return NotFound();
-					}
-					else
-					{
-						throw;
-					}
-				}
-				return Json(new { message = "Thành công" });
+				sprint.Name = name;
+				sprint.StartDate = startDate;
+				sprint.EndDate = endDate;
+				_context.Update(sprint);
+				await _context.SaveChangesAsync();
 			}
-			return View(sprints);
+			catch (DbUpdateConcurrencyException)
+			{
+				_context.Update(sprint);
+			}
+			return Json(new { message = "Thành công" });
+
 		}
 
 		// GET: Admin/Sprints/Delete/5
@@ -221,8 +172,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		[HttpPost]
 		public IActionResult UpdateSprintStatus(Guid sprintId, string status)
 		{
-			// Cập nhật trạng thái của Sprint ở đây
-			// Ví dụ:
 			var sprint = _context.Sprints.FirstOrDefault(s => s.Id == sprintId);
 			if (sprint != null && status == "Start")
 			{

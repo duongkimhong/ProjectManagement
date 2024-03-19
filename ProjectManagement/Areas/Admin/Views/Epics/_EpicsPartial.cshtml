@@ -1,0 +1,10 @@
+﻿@model IEnumerable<ProjectManagement.Models.Epics>
+
+@foreach (var epic in Model)
+{
+    <div class="epic-item" style="color: white; background-color: @epic.Color; cursor: pointer;"
+         onclick="openEditEpicModal('@epic.Id')" oncontextmenu="showContextDeleteEpic(event, '@epic.Id')"
+         data-type="epic" ondrop="drop(event, 'epic', '@epic.Id')" ondragover="allowDrop(event)" data-epic-id="@epic.Id">
+        @epic.Name
+    </div>
+}

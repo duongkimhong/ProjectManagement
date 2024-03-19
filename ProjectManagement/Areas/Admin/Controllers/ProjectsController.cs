@@ -208,6 +208,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				.Include(p => p.Teams)
 					.ThenInclude(t => t.TeamMembers)
 						.ThenInclude(tm => tm.User)
+				.Include(p => p.ProjectDocument)
+			        .ThenInclude(pd => pd.Documents)
 				.FirstOrDefaultAsync(p => p.Id == projectId);
 
 			if (project == null)
@@ -232,6 +234,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				}
 			}
 
+			// Lấy danh sách tài liệu của dự án và đưa vào danh sách JSON
+			var projectDocuments = project.ProjectDocument.Select(pd => new
+			{
+				DocumentId = pd.DocumentID,
+				FileName = pd.Documents.File,
+				DocumentType = pd.Documents.DocumentType
+			});
+
 			// Xây dựng object JSON chứa thông tin cần thiết từ dữ liệu lấy được
 			var responseData = new
 			{
@@ -241,13 +251,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				StartDate = project.StartDate,
 				EndDate = project.EndDate,
 				Image = project.Image,
-				TeamMembers = teamMembers
+				TeamMembers = teamMembers,
+				ProjectDocuments = projectDocuments
 			};
 
 			return Json(responseData);
 		}
-
-
 
 		// POST: Admin/Projects/Delete/5
 		[HttpPost, ActionName("Delete")]
@@ -361,9 +370,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
         }
 
-
-
 		// hành động xóa nhưng chỉ thay đổi trạng thái của dự án thành Cancelled, và không xóa các dữ liệu và tài liệu liên quan
+		#region
 		//public async Task<IActionResult> DeleteConfirmed(Guid id)
 		//{
 		//    var project = await _context.Projects.FindAsync(id);
@@ -382,8 +390,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 		//    return RedirectToAction(nameof(Index));
 		//}
-
-		
+		#endregion
 
 		private bool ProjectsExists(Guid id)
         {
@@ -529,6 +536,143 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 			// Trả về danh sách các người dùng
 			return Json(usersNotInProject);
+		}
+
+        
+		[HttpPost]
+		public async Task<IActionResult> DeleteDocument(Guid documentId)
+		{
+            try
+            {
+				var projectDocument = _context.ProjectDocument.FirstOrDefault(p => p.DocumentID == documentId);
+
+				// Kiểm tra xem projectDocument đã được tìm thấy không
+				if (projectDocument == null)
+				{
+					return NotFound();
+				}
+
+				_context.ProjectDocument.Remove(projectDocument);
+
+				var document = await _context.Documents.FindAsync(documentId);
+                if (document == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Documents.Remove(document);
+                _context.SaveChanges();
+
+                // Xóa tệp vật lý từ hệ thống tệp
+                var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateProjectFile(Guid projectId)
+		{
+			var project = _context.Projects.Find(projectId);
+			try
+			{
+				foreach (var file in Request.Form.Files)
+				{
+					if (file != null && file.Length > 0)
+					{
+						if (file.Length <= 10 * 1024 * 1024) // 10MB
+						{
+							string folder = "Uploads/ProjectFile";
+							string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+							string filePath = Path.Combine(_environment.WebRootPath, folder, uniqueFileName);
+
+							Directory.CreateDirectory(Path.Combine(_environment.WebRootPath, folder));
+
+							using (var stream = new FileStream(filePath, FileMode.Create))
+							{
+								await file.CopyToAsync(stream);
+							}
+
+							string documentPath = "/" + folder + "/" + uniqueFileName;
+
+							var document = new Documents
+							{
+								Id = Guid.NewGuid(),
+								File = documentPath, // Lưu đường dẫn của tệp tài liệu
+								DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
+							};
+
+							_context.Add(document);
+
+							var projectDocument = new ProjectDocument
+							{
+								Id = Guid.NewGuid(),
+								ProjectID = project.Id,
+								Projects = project,
+								DocumentID = document.Id,
+								Documents = document
+							};
+							_context.Add(projectDocument);
+							_context.SaveChanges();
+						}
+						else
+						{
+							ModelState.AddModelError("Documents", "Dung lượng tệp tải lên quá lớn (tối đa 10MB).");
+							return View();
+						}
+					}
+				}
+
+				return Json(new { success = true });
+	//			var projectDocuments = _context.ProjectDocument
+	//.Where(pd => pd.ProjectID == projectId)
+	//.Select(pd => pd.Documents)
+	//.ToList();
+
+	//			return PartialView("_DocumentListPartial", projectDocuments);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"Internal server error: {ex.Message}"); // Trả về lỗi nếu có exception
+			}
+		}
+
+		public async Task<IActionResult> AddTeamMember(Guid projectId, string selectedUser)
+		{
+			return View();
+		}
+
+		public IActionResult BurndownChart(int projectId)
+		{
+			try
+			{
+				// Truy vấn cơ sở dữ liệu để lấy dữ liệu cần thiết cho burndown chart
+				var burndownData = _context.Issues
+					//.Where(issue => issue.Sprints.ProjectID == projectId)
+					.Select(issue => new
+					{
+						issue.Name,
+						issue.StartDate,
+						issue.EndDate
+					})
+					.ToList();
+
+				// Trả về partial view chứa burndown chart và dữ liệu
+				return PartialView("_BurndownChartPartial", burndownData);
+			}
+			catch (Exception ex)
+			{
+				// Xử lý nếu có lỗi xảy ra trong quá trình truy vấn dữ liệu
+				ViewBag.ErrorMessage = "Error occurred while loading burndown chart data: " + ex.Message;
+				return PartialView("_ErrorPartial");
+			}
 		}
 	}
 }

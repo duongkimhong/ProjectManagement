@@ -1,11 +1,30 @@
 ﻿@model IEnumerable<ProjectManagement.Models.Notes>
+<div>
+	<h5>Ghim</h5>
+	@foreach (var item in Model.Where(x => x.IsStick))
+	{
+		<div role="alert" class="alert mt-1 mb-1" style="background-color: @item.Color; font-weight: bold;">
+			@item.Title
+			<span class="float-end pin-container" style="margin-right: 15px;">
+				<i class="icofont-tack-pin" style="color: dimgray;" onclick="unPinNote('@item.Id')"></i>
+				<i class="icofont-trash delete-note" style="margin-left: 10px;" onclick="confirmDelete('@item.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
+				<i class="icofont-edit edit-note" style="margin-left: 10px;" data-note-id="@item.Id" data-note-title="@item.Title" data-note-content="@item.NoteContent" data-note-color="@item.Color"></i>
+			</span>
+		</div>
+	}
+</div>
 
-@foreach (var note in Model)
-{
-	<div class="alert mt-1 mb-1" style="background-color: @note.Color;">
-		<span>@note.Title</span>
-		<span class="float-end">
-			<i class="icofont-trash delete-note" onclick="confirmDelete('@note.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
-		</span>
-	</div>
-}
+<div>
+	<h5 style="margin-bottom: 20px;"></h5>
+	@foreach (var item in Model.Where(x => !x.IsStick))
+	{
+		<div role="alert" class="alert mt-1 mb-1" style="background-color: @item.Color; font-weight: bold;">
+			@item.Title
+			<span class="float-end pin-container" style="margin-right: 15px;">
+				<i class="icofont-tack-pin pin-note" onclick="pinNote('@item.Id')"></i>
+				<i class="icofont-trash delete-note" style="margin-left: 10px;" onclick="confirmDelete('@item.Id')" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"></i>
+				<i class="icofont-edit edit-note" style="margin-left: 10px;" data-note-id="@item.Id" data-note-title="@item.Title" data-note-content="@item.NoteContent" data-note-color="@item.Color"></i>
+			</span>
+		</div>
+	}
+</div>

@@ -45,11 +45,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		// POST: Admin/Issues/Create
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
-		//[ValidateAntiForgeryToken]
-		//public async Task<IActionResult> Create([FromForm] Issues issues, [FromForm] string projectId)
 		public async Task<IActionResult> Create(string name, string type, string projectId)
 		{
 			Guid id = Guid.Parse(projectId);
@@ -85,12 +81,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				return NotFound();
 			}
 
-			var issue = await _context.Issues
-				.Include(i => i.Assignee)
-				.Include(i => i.Reporter) 
-				.Include(i => i.Epics)
-				.Include(i => i.Comments)
-				//.Include(i => i.Sprints)
+			var issue = await _context.Issues.Include(i => i.Assignee).Include(i => i.Reporter).Include(i => i.Epics).Include(i => i.Comments).ThenInclude(c => c.User)
 				.FirstOrDefaultAsync(i => i.Id == issueId);
 			if (issue == null)
 			{
@@ -137,7 +128,9 @@ namespace ProjectManagement.Areas.Admin.Controllers
 					Id = c.Id,
 					Content = c.Content,
 					Timestamp = c.Timestamp,
-					UserId = c.UserID					
+					UserId = c.UserID,
+					UserImage = c.User.Image,
+					Username = c.User.UserName
 				})
 			});
 		}
@@ -183,7 +176,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		{
 			try
 			{
-				//Guid id = Guid.Parse(issueId);
 				var issue = await _context.Issues.FindAsync(issueId);
 				var sprint = await _context.Sprints.FindAsync(sprintId);
 				issue.SprintID = sprintId;
@@ -192,9 +184,23 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				_context.Update(issue);
 				await _context.SaveChangesAsync();
 
-
-				//return RedirectToAction("Index", "Sprints", new { area = "Admin", id = projectId });
 				return Json(new { success = true });
+				//var projectId = _context.Sprints.Where(e => e.Id == sprintId).Select(e => e.ProjectID).FirstOrDefault();
+				//var projectSprints = _context.Sprints
+				//		.Include(i => i.Issues)
+				//		.ThenInclude(a => a.Assignee)
+				//		.Where(s => s.ProjectID == projectId)
+				//		.ToList();
+
+				//if (projectSprints == null)
+				//{
+				//	return PartialView("_SprintsPartial", new List<Sprints>());
+				//}
+				//else
+				//{
+				//	return PartialView("_SprintsPartial", projectSprints);
+				//}
+
 			}
 			catch (Exception ex)
 			{

@@ -15,9 +15,6 @@ function drop(event) {
     event.target.appendChild(document.getElementById(data));
 }
 
-//function allowDrop(event) {
-//    event.preventDefault();
-//}
 
 function drag(event) {
     event.dataTransfer.setData("issueId", event.target.id);
@@ -59,10 +56,7 @@ function openEditModal(issueId) {
             id = response.id;
 
             console.log(response);
-
-            // Xử lý phản hồi từ máy chủ và điền thông tin vào form chỉnh sửa
-            // id, name, type, epic, status, documents, description, startDate, endDate, assignee.image, assignee.fullName,
-            // reporter.image, reporter.fullName, storyPoint, sprint, priority, comment, history
+            
             $('#issueId').val(response.id);
             $('#issueName').val(response.name);
             $('#issueType').val(response.type);
@@ -189,35 +183,28 @@ function openEditModal(issueId) {
                     break;
             }
 
+            // Sắp xếp các comment theo thời gian
+            response.comments.sort(function (a, b) {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+
+            // Lặp qua các comment đã được sắp xếp
             $.each(response.comments, function (index, comment) {
-                // Tạo HTML cho mỗi comment và thêm vào phần tử có id là 'commentsContent'
+                var userImage = comment.userImage ? comment.userImage : '/defaultuser.png';
                 var commentHtml = '<div class="col-md-12 comment-item">' +
                     '    <div class="row align-items-center">' +
                     '        <div class="col-md-1">' +
-                    '            <img class="rounded-circle user-avatar" alt="Avatar" width="30" height="30">' +
+                    '            <img class="rounded-circle user-avatar" alt="Avatar" width="30" height="30" src="' + userImage + '">' +
                     '        </div>' +
                     '        <div class="col-md-10">' +
                     '            <p class="mb-1">' + comment.content + '</p>' +
-                    '            <p class="text-muted mb-1">Posted on: ' + new Date(comment.timestamp).toLocaleString() + '</p>' +
+                    '            <p class="text-muted mb-1">' + comment.username + ' - Posted on: ' + new Date(comment.timestamp).toLocaleString() + '</p>' +
                     '        </div>' +
                     '    </div>' +
                     '</div>';
 
                 // Thêm commentHtml vào phần tử có id là 'commentsContent'
                 $('#commentsContent').append(commentHtml);
-
-                $.ajax({
-                    url: '/Admin/Board/GetUserImage',
-                    method: 'GET',
-                    data: { userId: comment.userId },
-                    success: function (userData) {
-                        var userImage = userData.image ? userData.image : '/defaultuser.png';
-                        $('#commentsContent .comment-item:last .user-avatar').attr('src', userImage);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error(error);
-                    }
-                });
             });
 
             // Hiển thị modal popup
