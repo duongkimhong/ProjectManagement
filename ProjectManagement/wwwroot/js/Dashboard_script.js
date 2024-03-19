@@ -31,18 +31,12 @@ projectDropdown.addEventListener('change', function () {
 
 //Hiển thị tên file hình ảnh
 function displaySelectedFile() {
-    // Lấy tệp được chọn
     var selectedFile = document.getElementById('fileInput').files[0];
-
-    // Lấy tên của tệp
     var fileName = selectedFile.name;
-
-    // Hiển thị tên tệp trong input text
     document.getElementById('fileName').value = fileName;
 }
 
 //Hiển thị modal danh sách account để invite
-// Function to show the invite modal
 function showInviteModal() {
     $('#inviteModal').modal('show'); // Show the invite modal
 }

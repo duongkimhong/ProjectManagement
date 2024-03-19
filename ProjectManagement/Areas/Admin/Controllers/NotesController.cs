@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -60,26 +61,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return PartialView("_NotesPartial", notes);
         }
 
-        // GET: Admin/Notes/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
-        {
-            if (id == null || _context.Notes == null)
-            {
-                return NotFound();
-            }
-
-            var notes = await _context.Notes.FindAsync(id);
-            if (notes == null)
-            {
-                return NotFound();
-            }
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", notes.UserID);
-            return View(notes);
-        }
-
         // POST: Admin/Notes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         public async Task<IActionResult> Edit(Guid id, string title, string content, string color)
         {
@@ -127,9 +109,44 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return PartialView("_NotesPartial", notes);
         }
 
-        private bool NotesExists(Guid id)
+        public async Task<IActionResult> PinNote(Guid noteId)
         {
-          return (_context.Notes?.Any(e => e.Id == id)).GetValueOrDefault();
-        }
-    }
+			var note = _context.Notes.Find(noteId);
+
+			if (note == null)
+			{
+				return NotFound();
+			}
+
+			note.IsStick = true;
+			_context.Update(note);
+			_context.SaveChanges();
+
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			var notes = await _context.Notes.Where(u => u.UserID == userId)
+										 .OrderByDescending(n => n.Timestamp)
+										 .ToListAsync();
+			return PartialView("_NotesPartial", notes);
+		}
+
+		public async Task<IActionResult> UnPinNote(Guid noteId)
+		{
+			var note = _context.Notes.Find(noteId);
+
+			if (note == null)
+			{
+				return NotFound();
+			}
+
+			note.IsStick = false;
+			_context.Update(note);
+			_context.SaveChanges();
+
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			var notes = await _context.Notes.Where(u => u.UserID == userId)
+										 .OrderByDescending(n => n.Timestamp)
+										 .ToListAsync();
+			return PartialView("_NotesPartial", notes);
+		}
+	}
 }

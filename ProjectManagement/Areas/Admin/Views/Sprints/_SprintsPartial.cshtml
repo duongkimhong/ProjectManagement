@@ -1,0 +1,373 @@
+﻿@model IEnumerable<ProjectManagement.Models.Sprints>
+@inject ApplicationDbContext _context
+
+@foreach (var item in Model)
+{
+	if (item.Name == "Backlog")
+	{
+		<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@item.Id')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
+			<div class="card-header py-3 bg-transparent border-bottom-0">
+				<div class="row align-items-center">
+					<div class="col-sm-8" style="display: flex; align-items: center;">
+						<h6 class="mb-0 fw-bold">@item.Name</h6>
+					</div>
+					<div class="col-sm-4 d-flex align-items-center justify-content-end">
+						@{
+							var issues = item.Issues ?? new List<Issues>(); ;
+							var todoStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Todo).Sum(issue => issue.StoryPoint);
+							var inProgressStoryPoints = issues.Where(issue => issue.Status == IssueStatus.InProgress).Sum(issue => issue.StoryPoint);
+							var completedStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Completed).Sum(issue => issue.StoryPoint);
+						}
+
+						<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">@todoStoryPoints</span>
+						<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">@inProgressStoryPoints</span>
+						<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">@completedStoryPoints</span>
+						<span>
+							<button id="createSprintButton" class="btn btn-primary">Create Sprint</button>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div>
+				@if (item.Issues != null && item.Issues.Any())
+				{
+					<ul style="padding: 0px;">
+
+						@foreach (var issue in item.Issues)
+						{
+							<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" data-issue-id="@issue.Id" id="@issue.Id" draggable="true" ondragstart="drag(event)">
+								<div>
+									@if (issue.Type == IssueType.Task)
+									{
+										<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+											<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+										</span>
+									}
+									else if (issue.Type == IssueType.Bug)
+									{
+										<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+											<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+										</span>
+									}
+									else
+									{
+										<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+											<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+										</span>
+									}
+
+									<span style="margin-left: 8px; cursor: pointer;" onclick="openEditModal('@issue.Id')" oncontextmenu="showContextDelete(event, '@issue.Id')">@issue.Name</span>
+								</div>
+
+								<div class="d-flex align-items-center">
+									@if (issue.EpicID != null)
+									{
+										var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+										if (epic != null)
+										{
+											<span class="badge me-2" style="font-size: 14px; position: relative; background-color: @epic.Color !important;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+
+											<!-- Menu popup -->
+											<div id="contextMenu" class="custom-menu">
+												<ul>
+													<li id="unlinkEpic" onclick="handleClick('@issue.Id')">Unlink Epic</li>
+													<li id="viewDetail">View Detail</li>
+												</ul>
+											</div>
+										}
+									}
+
+									@if (issue.Status == IssueStatus.Todo)
+									{
+										<span class="badge me-2" style="font-size: 14px; background-color: #D8D8D8 !important;">@issue.Status</span>
+									}
+									else if (issue.Status == IssueStatus.InProgress)
+									{
+										<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #39B5E0 !important;">@issue.Status</span>
+									}
+									else
+									{
+										<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #1A5D1A !important;">@issue.Status</span>
+									}
+
+									<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: black !important; background-color:#D8D8D8 !important; border-radius: 50%;">
+										<span style="font-size: 19px;">@issue.StoryPoint</span>
+									</span>
+
+									@if (issue.Priority == Priorities.Lowest)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
+											<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else if (issue.Priority == Priorities.Low)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
+											<i class="icofont-curved-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else if (issue.Priority == Priorities.Medium)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; color: #F0DE36 !important">
+											<i class="icofont-navigation-menu" style="font-size: 20px;"></i>
+										</span>
+
+									}
+									else if (issue.Priority == Priorities.High)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+											<i class="icofont-curved-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else if (issue.Priority == Priorities.Highest)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+											<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else
+									{
+
+									}
+
+									<span class="p-2 me-1">
+										@if (issue.AssigneeID == null || issue.Assignee == null)
+										{
+											<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+										}
+										else
+										{
+											@* <img src="@Url.Content(issue.Assignee.Image)" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;"> *@
+											<img src="@issue.Assignee.Image" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+										}
+									</span>
+								</div>
+							</div>
+						}
+
+						<!-- Context menu -->
+						<div id="contextDelete" class="custom-menu" style="display: none;">
+							<ul>
+								<li onclick="confirmDeleteIssue()">Delete Issue</li>
+							</ul>
+						</div>
+					</ul>
+				}
+				else
+				{
+					<p class="me-2">No issues found for this sprint</p>
+				}
+			</div>
+
+			<div class="card-body">
+				<form id="issueForm" method="post" asp-area="Admin" asp-controller="Issues" asp-action="Create">
+					<div class="input-group">
+						<button id="selectedItemButton" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<span id="selectedItem">Task</span>
+						</button>
+						<ul class="dropdown-menu">
+							<li>
+								<a class="dropdown-item" href="#" onclick="updateButton('Task')" data-value="Task">
+									<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+										<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+									</span> Task
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="#" onclick="updateButton('Bug')" data-value="Bug">
+									<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+										<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+									</span> Bug
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="#" onclick="updateButton('User story')" data-value="User story">
+									<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+										<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+									</span> User story
+								</a>
+							</li>
+						</ul>
+						<input type="hidden" id="typeInput" name="Type" />
+						<input type="text" id="issueInputWrapper" name="Name" class="form-control" placeholder="Enter new issue name" onkeypress="handleKeyPressCreate(event)" />
+					</div>
+				</form>
+			</div>
+		</div>
+	}
+	if (item.Name != "Backlog")
+	{
+		<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@item.Id')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
+			<div class="card-header py-3 bg-transparent border-bottom-0">
+				<div class="row align-items-center">
+					<div class="col-sm-8 edit-sprint"
+						 style="display: flex; align-items: center;"
+						 data-id="@item.Id"
+						 data-name="@item.Name"
+						 data-start-date="@item.StartDate"
+						 data-end-date="@item.EndDate">
+						<h6 class="mb-0 fw-bold">@item.Name</h6>
+						<span style="color: gray; margin-left: 10px;">(@($"{item.StartDate:dd/MM/yyyy} - {item.EndDate:dd/MM/yyyy}"))</span>
+					</div>
+					<div class="col-sm-4 d-flex align-items-center justify-content-end">
+						@{
+							var issues = item.Issues;
+							var todoStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Todo).Sum(issue => issue.StoryPoint);
+							var inProgressStoryPoints = issues.Where(issue => issue.Status == IssueStatus.InProgress).Sum(issue => issue.StoryPoint);
+							var completedStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Completed).Sum(issue => issue.StoryPoint);
+						}
+
+						<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#D8D8D8 !important;">@todoStoryPoints</span>
+						<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">@inProgressStoryPoints</span>
+						<span class="rounded-circle bg-secondary text-light p-2 me-1" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:#1A5D1A !important;">@completedStoryPoints</span>
+						<span>
+							@if (item.Status == null)
+							{
+								<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Start')">Start Sprint</button>
+							}
+							else if (item.Status == SprintStatus.Start)
+							{
+								<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Complete')">Complete Sprint</button>
+							}
+							else
+							{
+								<button class="btn btn-primary">Sprint completed</button>
+							}
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div>
+				@if (item.Issues != null && item.Issues.Any())
+				{
+					<ul style="padding: 0px;">
+
+						@foreach (var issue in item.Issues)
+						{
+							<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" data-issue-id="@issue.Id" id="@issue.Id" draggable="true" ondragstart="drag(event)">
+								<div>
+									@if (issue.Type == IssueType.Task)
+									{
+										<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+											<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+										</span>
+									}
+									else if (issue.Type == IssueType.Bug)
+									{
+										<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+											<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+										</span>
+									}
+									else
+									{
+										<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+											<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+										</span>
+									}
+
+									<span style="margin-left: 8px; cursor: pointer;" onclick="openEditModal('@issue.Id')" oncontextmenu="showContextDelete(event, '@issue.Id')">@issue.Name</span>
+								</div>
+
+								<div class="d-flex align-items-center">
+									@if (issue.EpicID != null)
+									{
+										var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+										if (epic != null)
+										{
+											<span class="badge me-2" style="font-size: 14px; position: relative; background-color: @epic.Color !important;" oncontextmenu="showContextMenu(event)">@epic.Name</span>
+
+											<!-- Menu popup -->
+											<div id="contextMenu" class="custom-menu">
+												<ul>
+													<li id="unlinkEpic" onclick="handleClick('@issue.Id')">Unlink Epic</li>
+													<li id="viewDetail">View Detail</li>
+												</ul>
+											</div>
+										}
+									}
+
+									@if (issue.Status == IssueStatus.Todo)
+									{
+										<span class="badge me-2" style="font-size: 14px; background-color: #D8D8D8 !important;">@issue.Status</span>
+									}
+									else if (issue.Status == IssueStatus.InProgress)
+									{
+										<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #39B5E0 !important;">@issue.Status</span>
+									}
+									else
+									{
+										<span class="badge bg-primary me-2" style="font-size: 14px; background-color: #1A5D1A !important;">@issue.Status</span>
+									}
+
+									<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: black !important; background-color:#D8D8D8 !important; border-radius: 50%;">
+										<span style="font-size: 19px;">@issue.StoryPoint</span>
+									</span>
+
+									@if (issue.Priority == Priorities.Lowest)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
+											<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else if (issue.Priority == Priorities.Low)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; transform: rotate(270deg); color: #0D1282 !important">
+											<i class="icofont-curved-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else if (issue.Priority == Priorities.Medium)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color:white !important; border-radius: 50%; color: #F0DE36 !important">
+											<i class="icofont-navigation-menu" style="font-size: 20px;"></i>
+										</span>
+
+									}
+									else if (issue.Priority == Priorities.High)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+											<i class="icofont-curved-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else if (issue.Priority == Priorities.Highest)
+									{
+										<span class="rounded-circle bg-secondary text-light p-2 me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background-color: white !important; border-radius: 50%; transform: rotate(90deg); color: #D71313 !important">
+											<i class="icofont-curved-double-left" style="font-size: 20px;"></i>
+										</span>
+									}
+									else
+									{
+
+									}
+
+									<span class="p-2 me-1">
+										@if (issue.AssigneeID == null || issue.Assignee == null)
+										{
+											<img src="/defaultuser.png" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+										}
+										else
+										{
+											<img src="@issue.Assignee.Image" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; border-radius: 50%;">
+										}
+									</span>
+								</div>
+							</div>
+						}
+
+						<!-- Context menu -->
+						<div id="contextDelete" class="custom-menu" style="display: none;">
+							<ul>
+								<li onclick="confirmDeleteIssue()">Delete Issue</li>
+							</ul>
+						</div>
+					</ul>
+				}
+				else
+				{
+					<p class="me-2">No issues found for this sprint</p>
+				}
+			</div>
+		</div>
+	}
+}

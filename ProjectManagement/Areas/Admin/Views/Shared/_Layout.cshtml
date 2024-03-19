@@ -50,7 +50,6 @@
 			color: white;
 		}
 	</style>
-
 </head>
 
 <body data-mytask="theme-indigo">
@@ -75,7 +74,7 @@
 				<ul class="menu-list flex-grow-1 mt-3">
 
 					<li class="collapsed">
-						<a class="m-link active" data-bs-toggle="collapse" data-bs-target="#dashboard-Components" href="#">
+						<a class="m-link active" asp-area="Admin" asp-controller="Home" asp-action="Index">
 							<i class="icofont-home fs-5"></i> <span>Dashboard</span>
 						</a>
 					</li>
@@ -93,22 +92,16 @@
 					</li>
 
 					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
-							<i class="icofont-calendar"></i> <span>Calendar</span></span>
+						<a class="m-link" asp-area="Admin" asp-controller="CalendarEvents" asp-action="Index">
+							<i class="icofont-calendar"></i> <span>Calendar</span>
 						</a>
 					</li>
 
 					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
-							<i class="icofont-ui-text-chat"></i> <span>Chat</span></span>
+						<a class="m-link" asp-area="Admin" asp-controller="Chat" asp-action="Index">
+							<i class="icofont-ui-text-chat"></i> <span>Chat</span>
 						</a>
 					</li>
-
-					@* <li class="collapsed">
-						<a class="m-link" id="noteLink" href="#">
-							<i class="icofont-ui-note"></i> <span>Notes</span>
-						</a>
-					</li> *@
 
 					<li class="collapsed">
 						<a class="m-link" asp-area="Admin" asp-controller="Notes" asp-action="Index" asp-route-id="@UserManager.GetUserAsync(User)">

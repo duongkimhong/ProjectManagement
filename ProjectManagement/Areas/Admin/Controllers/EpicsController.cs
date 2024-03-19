@@ -61,7 +61,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		// To protect from overposting attacks, enable the specific properties you want to bind to.
 		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
-		//[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Create(string name, string projectId)
 		{
 			Guid id = Guid.Parse(projectId);
@@ -80,7 +79,10 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 			_context.Add(epic);
 			await _context.SaveChangesAsync();
-			return RedirectToAction("Index", "Sprints", new { area = "Admin", id = projectId });
+
+			//return RedirectToAction("Index", "Sprints", new { area = "Admin", id = projectId });
+			var epics = _context.Epics.Where(e => e.ProjectID == id).ToList();
+			return PartialView("_EpicsPartial", epics);
 		}
 
 		// GET: Admin/Epics/Edit/5
@@ -174,17 +176,17 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 		// POST: Admin/Epics/Delete/5
 		[HttpPost]
-		//[ValidateAntiForgeryToken]
 		public async Task<IActionResult> DeleteConfirmed(Guid id)
 		{
-			if (_context.Epics == null)
+            var projectId = _context.Epics.Where(e => e.Id == id).Select(e => e.ProjectID).FirstOrDefault();
+            if (_context.Epics == null)
 			{
 				return Problem("Entity set 'ApplicationDbContext.Epics'  is null.");
 			}
-			var epics = await _context.Epics.FindAsync(id);
+			var epic = await _context.Epics.FindAsync(id);
 
 			// Lấy danh sách các tài liệu thuộc epic
-			var epicDocuments = _context.EpicDocument.Where(ed => ed.EpicID == epics.Id).ToList();
+			var epicDocuments = _context.EpicDocument.Where(ed => ed.EpicID == epic.Id).ToList();
 			if (epicDocuments.Any())
 			{
 				_context.EpicDocument.RemoveRange(epicDocuments);
@@ -218,14 +220,16 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				_context.Update(issue);
 			}
 
-			if (epics != null)
+			if (epic != null)
 			{
-				_context.Epics.Remove(epics);
+				_context.Epics.Remove(epic);
 			}
 
 			await _context.SaveChangesAsync();
-			return Json(new { success = true });
-		}
+            
+            var epics = _context.Epics.Where(e => e.ProjectID == projectId).ToList();
+            return PartialView("_EpicsPartial", epics);
+        }
 
 		private bool EpicsExists(Guid id)
 		{

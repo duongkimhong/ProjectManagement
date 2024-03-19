@@ -12,6 +12,8 @@
 
         public string? Color { get; set; }
 
+        public bool IsStick { get; set; }
+
         public string UserID { get; set; }
         public virtual ApplicationUser User { get; set; }
     }

@@ -39,10 +39,13 @@ function updateSprint(issueId, sId) {
         method: 'POST',
         data: { issueId: issueId, sprintId: sId },
         success: function (response) {
+            console.log(response);
             location.reload();
+            $('#sprintsContainer').html(response);
         },
         error: function (xhr, status, error) {
             console.error(error);
+            console.log('lỗi');
         }
     });
 }
@@ -117,24 +120,24 @@ function handleEpicKeyPress(event) {
             alert("Epic name cannot be null");
         } else {
             var url = window.location.href;
-            console.log(url);
-
+            
             // Sử dụng regex để tìm projectId trong URL
             var regex = /\/([\w-]+)#?$/;
             var match = regex.exec(url);
             if (match) {
                 var projectId = match[1];
-                console.log(projectId);
-
                 $.ajax({
                     type: "POST",
                     url: "/Admin/Epics/Create",
                     data: { name: epicName, projectId: projectId },
                     success: function (response) {
-                        location.reload();
+                        console.log(response);
+                        //location.reload();
+                        $('#epicsContainer').html(response);
+                        document.getElementById('epicInputWrapper').value = '';
                     },
                     error: function (error) {
-                        console.error("Error creating issue:", error);
+                        console.error("Error creating epic:", error);
                     }
                 });
 
@@ -295,6 +298,29 @@ function openEditModal(issueId) {
             }
 
 
+            // Sắp xếp các comment theo thời gian
+            response.comments.sort(function (a, b) {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+
+            // Lặp qua các comment đã được sắp xếp
+            $.each(response.comments, function (index, comment) {
+                var userImage = comment.userImage ? comment.userImage : '/defaultuser.png';
+                var commentHtml = '<div class="col-md-12 comment-item">' +
+                    '    <div class="row align-items-center">' +
+                    '        <div class="col-md-1">' +
+                    '            <img class="rounded-circle user-avatar" alt="Avatar" width="30" height="30" src="' + userImage + '">' +
+                    '        </div>' +
+                    '        <div class="col-md-10">' +
+                    '            <p class="mb-1">' + comment.content + '</p>' +
+                    '            <p class="text-muted mb-1">' + comment.username + ' - Posted on: ' + new Date(comment.timestamp).toLocaleString() + '</p>' +
+                    '        </div>' +
+                    '    </div>' +
+                    '</div>';
+                    
+                $('#commentsContent').append(commentHtml);
+            });
+
             // Hiển thị modal popup
             $('#editIssueModal').modal('show');
         },
@@ -410,7 +436,6 @@ document.addEventListener("DOMContentLoaded", function () {
     addProjectIdInputToForm("createSprintForm");
 });
 
-
 //Hiển thị modal tạo sprint
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('createSprintButton').addEventListener('click', function () {
@@ -458,15 +483,12 @@ function enableEndDateBeforeSubmit() {
 
 document.getElementById('createSprintForm').addEventListener('submit', enableEndDateBeforeSubmit);
 
-
 function getProjectIdFromUrl() {
     var url = window.location.href;
     var segments = url.split('/');
     var projectId = segments.pop() || segments.pop(); // Extract the last segment
     return projectId;
 }
-
-
 
 //update sprint
 $(document).ready(function () {
@@ -497,12 +519,24 @@ $(document).ready(function () {
 
 $(document).ready(function () {
     $('#saveChangesBtn').click(function () {
-        var formData = $('#editSprintForm').serialize();
+        var sprintId = $('#sprintIdInput').val();
+        var sprintName = $('#sprintNameInput').val();
+        var startDate = $('#startDateInput').val();
+        var endDate = $('#endDateInput').val();
 
+        // Tạo object JSON chứa các giá trị
+        var formData = {
+            Id: sprintId,
+            Name: sprintName,
+            StartDate: startDate,
+            EndDate: endDate
+        };
+
+        // Gửi dữ liệu form qua Ajax
         $.ajax({
             url: '/Admin/Sprints/Edit',
             method: 'POST',
-            data: formData,
+            data: formData, // Gửi object JSON
             success: function (response) {
                 window.location.reload();
             },
@@ -528,22 +562,15 @@ function startSprint(sprintId, status) {
 }
 
 // Hiện context menu khi nhấp chuột phải vào epic name
-function showContextMenu(event) {
-    const epicSpan = event.target;
-    console.log('unlink');
-
-    // Kiểm tra xem phần tử được nhấp chuột có phải là epic name không
-    if (epicSpan.classList.contains('badge') && epicSpan.classList.contains('bg-primary')) {
-        event.preventDefault(); // Ngăn chặn hành vi mặc định của trình duyệt
-        // Xử lý hiển thị menu context
-        const rect = epicSpan.getBoundingClientRect();
-        const contextMenu = document.getElementById('contextMenu');
-        contextMenu.style.display = 'block';
-        contextMenu.style.left = (rect.left - 350) + 'px';
-        contextMenu.style.top = (rect.top + epicSpan.offsetHeight - 230) + 'px';
-        // Thêm một event listener để ẩn menu khi click bên ngoài nó
-        document.addEventListener('click', hideContextMenu);
-    }
+var unlinkIssueId;
+function showContextMenu(event, issueId) {
+    event.preventDefault();
+    const menu = document.querySelector('#contextMenu');
+    const rect = event.target.getBoundingClientRect();
+    menu.style.setProperty('--mouse-x', rect.left + 'px');
+    menu.style.setProperty('--mouse-y', rect.top + 'px');
+    menu.style.display = 'block';
+    unlinkIssueId = issueId;
 }
 
 function hideContextMenu() {
@@ -554,21 +581,19 @@ function hideContextMenu() {
     document.removeEventListener('click', hideContextMenu);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    const epicName = document.querySelector('.badge.bg-primary');
-
-    epicName.addEventListener('click', function (event) {
-        event.preventDefault();
-        showContextMenu(event);
-    });
+document.addEventListener("click", function (event) {
+    const contextMenu = document.getElementById("contextMenu");
+    if (!contextMenu.contains(event.target)) {
+        contextMenu.style.display = "none";
+    }
 });
 
-function handleClick(issueId) {
-    console.log("Click event with issueId:", issueId);
+function handleClick() {
+    console.log("Click event with issueId:", unlinkIssueId);
     $.ajax({
         url: '/Admin/Issues/UnlinkEpic',
         method: 'POST',
-        data: { issueId: issueId },
+        data: { issueId: unlinkIssueId },
         success: function (response) {
             location.reload();
         },
@@ -580,11 +605,10 @@ function handleClick(issueId) {
     xhr.send(JSON.stringify({ issueId: issueId }));
 }
 
-
 //hiển thị context delete 
 var deleteIssueId;
 function showContextDelete(event, issueId) {
-    event.preventDefault(); // Ngăn chặn hành vi mặc định của trình duyệt
+    event.preventDefault(); 
     const menu = document.querySelector('#contextDelete');
     const rect = event.target.getBoundingClientRect();
     menu.style.setProperty('--mouse-x', rect.left + 'px');
@@ -1120,7 +1144,9 @@ $('#deleteEpicButton').on('click', function () {
         method: 'POST',
         data: { id: deleteEpicId },
         success: function (response) {
-            location.reload();
+            //location.reload();
+            $('#epicsContainer').html(response);
+            document.getElementById('epicInputWrapper').value = '';
         },
         error: function (xhr, status, error) {
             console.error(error);

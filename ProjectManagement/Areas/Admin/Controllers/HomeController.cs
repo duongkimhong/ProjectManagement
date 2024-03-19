@@ -19,7 +19,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 		public IActionResult Index()
         {
-
             return View();
         }
     }
