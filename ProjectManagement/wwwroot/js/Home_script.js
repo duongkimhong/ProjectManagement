@@ -93,43 +93,41 @@ function openEditModal(projectId) {
                 var imageCell = $('<td><div class="avatar-container"><img src="' + member.image + '" alt="' + member.userName + '" class="avatar"></div></td>');
 
                 row.append(imageCell);
-                
+
                 var nameCell = $('<td>' + member.userName + '</td>');
                 row.append(nameCell);
-                
+
                 var roleCell = $('<td>' + member.role + '</td>');
                 row.append(roleCell);
-                
+
                 table.append(row);
             });
 
             // Thêm bảng vào phần tử có id là 'teamMembersContainer'
             $('#teamMembersContainer').append(table);
 
-            //var documentList = $('#documentList');
-            //documentList.empty(); // Xóa nội dung cũ trước khi thêm mới
+            var documentList = $('#documentList');
+            documentList.empty(); // Xóa nội dung cũ trước khi thêm mới
 
-            //// Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
-            //response.projectDocuments.forEach(function (document) {
-            //    var lastSlashIndex = document.fileName.lastIndexOf('_');
-            //    var fileName = document.fileName.substring(lastSlashIndex + 1);
+            // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
+            response.projectDocuments.forEach(function (document) {
+                var lastSlashIndex = document.fileName.lastIndexOf('_');
+                var fileName = document.fileName.substring(lastSlashIndex + 1);
 
-            //    var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
-            //    documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
-            //    documentHtml += '<div class="d-flex flex-column ps-3">';
-            //    documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
-            //    documentHtml += '</div>';
-            //    documentHtml += '</div>';
-            //    documentHtml += '<a href="' + document.fileName + '" download>';
-            //    documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
-            //    documentHtml += '</a>';
-            //    documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
-            //    documentHtml += '</div>';
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
 
-            //    documentList.append(documentHtml);
-            //});
-            updateDocumentList(response);
-            updateDocumentList(response.projectDocuments);
+                documentList.append(documentHtml);
+            });
 
             // Hiển thị modal popup
             $('#editProjectModal').modal('show');
@@ -137,31 +135,6 @@ function openEditModal(projectId) {
         error: function (xhr, status, error) {
             console.error(error);
         }
-    });
-}
-
-function updateDocumentList(projectDocuments) {
-    var documentList = $('#documentList');
-    documentList.empty(); // Xóa nội dung cũ trước khi thêm mới
-
-    // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
-    projectDocuments.forEach(function (document) {
-        var lastSlashIndex = document.fileName.lastIndexOf('_');
-        var fileName = document.fileName.substring(lastSlashIndex + 1);
-
-        var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
-        documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
-        documentHtml += '<div class="d-flex flex-column ps-3">';
-        documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
-        documentHtml += '</div>';
-        documentHtml += '</div>';
-        documentHtml += '<a href="' + document.fileName + '" download>';
-        documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
-        documentHtml += '</a>';
-        documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
-        documentHtml += '</div>';
-
-        documentList.append(documentHtml);
     });
 }
 
@@ -276,125 +249,72 @@ document.getElementById('editFileInput').addEventListener('change', function () 
     document.getElementById('editCurrentImagePath').value = fileName;
 });
 
-// Function to open the invite modal
-//function openInviteModal() {
-//    // Hiển thị modal
-//    $('#editInviteModal').modal('show');
-
-//    // Gọi AJAX để lấy danh sách các người dùng không thuộc dự án
-//    $.ajax({
-//        url: '/Admin/Projects/GetListAccountsNotInProject',
-//        method: 'GET',
-//        data: { projectId: projectEditId },
-//        success: function (response) {
-//            // Xóa hết các dòng đã có trong bảng
-//            $('#editInviteModal tbody').empty();
-
-//            // Thêm các dòng mới vào bảng
-//            response.forEach(function (account) {
-//                var row = $('<tr></tr>');
-//                row.append('<td>' + account.userName + '</td>');
-//                row.append('<td><input type="checkbox" class="user-checkbox" data-user-id="' + account.id + '" name="selectedUsers"></td>');
-//                $('#editInviteModal tbody').append(row);
-//            });
-
-//            // Bắt sự kiện khi người dùng chọn các người dùng
-//            $('.user-checkbox').change(function () {
-//                var userId = $(this).data('user-id');
-//                if ($(this).is(':checked')) {
-//                    selectedUsers.push(userId);
-//                } else {
-//                    selectedUsers = selectedUsers.filter(function (id) {
-//                        return id !== userId;
-//                    });
-//                }
-//            });
-//        },
-//        error: function (xhr, status, error) {
-//            console.error(error);
-//        }
-//    });
-//}
-
 //Hiển thị modal danh sách account
 function showInviteModal() {
     $('#editInviteModal').modal('show'); // Show the invite modal
 }
 
-// Add an event listener to the Invite button
-document.getElementById('editInviteButton').addEventListener('click', function () {
-    openInviteModal(); // Call the function to open the invite modal
-});
 
-document.getElementById('selectInvite').addEventListener('click', function () {
-    inviteUsers();
-});
 
-// Mảng tạm để lưu trữ các người dùng đã chọn
+
+
+// Global variable to store selected users
 var selectedUsers = [];
 
-//// Function to invite selected users
-//function inviteUsers(event) {
-//    event.preventDefault();
-//    console.log(selectedUsers);
-//    $.ajax({
-//        url: '/Admin/Projects/AddTeamMember',
-//        method: 'POST',
-//        data: { projectId: projectEditId, selectedUsers: selectedUsers },
-//        success: function (response) {
-//            // Đóng modal và làm mới trang hoặc cập nhật dữ liệu cần thiết
-//            $('#editInviteModal').modal('hide');
-//        },
-//        error: function (xhr, status, error) {
-//            console.error(error);
-//        }
-//    });
-//}
-
-// Function to open the invite modal
+// Function to open the invite modal and assign click event to the "Invite" button
 function openInviteModal() {
-    // Hiển thị modal
+    // Show the invite modal
     $('#editInviteModal').modal('show');
 
-    // Gọi AJAX để lấy danh sách các người dùng không thuộc dự án
+    // Call AJAX to get the list of users not in the project
     $.ajax({
         url: '/Admin/Projects/GetListAccountsNotInProject',
         method: 'GET',
         data: { projectId: projectEditId },
         success: function (response) {
-            // Xóa hết các dòng đã có trong bảng
+            // Clear the existing rows in the table
             $('#editInviteModalBody').empty();
 
-            // Thêm các dòng mới vào bảng
+            // Add new rows to the table
             response.forEach(function (account) {
                 var row = $('<tr></tr>');
                 row.append('<td>' + account.userName + '</td>');
-                row.append('<td><input type="checkbox" class="user-checkbox" data-user-id="' + account.id + '" name="selectedUsers"></td>');
+                row.append('<td><input type="checkbox" class="user-checkbox" data-user-id="' + account.userId + '" name="selectedUsers"></td>');
                 $('#editInviteModalBody').append(row);
+            });
+
+            // Handle the event when users change the selection
+            $('.user-checkbox').change(function () {
+                var userId = $(this).data('user-id');
+                if ($(this).is(':checked')) {
+                    selectedUsers.push(userId);
+                } else {
+                    selectedUsers = selectedUsers.filter(function (id) {
+                        return id !== userId;
+                    });
+                }
             });
         },
         error: function (xhr, status, error) {
             console.error(error);
         }
     });
+
+    // Add event listener to the invite button in the modal
+    $('#inviteButtonInModal').off('click').on('click', function () {
+        inviteUsers(); // Gọi hàm inviteUsers khi nhấn nút "Invite" trong modal
+    });
 }
 
-// Function to invite selected users
+// Function to handle invite users action
 function inviteUsers() {
-    var selecteddUsers = [];
-    // Lặp qua các checkbox để lấy các user đã chọn
-    $('.user-checkbox').each(function () {
-        if ($(this).is(':checked')) {
-            selecteddUsers.push($(this).data('user-id'));
-        }
-    });
-    console.log('click');
-    console.log(selecteddUsers);
-    // Gọi AJAX để thêm các user đã chọn vào dự án
+    console.log('1');
+    console.log(selectedUsers);
+    // Gửi danh sách người dùng đã chọn đến controller
     $.ajax({
         url: '/Admin/Projects/AddTeamMember',
         method: 'POST',
-        data: { projectId: projectEditId, selectedUsers: selecteddUsers },
+        data: { projectId: projectEditId, selectedUsers: selectedUsers },
         success: function (response) {
             $('#editInviteModal').modal('hide');
         },
@@ -403,6 +323,27 @@ function inviteUsers() {
         }
     });
 }
+
+// Add event listener to the invite button in the modal
+$('#inviteButtonInModal').on('click', function () {
+    inviteUsers(); // Gọi hàm inviteUsers khi nhấn nút "Invite" trong modal
+});
+
+// Add event listener to the invite button
+$('#editInviteButton').on('click', function () {
+    openInviteModal();
+});
+
+
+
+
+
+
+
+
+
+
+
 
 var selectedDocumentId;
 function showDeleteFileModal(documentId) {
@@ -416,7 +357,6 @@ function showDeleteFileModal(documentId) {
 }
 
 function confirmDeleteBtn() {
-    // Gọi đến action trong controller để xóa tài liệu
     console.log('clicked');
     $.ajax({
         url: '/Admin/Projects/DeleteDocument',
@@ -425,20 +365,46 @@ function confirmDeleteBtn() {
         success: function () {
             console.log('success');
             $('#confirmDeleteModal').modal('hide');
-            removeDocumentFromUI(selectedDocumentId);
-            console.log('done');
+            updateDocumentList();
+            console.log(selectedDocumentId);
         },
         error: function (xhr, status, error) {
-            console.log('error');
             console.error(error);
         }
     });
 }
 
-function removeDocumentFromUI(documentId) {
-    console.log('start remove');
-    $('#document_' + documentId).remove();
-    console.log('end remove');
+function updateDocumentList() {
+    $.ajax({
+        url: '/Admin/Projects/Edit',
+        method: 'GET',
+        data: { projectId: projectEditId },
+        success: function (response) {
+            var documentList = $('#documentList');
+            documentList.empty();
+            response.projectDocuments.forEach(function (document) {
+                var lastSlashIndex = document.fileName.lastIndexOf('_');
+                var fileName = document.fileName.substring(lastSlashIndex + 1);
+
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                documentList.append(documentHtml);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
 }
 
 function uploadFiles(files) {
@@ -458,9 +424,7 @@ function uploadFiles(files) {
         processData: false,
         contentType: false,
         success: function (response) {
-            console.log('Files uploaded successfully');
-            location.reload();
-            //$('#documentList').html(response);
+            updateDocumentList()
         },
         error: function (xhr, status, error) {
             console.error('File upload failed:', error);

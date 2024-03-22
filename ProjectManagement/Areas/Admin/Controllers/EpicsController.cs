@@ -31,25 +31,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return View(await applicationDbContext.ToListAsync());
 		}
 
-		// GET: Admin/Epics/Details/5
-		public async Task<IActionResult> Details(Guid? id)
-		{
-			if (id == null || _context.Epics == null)
-			{
-				return NotFound();
-			}
-
-			var epics = await _context.Epics
-				.Include(e => e.Reporter)
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (epics == null)
-			{
-				return NotFound();
-			}
-
-			return View(epics);
-		}
-
 		// GET: Admin/Epics/Create
 		public IActionResult Create()
 		{
@@ -58,8 +39,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		// POST: Admin/Epics/Create
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
 		public async Task<IActionResult> Create(string name, string projectId)
 		{
@@ -80,7 +59,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			_context.Add(epic);
 			await _context.SaveChangesAsync();
 
-			//return RedirectToAction("Index", "Sprints", new { area = "Admin", id = projectId });
 			var epics = _context.Epics.Where(e => e.ProjectID == id).ToList();
 			return PartialView("_EpicsPartial", epics);
 		}
@@ -95,6 +73,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 			var epic = await _context.Epics
 								.Include(e => e.Reporter)
+								.Include(p => p.EpicDocument)
+												.ThenInclude(ed => ed.Documents)
 								.FirstOrDefaultAsync(e => e.Id == epicId);
 			
 			if (epic == null)
@@ -103,6 +83,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 			var reporterFullName = epic.Reporter != null ? epic.Reporter.FullName : null;
 			var reporterImage = epic.Reporter != null ? epic.Reporter.Image : null;
+
+			var epicDocuments = epic.EpicDocument.Select(ed => new
+			{
+				DocumentId = ed.DocumentID,
+				FileName = ed.Documents.File,
+				DocumentType = ed.Documents.DocumentType
+			});
+
 			return Json(new
 			{
 				Id = epic.Id,
@@ -115,13 +103,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				{
 					FullName = reporterFullName,
 					Image = reporterImage
-				}
+				},
+				EpicDocument = epicDocuments
 			});
 		}
 
 		// POST: Admin/Epics/Edit/5
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Color,Description,Priority,StartDate,EndDate,ReporterID,SprintID")] Epics epics)
@@ -323,6 +310,105 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			catch (Exception ex)
 			{
 				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> DeleteDocument(Guid documentId)
+		{
+			try
+			{
+				var epicDocument = _context.EpicDocument.FirstOrDefault(p => p.DocumentID == documentId);
+
+				// Kiểm tra xem projectDocument đã được tìm thấy không
+				if (epicDocument == null)
+				{
+					return NotFound();
+				}
+
+				_context.EpicDocument.Remove(epicDocument);
+
+				var document = await _context.Documents.FindAsync(documentId);
+				if (document == null)
+				{
+					return NotFound();
+				}
+
+				_context.Documents.Remove(document);
+				_context.SaveChanges();
+
+				// Xóa tệp vật lý từ hệ thống tệp
+				var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+				if (System.IO.File.Exists(filePath))
+				{
+					System.IO.File.Delete(filePath);
+				}
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateEpicFiles(Guid epicId)
+		{
+			var epic = _context.Epics.Find(epicId);
+			try
+			{
+				foreach (var file in Request.Form.Files)
+				{
+					if (file != null && file.Length > 0)
+					{
+						if (file.Length <= 10 * 1024 * 1024) // 10MB
+						{
+							string folder = "Uploads/EpicFile";
+							string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+							string filePath = Path.Combine(_environment.WebRootPath, folder, uniqueFileName);
+
+							Directory.CreateDirectory(Path.Combine(_environment.WebRootPath, folder));
+
+							using (var stream = new FileStream(filePath, FileMode.Create))
+							{
+								await file.CopyToAsync(stream);
+							}
+
+							string documentPath = "/" + folder + "/" + uniqueFileName;
+
+							var document = new Documents
+							{
+								Id = Guid.NewGuid(),
+								File = documentPath, // Lưu đường dẫn của tệp tài liệu
+								DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
+							};
+
+							_context.Add(document);
+
+							var epicDocument = new EpicDocument
+							{
+								Id = Guid.NewGuid(),
+								EpicID = epic.Id,
+								Epics = epic,
+								DocumentID = document.Id,
+								Documents = document
+							};
+							_context.Add(epicDocument);
+							_context.SaveChanges();
+						}
+						else
+						{
+							ModelState.AddModelError("Documents", "Dung lượng tệp tải lên quá lớn (tối đa 10MB).");
+							return View();
+						}
+					}
+				}
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"Internal server error: {ex.Message}"); // Trả về lỗi nếu có exception
 			}
 		}
 	}

@@ -1,5 +1,4 @@
-﻿@* @model IEnumerable<ProjectManagement.Models.Issues> *@
-@inject ApplicationDbContext _context
+﻿@inject ApplicationDbContext _context
 @{
 	ViewData["Title"] = "Index";
 	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -8,6 +7,15 @@
 	.taskboard .progress_task .dd-item:before {
 		background-color: #a0d9b4 !important;
 	}
+
+	.comment-item {
+		display: flex;
+		align-items: center;
+	}
+
+	.user-avatar {
+		margin-right: 10px;
+	}
 </style>
 <div class="body d-flex py-lg-3 py-md-2">
 	<div class="container-xxl">
@@ -15,11 +23,6 @@
 			<div class="border-0 mb-4">
 				<div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
 					<h3 class="fw-bold mb-0">Board</h3>
-					<div class="col-auto d-flex w-sm-100">
-						<button type="button" class="btn btn-primary btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#anotherModal">
-							<i class="icofont-chart-line-alt me-2 fs-6"></i>Insights
-						</button>
-					</div>
 				</div>
 			</div>
 		</div> <!-- Row end  -->
@@ -30,7 +33,15 @@
 					{
 						@foreach (var sprint in ViewBag.BoardSprints as List<Sprints>)
 						{
-							<h4 class="fw-bold">@sprint.Name</h4>
+							<div class="d-flex justify-content-between mt-0">
+								<h4 class="fw-bold">@sprint.Name</h4>
+								<div class="col-auto d-flex w-sm-100">
+									<button type="button" class="btn btn-primary btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#burndownModal" onclick="openBurndownModal('@sprint.Id')">
+										<i class="icofont-chart-line-alt me-2 fs-6"></i>Insights
+									</button>
+								</div>
+							</div>
+
 							<div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12 mt-xxl-4 mt-xl-4 mt-lg-4 mt-md-4 mt-sm-4 mt-4" ondrop="drop(event, 'Todo')" ondragover="allowDrop(event)">
 								<h6 class="fw-bold py-3 mb-0" style="margin-left: 30px;">To do</h6>
 								<div class="progress_task">
@@ -90,11 +101,11 @@
 																		<div class="d-flex align-items-center">
 																			@if (issue.IsFlag == false)
 																			{
-																				<i class="icofont-flag" style="font-size: 25px;"></i>
+																				<i class="icofont-flag" style="font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', true)"></i>
 																			}
 																			else
 																			{
-																				<i class="icofont-flag" style="color: red; font-size: 25px;"></i>
+																				<i class="icofont-flag" style="color: red; font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', false)"></i>
 																			}
 																			@if (issue.EndDate.HasValue)
 																			{
@@ -103,16 +114,20 @@
 																			else { }
 																		</div>
 																	</li>
-																	<li class="me-2">
+																	@{
+																		var commentCount = _context.Comments.Where(c => c.IssueID == issue.Id).Count();
+																		var documentCount = _context.IssueDocument.Where(d => d.IssueID == issue.Id).Count();
+																	}
+																	<li class="me-2" style="cursor: pointer;" onclick="openCommentModal('@issue.Id')">
 																		<div class="d-flex align-items-center">
 																			<i class="icofont-ui-text-chat"></i>
-																			<span class="ms-1">5</span>
+																			<span class="ms-1" id="commentCount">@commentCount</span>
 																		</div>
 																	</li>
-																	<li>
+																	<li class="me-2" style="cursor: pointer;" onclick="openDocumentModal('@issue.Id')">
 																		<div class="d-flex align-items-center">
 																			<i class="icofont-paper-clip"></i>
-																			<span class="ms-1">5</span>
+																			<span class="ms-1" id="documentCount">@documentCount</span>
 																		</div>
 																	</li>
 																	<li>
@@ -219,11 +234,11 @@
 																		<div class="d-flex align-items-center">
 																			@if (issue.IsFlag == false)
 																			{
-																				<i class="icofont-flag" style="font-size: 25px;"></i>
+																				<i class="icofont-flag" style="font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', true)"></i>
 																			}
 																			else
 																			{
-																				<i class="icofont-flag" style="color: red; font-size: 25px;"></i>
+																				<i class="icofont-flag" style="color: red; font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', false)"></i>
 																			}
 																			@if (issue.EndDate.HasValue)
 																			{
@@ -232,18 +247,20 @@
 																			else { }
 																		</div>
 																	</li>
-																	<li class="me-2">
+																	@{
+																		var commentCount = _context.Comments.Where(c => c.IssueID == issue.Id).Count();
+																		var documentCount = _context.IssueDocument.Where(d => d.IssueID == issue.Id).Count();
+																	}
+																	<li class="me-2" style="cursor: pointer;" onclick="openCommentModal('@issue.Id')">
 																		<div class="d-flex align-items-center">
-
 																			<i class="icofont-ui-text-chat"></i>
-																			<span class="ms-1">5</span>
-
+																			<span class="ms-1" id="commentCount">@commentCount</span>
 																		</div>
 																	</li>
-																	<li>
+																	<li class="me-2" style="cursor: pointer;" onclick="openDocumentModal('@issue.Id')">
 																		<div class="d-flex align-items-center">
 																			<i class="icofont-paper-clip"></i>
-																			<span class="ms-1">5</span>
+																			<span class="ms-1" id="documentCount">@documentCount</span>
 																		</div>
 																	</li>
 																	<li>
@@ -285,7 +302,6 @@
 													</div>
 
 												</li>
-
 											}
 										}
 									</ol>
@@ -314,7 +330,7 @@
 																	}
 																	else
 																	{
-																		
+
 																		<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
 																	}
 																</div>
@@ -352,11 +368,11 @@
 																		<div class="d-flex align-items-center">
 																			@if (issue.IsFlag == false)
 																			{
-																				<i class="icofont-flag" style="font-size: 25px;"></i>
+																				<i class="icofont-flag" style="font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', true)"></i>
 																			}
 																			else
 																			{
-																				<i class="icofont-flag" style="color: red; font-size: 25px;"></i>
+																				<i class="icofont-flag" style="color: red; font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', false)"></i>
 																			}
 																			@if (issue.EndDate.HasValue)
 																			{
@@ -365,18 +381,20 @@
 																			else { }
 																		</div>
 																	</li>
-																	<li class="me-2">
+																	@{
+																		var commentCount = _context.Comments.Where(c => c.IssueID == issue.Id).Count();
+																		var documentCount = _context.IssueDocument.Where(d => d.IssueID == issue.Id).Count();
+																	}
+																	<li class="me-2" style="cursor: pointer;" onclick="openCommentModal('@issue.Id')">
 																		<div class="d-flex align-items-center">
-
 																			<i class="icofont-ui-text-chat"></i>
-																			<span class="ms-1">5</span>
-
+																			<span class="ms-1" id="commentCount">@commentCount</span>
 																		</div>
 																	</li>
-																	<li>
+																	<li class="me-2" style="cursor: pointer;" onclick="openDocumentModal('@issue.Id')">
 																		<div class="d-flex align-items-center">
 																			<i class="icofont-paper-clip"></i>
-																			<span class="ms-1">5</span>
+																			<span class="ms-1" id="documentCount">@documentCount</span>
 																		</div>
 																	</li>
 																	<li>
@@ -569,15 +587,24 @@
 							</select>
 						</div>
 
+						<!-- document -->
+						<div class="col-md-12">
+							<label for="documents" class="form-label">Documents</label>
+							<div id="IssueDocumentList">
+								<!-- Danh sách tài liệu sẽ được cập nhật bằng JavaScript -->
+							</div>
+							<div>
+								<input type="file" id="fileInput" class="form-control" multiple onchange="uploadIssueFiles(this.files)" />
+							</div>
+						</div>
+
 						<div class="row mt-2">
 							<div class="col-md-2">Show:</div>
 							<div class="col-md-2">
 								<button type="button" class="btn btn-toggle" id="commentsToggle" onclick="toggleContent('comments')">Comments</button>
-								
 							</div>
 							<div class="col-md-2">
 								<button type="button" class="btn btn-toggle" id="historyToggle" onclick="toggleContent('history')">History</button>
-								
 							</div>
 						</div>
 						<div class="row" id="commentsContent" style="display: none;">
@@ -610,6 +637,56 @@
 	</div>
 </div>
 
+<!-- Modal xác nhận xóa issue file -->
+<div class="modal fade" id="confirmIssueDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Delete</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>Are you sure you want to delete this issue document?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-danger" id="confirmIssueDeleteBtn" onclick="confirmIssueDeleteBtn()">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal hiện issue comments -->
+<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-sm-5">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="commentModalLabel">Comments</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body" id="commentModalBody">
+				<!-- Content will be dynamically populated by JavaScript -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal Popup hiện issue documents -->
+<div class="modal fade" id="documentModal" tabindex="-1" aria-labelledby="documentModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="documentModalLabel">Documents for Issue</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<!-- Content will be dynamically populated by JavaScript -->
+				<ul id="documentList" class="list-group"></ul>
+			</div>
+		</div>
+	</div>
+</div>
+
 <!-- Modal select team member-->
 <div class="modal fade" id="assigneeModal" tabindex="-1" aria-labelledby="assigneeModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
@@ -635,8 +712,92 @@
 	</div>
 </div>
 
+<!-- Modal Popup hiển thị biểu đồ burndown -->
+<div class="modal fade" id="burndownModal" tabindex="-1" aria-labelledby="burndownModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="burndownModalLabel">Burndown Chart</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<canvas id="burndownChart"></canvas>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-@* <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> *@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 
 <script src="~/js/board_script.js"></script>
+
+
+@section Scripts {
+	<script>
+		var burndownChart; // Biến lưu trữ biểu đồ
+
+		function openBurndownModal(sprintId) {
+			console.log('hello');
+			$.ajax({
+				url: '/Admin/Board/GetData',
+				method: 'Get',
+				data: { sprintId: sprintId },
+				success: function (data) {
+					// Hủy biểu đồ cũ nếu tồn tại
+					if (burndownChart != null) {
+						burndownChart.destroy();
+					}
+					// Vẽ biểu đồ mới
+					drawBurndownChart(data);
+					$('#burndownModal').modal('show');
+				},
+				error: function (xhr, status, error) {
+					console.error(error);
+				}
+			});
+		}
+
+		function drawBurndownChart(data) {
+			var ctx = document.getElementById('burndownChart').getContext('2d');
+			burndownChart = new Chart(ctx, {
+				type: 'line',
+				data: {
+					labels: data.labels,
+					datasets: [{
+						label: 'Planned Progress',
+						data: data.plannedProgress,
+						borderColor: 'blue',
+						fill: false
+					},
+					{
+						label: 'Actual Progress',
+						data: data.actualProgress,
+						borderColor: 'green',
+						fill: false
+					}]
+				},
+				options: {
+					scales: {
+						x: {
+							display: true,
+							title: {
+								display: true,
+								text: 'Date'
+							}
+						},
+						y: {
+							display: true,
+							title: {
+								display: true,
+								text: 'Story Points'
+							}
+						}
+					}
+				}
+			});
+		}
+
+	</script>
+}

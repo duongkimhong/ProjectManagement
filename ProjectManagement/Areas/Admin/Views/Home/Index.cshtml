@@ -156,6 +156,7 @@
 								<input type="file" id="fileInput" class="form-control" multiple onchange="uploadFiles(this.files)" />
 							</div>
 						</div>
+
 						<div class="mb-3">
 							<label>Team Members</label>
 							<div id="teamMembersContainer">
@@ -196,12 +197,11 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary" id="inviteButtonInModal" onclick="inviteUsers()">Invite</button>
+				<button type="button" class="btn btn-primary" id="inviteButtonInModal">Invite</button>
 			</div>
 		</div>
 	</div>
 </div>
-
 
 <!-- Modal Popup for Delete Confirmation -->
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">

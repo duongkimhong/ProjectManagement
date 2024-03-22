@@ -61,8 +61,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
         }
 
         // POST: Admin/Projects/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([FromForm] Projects projects, [FromForm] IFormFile? CoverImage, [FromForm] string? selectedUsers, [FromForm] List<IFormFile>? documents)
@@ -526,19 +524,27 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-        [HttpGet]
-        public async Task<IActionResult> GetListAccountsNotInProject(Guid projectId)
-        {
+		[HttpGet]
+		public async Task<IActionResult> GetListAccountsNotInProject(Guid projectId)
+		{
 			// Lấy danh sách các người dùng không thuộc dự án
 			var usersNotInProject = await _context.Users
-				.Where(u => !_context.TeamMembers.Any(tm => tm.UserID == u.Id && tm.Teams.ProjectID == projectId))
+				.Where(u => !_context.TeamMembers
+					.Any(tm => tm.UserID == u.Id && tm.Teams.ProjectID == projectId))
+				.Select(u => new
+				{
+					UserId = u.Id,
+					UserName = u.UserName,
+					UserImage = u.Image
+				})
 				.ToListAsync();
 
 			// Trả về danh sách các người dùng
 			return Json(usersNotInProject);
 		}
 
-        
+
+
 		[HttpPost]
 		public async Task<IActionResult> DeleteDocument(Guid documentId)
 		{
@@ -631,12 +637,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				}
 
 				return Json(new { success = true });
-	//			var projectDocuments = _context.ProjectDocument
-	//.Where(pd => pd.ProjectID == projectId)
-	//.Select(pd => pd.Documents)
-	//.ToList();
-
-	//			return PartialView("_DocumentListPartial", projectDocuments);
 			}
 			catch (Exception ex)
 			{
@@ -644,7 +644,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-		public async Task<IActionResult> AddTeamMember(Guid projectId, string selectedUser)
+		public async Task<IActionResult> AddTeamMember(Guid projectId, string selectedUsers)
 		{
 			return View();
 		}

@@ -107,7 +107,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 		// POST: Admin/Sprints/Edit/5
 		[HttpPost]
-		public async Task<IActionResult> Edit(Guid id, string name, DateTime startDate, DateTime endDate)
+		public async Task<IActionResult> Edit(Guid id, string name, DateTime startDate, DateTime endDate, string SprintGoal)
 		{
 			var sprint = await _context.Sprints.FindAsync(id);
 
@@ -116,6 +116,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				sprint.Name = name;
 				sprint.StartDate = startDate;
 				sprint.EndDate = endDate;
+				sprint.SprintGoal = SprintGoal;
 				_context.Update(sprint);
 				await _context.SaveChangesAsync();
 			}
@@ -172,7 +173,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		[HttpPost]
 		public IActionResult UpdateSprintStatus(Guid sprintId, string status)
 		{
-			var sprint = _context.Sprints.FirstOrDefault(s => s.Id == sprintId);
+			var sprint = _context.Sprints.Include(i => i.Issues).FirstOrDefault(s => s.Id == sprintId);
 			if (sprint != null && status == "Start")
 			{
 				sprint.Status = SprintStatus.Start;
@@ -182,6 +183,18 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			else if (sprint != null && status == "Complete")
 			{
 				sprint.Status = SprintStatus.Complete;
+				// Lặp qua các issue thuộc sprint
+				foreach (var issue in sprint.Issues)
+				{
+					if (issue.Status != IssueStatus.Completed)
+					{
+						var backlogSprint = _context.Sprints.FirstOrDefault(s => s.Name == "Backlog");
+						if (backlogSprint != null)
+						{
+							issue.Sprints = backlogSprint;
+						}
+					}
+				}
 				_context.SaveChanges();
 				return Json(new { success = true });
 			}

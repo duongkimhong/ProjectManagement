@@ -21,23 +21,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		//[HttpPost]
 		public async Task<IActionResult> Index(Guid id)
 		{
-			//var project = await _context.Projects
-			//		.Include(e => e.Epics)
-			//		.Include(p => p.Sprints)
-			//		.ThenInclude(s => s.Issues).ThenInclude(a => a.Assignee)
-			//		.FirstOrDefaultAsync(p => p.Id == id);
-			//if (project != null)
-			//{
-			//	var projectSprint = project.Sprints.Where(s => s.Status == SprintStatus.Start).ToList();
-			//	ViewBag.BoardSprints = projectSprint;
-
-			//	var projectEpics = project.Epics.ToList();
-			//	ViewBag.ProjectEpics = projectEpics;
-
-			//	var listSprints = project.Sprints.ToList();
-			//	ViewBag.ListSprints = listSprints;
-			//}
-
 			var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id);
 
 			if (project == null)
@@ -94,6 +77,50 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				return StatusCode(500, $"Internal server error: {ex.Message}");
 			}
+		}
+
+		public async Task<IActionResult> GetData(Guid sprintId)
+		{
+			var sprint = _context.Sprints.FirstOrDefault(s => s.Id == sprintId);
+			if (sprint == null)
+			{
+				return NotFound();
+			}
+
+			var tasks = _context.Issues.Where(i => i.SprintID == sprintId).ToList();
+			if (tasks.Count == 0)
+			{
+				return Json(new { Error = "No tasks found for this sprint" });
+			}
+
+			var startDate = sprint.StartDate.Value.Date;
+			var endDate = sprint.EndDate.Value.Date;
+
+			var labels = new List<string>();
+			var plannedProgress = new List<int>();
+			var actualProgress = new List<int>();
+
+			DateTime currentDate = startDate;
+			while (currentDate <= endDate)
+			{
+				var totalStoryPoints = tasks.Where(t => t.StartDate?.Date <= currentDate && (!t.EndDate.HasValue || t.EndDate.Value.Date >= currentDate)).Sum(t => t.StoryPoint);
+				var completedStoryPoints = tasks.Where(t => t.EndDate.HasValue && t.EndDate.Value.Date <= currentDate).Sum(t => t.StoryPoint);
+
+				labels.Add(currentDate.ToShortDateString());
+				plannedProgress.Add((int)totalStoryPoints);
+				actualProgress.Add((int)(totalStoryPoints - completedStoryPoints));
+
+				currentDate = currentDate.AddDays(1);
+			}
+
+			var burndownData = new
+			{
+				Labels = labels,
+				PlannedProgress = plannedProgress,
+				ActualProgress = actualProgress
+			};
+
+			return Json(burndownData);
 		}
 	}
 }

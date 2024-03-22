@@ -35,7 +35,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return View(await applicationDbContext.ToListAsync());
 		}
 
-
 		// GET: Admin/Issues/Create
 		public IActionResult Create()
 		{
@@ -81,7 +80,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				return NotFound();
 			}
 
-			var issue = await _context.Issues.Include(i => i.Assignee).Include(i => i.Reporter).Include(i => i.Epics).Include(i => i.Comments).ThenInclude(c => c.User)
+			var issue = await _context.Issues.Include(i => i.Assignee)
+											.Include(i => i.Reporter)
+											.Include(i => i.Epics)
+											.Include(i => i.Comments)
+												.ThenInclude(c => c.User)
+											.Include(p => p.IssueDocument)
+												.ThenInclude(pd => pd.Documents)
 				.FirstOrDefaultAsync(i => i.Id == issueId);
 			if (issue == null)
 			{
@@ -92,6 +97,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			var assigneeImage = issue.Assignee != null ? issue.Assignee.Image : null;
 			var reporterFullName = issue.Reporter != null ? issue.Reporter.FullName : null;
 			var reporterImage = issue.Reporter != null ? issue.Reporter.Image : null;
+
+			var issueDocuments = issue.IssueDocument.Select(id => new
+			{
+				DocumentId = id.DocumentID,
+				FileName = id.Documents.File,
+				DocumentType = id.Documents.DocumentType
+			});
 
 			Guid? epicId = null;
 			var epic = await _context.Epics.FirstOrDefaultAsync(e => e.Id == issue.EpicID);
@@ -131,13 +143,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 					UserId = c.UserID,
 					UserImage = c.User.Image,
 					Username = c.User.UserName
-				})
+				}),
+				IssueDocuments = issueDocuments
 			});
 		}
 
 		// POST: Admin/Issues/Edit/5
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 		[HttpPost]
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Type,StartDate,EndDate,Description,Status,Priority,IsFlag,StoryPoint,ReporterID,AssigneeID,SprintID,EpicID")] Issues issues)
@@ -229,10 +240,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-
 		// POST: Admin/Issues/Delete/5
 		[HttpPost]
-		//[ValidateAntiForgeryToken]
 		public async Task<IActionResult> DeleteConfirmed(Guid id)
 		{
 			if (_context.Issues == null)
@@ -286,7 +295,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		[HttpPost]
-		// BUG: không lấy đúng id của issue cần unlink epic
 		public async Task<IActionResult> UnlinkEpic(Guid issueId)
 		{
 			var issue = _context.Issues.Find(issueId);
@@ -496,7 +504,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
 					issue.StoryPoint = storyPoint;
 				}
 				_context.SaveChanges();
-				return Json(new { success = true });
+				//return Json(new { success = true });
+
+				//var projectSprints = await _context.Sprints.Include(s => s.Issues).ThenInclude(i => i.Assignee).Where(s => s.ProjectID == _context.Issues
+				//									.Where(i => i.Id == issueId).Select(i => i.Sprints.ProjectID).FirstOrDefault()).ToListAsync();
+				var issues = await _context.Issues.Include(i => i.Sprints).ThenInclude(s => s.Projects).FirstOrDefaultAsync(i => i.Id == issueId);
+				var projectId = issue.Sprints?.Projects?.Id;
+				var projectSprints = await _context.Sprints.Include(i => i.Issues).ThenInclude(a => a.Assignee).Where(s => s.ProjectID == projectId).ToListAsync();
+				return PartialView("_SprintsPartial", projectSprints);
 			}
 			catch (Exception ex)
 			{
@@ -522,6 +537,164 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				return StatusCode(500, $"An error occurred: {ex.Message}");
 			}
+		}
+
+		public async Task<IActionResult> UpdateIssueIsFlag(Guid issueId, bool isFlag)
+		{
+			try
+			{
+				var issue = await _context.Issues.FindAsync(issueId);
+				if (isFlag == true)
+				{
+					issue.IsFlag = true;
+				}
+				else
+				{
+					issue.IsFlag = false;
+				}
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> DeleteDocument(Guid documentId)
+		{
+			try
+			{
+				var issueDocument = _context.IssueDocument.FirstOrDefault(p => p.DocumentID == documentId);
+
+				// Kiểm tra xem projectDocument đã được tìm thấy không
+				if (issueDocument == null)
+				{
+					return NotFound();
+				}
+
+				_context.IssueDocument.Remove(issueDocument);
+
+				var document = await _context.Documents.FindAsync(documentId);
+				if (document == null)
+				{
+					return NotFound();
+				}
+
+				_context.Documents.Remove(document);
+				_context.SaveChanges();
+
+				// Xóa tệp vật lý từ hệ thống tệp
+				var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+				if (System.IO.File.Exists(filePath))
+				{
+					System.IO.File.Delete(filePath);
+				}
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateIssueFiles(Guid issueId)
+		{
+			var issue = _context.Issues.Find(issueId);
+			try
+			{
+				foreach (var file in Request.Form.Files)
+				{
+					if (file != null && file.Length > 0)
+					{
+						if (file.Length <= 10 * 1024 * 1024) // 10MB
+						{
+							string folder = "Uploads/IssueFile";
+							string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+							string filePath = Path.Combine(_environment.WebRootPath, folder, uniqueFileName);
+
+							Directory.CreateDirectory(Path.Combine(_environment.WebRootPath, folder));
+
+							using (var stream = new FileStream(filePath, FileMode.Create))
+							{
+								await file.CopyToAsync(stream);
+							}
+
+							string documentPath = "/" + folder + "/" + uniqueFileName;
+
+							var document = new Documents
+							{
+								Id = Guid.NewGuid(),
+								File = documentPath, // Lưu đường dẫn của tệp tài liệu
+								DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
+							};
+
+							_context.Add(document);
+
+							var issueDocument = new IssueDocument
+							{
+								Id = Guid.NewGuid(),
+								IssueID = issue.Id,
+								Issues = issue,
+								DocumentID = document.Id,
+								Documents = document
+							};
+							_context.Add(issueDocument);
+							_context.SaveChanges();
+						}
+						else
+						{
+							ModelState.AddModelError("Documents", "Dung lượng tệp tải lên quá lớn (tối đa 10MB).");
+							return View();
+						}
+					}
+				}
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"Internal server error: {ex.Message}"); // Trả về lỗi nếu có exception
+			}
+		}
+
+		[HttpGet]
+		public IActionResult GetIssueComments(Guid issueId)
+		{
+			var issue = _context.Issues
+				.Include(i => i.Comments)
+					.ThenInclude(c => c.User)
+				.FirstOrDefault(i => i.Id == issueId);
+
+			var comments = issue.Comments.Select(c => new
+			{
+				Id = c.Id,
+				Content = c.Content,
+				Timestamp = c.Timestamp,
+				UserId = c.UserID,
+				UserImage = c.User.Image, // Lấy avatar của user
+				Username = c.User.UserName
+			});
+
+			return Json(comments);
+		}
+
+		[HttpGet]
+		public IActionResult GetDocuments(Guid issueId)
+		{
+			var issue = _context.Issues.Include(i => i.IssueDocument).ThenInclude(id => id.Documents).FirstOrDefault(i => i.Id == issueId);
+			if (issue != null)
+			{
+				var documents = issue.IssueDocument.Select(id => new
+				{
+					FileName = id.Documents.File,
+					File = id.Documents.File
+				}).ToList();
+				return Json(documents);
+			}
+			return Json(new List<object>());
 		}
 	}
 }
