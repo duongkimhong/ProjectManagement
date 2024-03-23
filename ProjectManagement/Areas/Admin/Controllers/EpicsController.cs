@@ -24,20 +24,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			_environment = environment;
 		}
 
-		// GET: Admin/Epics
-		public async Task<IActionResult> Index()
-		{
-			var applicationDbContext = _context.Epics.Include(e => e.Reporter);
-			return View(await applicationDbContext.ToListAsync());
-		}
-
-		// GET: Admin/Epics/Create
-		public IActionResult Create()
-		{
-			ViewData["ReporterID"] = new SelectList(_context.Users, "Id", "Id");
-			return View();
-		}
-
 		// POST: Admin/Epics/Create
 		[HttpPost]
 		public async Task<IActionResult> Create(string name, string projectId)
@@ -74,7 +60,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			var epic = await _context.Epics
 								.Include(e => e.Reporter)
 								.Include(p => p.EpicDocument)
-												.ThenInclude(ed => ed.Documents)
 								.FirstOrDefaultAsync(e => e.Id == epicId);
 			
 			if (epic == null)
@@ -84,12 +69,17 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			var reporterFullName = epic.Reporter != null ? epic.Reporter.FullName : null;
 			var reporterImage = epic.Reporter != null ? epic.Reporter.Image : null;
 
-			var epicDocuments = epic.EpicDocument.Select(ed => new
+			var epicDocuments = new List<object>();
+			foreach (var document in epic.EpicDocument)
 			{
-				DocumentId = ed.DocumentID,
-				FileName = ed.Documents.File,
-				DocumentType = ed.Documents.DocumentType
-			});
+				var documentInfo = new
+				{
+					Id = document.Id,
+					FileName = document.FileName,
+					FilePath = document.FilePath
+				};
+				epicDocuments.Add(documentInfo);
+			}
 
 			return Json(new
 			{
@@ -107,60 +97,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				EpicDocument = epicDocuments
 			});
 		}
-
-		// POST: Admin/Epics/Edit/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Color,Description,Priority,StartDate,EndDate,ReporterID,SprintID")] Epics epics)
-		{
-			if (id != epics.Id)
-			{
-				return NotFound();
-			}
-
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_context.Update(epics);
-					await _context.SaveChangesAsync();
-				}
-				catch (DbUpdateConcurrencyException)
-				{
-					if (!EpicsExists(epics.Id))
-					{
-						return NotFound();
-					}
-					else
-					{
-						throw;
-					}
-				}
-				return RedirectToAction(nameof(Index));
-			}
-			ViewData["ReporterID"] = new SelectList(_context.Users, "Id", "Id", epics.ReporterID);
-			return View(epics);
-		}
-
-		// GET: Admin/Epics/Delete/5
-		public async Task<IActionResult> Delete(Guid? id)
-		{
-			if (id == null || _context.Epics == null)
-			{
-				return NotFound();
-			}
-
-			var epics = await _context.Epics
-				.Include(e => e.Reporter)
-				.FirstOrDefaultAsync(m => m.Id == id);
-			if (epics == null)
-			{
-				return NotFound();
-			}
-
-			return View(epics);
-		}
-
+		
 		// POST: Admin/Epics/Delete/5
 		[HttpPost]
 		public async Task<IActionResult> DeleteConfirmed(Guid id)
@@ -170,7 +107,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				return Problem("Entity set 'ApplicationDbContext.Epics'  is null.");
 			}
-			var epic = await _context.Epics.FindAsync(id);
+			var epic = await _context.Epics.Include(d => d.EpicDocument).FirstOrDefaultAsync(i => i.Id == id);
 
 			// Lấy danh sách các tài liệu thuộc epic
 			var epicDocuments = _context.EpicDocument.Where(ed => ed.EpicID == epic.Id).ToList();
@@ -178,16 +115,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				_context.EpicDocument.RemoveRange(epicDocuments);
 
-				var documents = _context.Documents.Where(d => epicDocuments.Select(ed => ed.DocumentID).Contains(d.Id)).ToList();
-
-				if (documents.Any())
+				if (epicDocuments.Any())
 				{
-					_context.Documents.RemoveRange(documents);
-
-					foreach (var document in documents)
+					foreach (var document in epicDocuments)
 					{
 						// Xóa tệp vật lý từ hệ thống tệp
-						var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+						var filePath = Path.Combine(_environment.WebRootPath, document.FilePath.TrimStart('/'));
 						if (System.IO.File.Exists(filePath))
 						{
 							System.IO.File.Delete(filePath);
@@ -318,9 +251,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		{
 			try
 			{
-				var epicDocument = _context.EpicDocument.FirstOrDefault(p => p.DocumentID == documentId);
+				var epicDocument = _context.EpicDocument.FirstOrDefault(p => p.Id == documentId);
 
-				// Kiểm tra xem projectDocument đã được tìm thấy không
 				if (epicDocument == null)
 				{
 					return NotFound();
@@ -328,17 +260,10 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 				_context.EpicDocument.Remove(epicDocument);
 
-				var document = await _context.Documents.FindAsync(documentId);
-				if (document == null)
-				{
-					return NotFound();
-				}
-
-				_context.Documents.Remove(document);
 				_context.SaveChanges();
 
 				// Xóa tệp vật lý từ hệ thống tệp
-				var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+				var filePath = Path.Combine(_environment.WebRootPath, epicDocument.FilePath.TrimStart('/'));
 				if (System.IO.File.Exists(filePath))
 				{
 					System.IO.File.Delete(filePath);
@@ -376,22 +301,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 							string documentPath = "/" + folder + "/" + uniqueFileName;
 
-							var document = new Documents
-							{
-								Id = Guid.NewGuid(),
-								File = documentPath, // Lưu đường dẫn của tệp tài liệu
-								DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
-							};
-
-							_context.Add(document);
-
 							var epicDocument = new EpicDocument
 							{
 								Id = Guid.NewGuid(),
+								FileName = file.FileName,
+								FilePath = documentPath,
 								EpicID = epic.Id,
-								Epics = epic,
-								DocumentID = document.Id,
-								Documents = document
+								Epics = epic
 							};
 							_context.Add(epicDocument);
 							_context.SaveChanges();

@@ -4,10 +4,11 @@
     {
         public Guid Id { get; set; }
 
+        public string? FileName { get; set; }
+
+        public string? FilePath { get; set; }
+
         public Guid? IssueID { get; set; }
         public virtual Issues? Issues { get; set; }
-
-        public Guid? DocumentID { get; set; }
-        public virtual Documents? Documents { get; set; }
     }
 }

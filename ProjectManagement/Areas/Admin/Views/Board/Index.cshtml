@@ -17,6 +17,7 @@
 		margin-right: 10px;
 	}
 </style>
+
 <div class="body d-flex py-lg-3 py-md-2">
 	<div class="container-xxl">
 		<div class="row align-items-center">
@@ -36,7 +37,7 @@
 							<div class="d-flex justify-content-between mt-0">
 								<h4 class="fw-bold">@sprint.Name</h4>
 								<div class="col-auto d-flex w-sm-100">
-									<button type="button" class="btn btn-primary btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#burndownModal" onclick="openBurndownModal('@sprint.Id')">
+									<button type="button" class="btn btn-primary btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#burndownModal" onclick="drawBurndownChart('@sprint.Id')">
 										<i class="icofont-chart-line-alt me-2 fs-6"></i>Insights
 									</button>
 								</div>
@@ -673,7 +674,7 @@
 
 <!-- Modal Popup hiện issue documents -->
 <div class="modal fade" id="documentModal" tabindex="-1" aria-labelledby="documentModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered modal-lg">
+	<div class="modal-dialog modal-dialog-centered modal-sm-6">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="documentModalLabel">Documents for Issue</h5>
@@ -714,7 +715,7 @@
 
 <!-- Modal Popup hiển thị biểu đồ burndown -->
 <div class="modal fade" id="burndownModal" tabindex="-1" aria-labelledby="burndownModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
+	<div class="modal-dialog modal-dialog-centered modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="burndownModalLabel">Burndown Chart</h5>
@@ -732,72 +733,3 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 
 <script src="~/js/board_script.js"></script>
-
-
-@section Scripts {
-	<script>
-		var burndownChart; // Biến lưu trữ biểu đồ
-
-		function openBurndownModal(sprintId) {
-			console.log('hello');
-			$.ajax({
-				url: '/Admin/Board/GetData',
-				method: 'Get',
-				data: { sprintId: sprintId },
-				success: function (data) {
-					// Hủy biểu đồ cũ nếu tồn tại
-					if (burndownChart != null) {
-						burndownChart.destroy();
-					}
-					// Vẽ biểu đồ mới
-					drawBurndownChart(data);
-					$('#burndownModal').modal('show');
-				},
-				error: function (xhr, status, error) {
-					console.error(error);
-				}
-			});
-		}
-
-		function drawBurndownChart(data) {
-			var ctx = document.getElementById('burndownChart').getContext('2d');
-			burndownChart = new Chart(ctx, {
-				type: 'line',
-				data: {
-					labels: data.labels,
-					datasets: [{
-						label: 'Planned Progress',
-						data: data.plannedProgress,
-						borderColor: 'blue',
-						fill: false
-					},
-					{
-						label: 'Actual Progress',
-						data: data.actualProgress,
-						borderColor: 'green',
-						fill: false
-					}]
-				},
-				options: {
-					scales: {
-						x: {
-							display: true,
-							title: {
-								display: true,
-								text: 'Date'
-							}
-						},
-						y: {
-							display: true,
-							title: {
-								display: true,
-								text: 'Story Points'
-							}
-						}
-					}
-				}
-			});
-		}
-
-	</script>
-}

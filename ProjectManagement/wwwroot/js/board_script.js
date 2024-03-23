@@ -212,19 +212,16 @@ function openEditModal(issueId) {
 
             // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
             response.issueDocuments.forEach(function (document) {
-                var lastSlashIndex = document.fileName.lastIndexOf('_');
-                var fileName = document.fileName.substring(lastSlashIndex + 1);
-
                 var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
                 documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
                 documentHtml += '<div class="d-flex flex-column ps-3">';
-                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
                 documentHtml += '</div>';
                 documentHtml += '</div>';
-                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
                 documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
                 documentHtml += '</a>';
-                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.id + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
                 documentHtml += '</div>';
 
                 documentList.append(documentHtml);
@@ -283,16 +280,13 @@ function openDocumentModal(issueId) {
 
             // Populate the modal with documents
             response.forEach(function (document) {
-                var lastSlashIndex = document.fileName.lastIndexOf('_');
-                var fileName = document.fileName.substring(lastSlashIndex + 1);
-
                 var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
                 documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
                 documentHtml += '<div class="d-flex flex-column ps-3">';
-                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
                 documentHtml += '</div>';
                 documentHtml += '</div>';
-                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
                 documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
                 documentHtml += '</a>'; 
                 documentHtml += '</div>';
@@ -364,24 +358,6 @@ function updateNewButton(value) {
     document.getElementById('selectedIcon').className = iconClass;
     document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
 }
-
-//function updateNewButton(type) {
-//	var issueId = id;
-//	console.log('update new button');
-//	//console.log(issueId);
-//	$.ajax({
-//		url: '/Admin/Issues/Edit',
-//		method: 'POST',
-//		data: { id: issueId },
-//		//data: { issueId: issueId, type: type },
-//		success: function (response) {
-//		},
-//		error: function (xhr, status, error) {
-//			// Xử lý lỗi nếu có
-//			console.error(error);
-//		}
-//	});
-//}
 
 // update issue type
 function updateIssueType(type, color, iconClass) {
@@ -785,6 +761,74 @@ function uploadIssueFiles(files) {
         },
         error: function (xhr, status, error) {
             console.error('File upload failed:', error);
+        }
+    });
+}
+
+
+
+
+
+var burndownChart; // Biến lưu trữ biểu đồ
+
+function openBurndownModal(sprintId) {
+    console.log('hello');
+    $.ajax({
+        url: '/Admin/Board/GetData',
+        method: 'Get',
+        data: { sprintId: sprintId },
+        success: function (data) {
+            // Hủy biểu đồ cũ nếu tồn tại
+            if (burndownChart != null) {
+                burndownChart.destroy();
+            }
+            // Vẽ biểu đồ mới
+            drawBurndownChart(data);
+            $('#burndownModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function drawBurndownChart(sprintId) {
+    $.ajax({
+        url: '/Admin/Board/BurndownChart',
+        method: 'GET',
+        data: { sprintId: sprintId },
+        success: function (response) {
+            console.log(response);
+            // Vẽ biểu đồ burndown chart bằng Chart.js
+            var ctx = document.getElementById('burndownChart').getContext('2d');
+            var burndownChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [...Array(response.remainingPlannedPoints.length).keys()].map(i => i + 1),
+                    datasets: [{
+                        label: 'Planned Tasks',
+                        data: response.remainingPlannedPoints,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Actual Tasks',
+                        data: response.remainingActualPoints,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            $('#burndownModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
         }
     });
 }

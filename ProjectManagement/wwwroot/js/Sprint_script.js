@@ -324,19 +324,17 @@ function openEditModal(issueId) {
 
             // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
             response.issueDocuments.forEach(function (document) {
-                var lastSlashIndex = document.fileName.lastIndexOf('_');
-                var fileName = document.fileName.substring(lastSlashIndex + 1);
 
                 var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
                 documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
                 documentHtml += '<div class="d-flex flex-column ps-3">';
-                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
                 documentHtml += '</div>';
                 documentHtml += '</div>';
-                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
                 documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
                 documentHtml += '</a>';
-                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.id + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
                 documentHtml += '</div>';
 
                 documentList.append(documentHtml);
@@ -1045,19 +1043,16 @@ function openEditEpicModal(epicId) {
 
             // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
             response.epicDocument.forEach(function (document) {
-                var lastSlashIndex = document.fileName.lastIndexOf('_');
-                var fileName = document.fileName.substring(lastSlashIndex + 1);
-
                 var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
                 documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
                 documentHtml += '<div class="d-flex flex-column ps-3">';
-                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
                 documentHtml += '</div>';
                 documentHtml += '</div>';
-                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
                 documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
                 documentHtml += '</a>';
-                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showEpicDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showEpicDeleteFileModal(\'' + document.id + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
                 documentHtml += '</div>';
 
                 epicDocumentList.append(documentHtml);

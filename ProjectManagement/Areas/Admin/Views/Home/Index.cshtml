@@ -28,7 +28,11 @@
 
 @{
 	var accounts = UserManager.Users.ToList();
-	var projects = _context.Projects.Where(p => p.Status != ProjectStatus.Cancelled).ToList();
+	// var projects = _context.Projects.Where(p => p.Status != ProjectStatus.Cancelled).ToList();
+	var projects = ViewBag.Projects as List<Projects>;
+	var TodoIssues = ViewBag.TodoIssues as List<Issues>;
+	var InProgressIssues = ViewBag.InProgressIssues as List<Issues>;
+	var notes = ViewBag.Top5Notes as List<Notes>;
 }
 
 <!-- Body: Body -->
@@ -43,6 +47,284 @@
 				</div>
 			</div>
 		</div> <!-- Row end  -->
+		<div class="row g-3 mb-3 row-deck">
+			<div class="col-md-12 col-lg-8 col-xl-7 col-xxl-7">
+				<div class="card">
+					<div class="card-body" style="background-color: #B4D4FF; border-radius: 5px;">
+						<h5 class="fw-bold mb-1">Assignee to me</h5>
+						<div class="row align-items-center">
+
+							<div class="col-12 col-md-5 col-lg-6 order-md-2 ">
+								<ol class="dd-list" style="padding-left: 0px;">
+									<h6>Todo</h6>
+									@foreach (var issue in TodoIssues)
+									{
+										<li class="dd-item">
+											<div class="dd-handle p-2" style="border-radius: 3px;">
+												<div class="task-info d-flex align-items-center justify-content-between">
+													<h6 style="cursor: pointer;" class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0" onclick="openEditModal('@issue.Id')">
+														@issue.Name
+													</h6>
+													<div class="task-priority d-flex flex-column align-items-center justify-content-center">
+														<div class="avatar-list avatar-list-stacked m-0">
+															@if (issue.AssigneeID == null)
+															{
+																<img class="avatar rounded-circle small-avt" src="/defaultuser.png" alt="" style="background-color: white;">
+															}
+															else
+															{
+																<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
+															}
+														</div>
+														@if (issue.Priority == Priorities.Lowest)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.Low)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.Medium)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.High)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.Highest)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
+														}
+
+													</div>
+												</div>
+												<div class="tikit-info row g-3 align-items-center">
+													<div class="col-sm-8">
+														<ul class="d-flex list-unstyled align-items-center flex-wrap">
+															<li class="me-2">
+																<div class="d-flex align-items-center">
+																	@if (issue.IsFlag == false)
+																	{
+																		<i class="icofont-flag" style="font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', true)"></i>
+																	}
+																	else
+																	{
+																		<i class="icofont-flag" style="color: red; font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', false)"></i>
+																	}
+																	@if (issue.EndDate.HasValue)
+																	{
+																		<span>@issue.EndDate.Value.ToString("dd/MM")</span>
+																	}
+																	else { }
+																</div>
+															</li>
+															@{
+																var commentCount = _context.Comments.Where(c => c.IssueID == issue.Id).Count();
+																var documentCount = _context.IssueDocument.Where(d => d.IssueID == issue.Id).Count();
+															}
+															<li class="me-2" style="cursor: pointer;" onclick="openCommentModal('@issue.Id')">
+																<div class="d-flex align-items-center">
+																	<i class="icofont-ui-text-chat"></i>
+																	<span class="ms-1" id="commentCount">@commentCount</span>
+																</div>
+															</li>
+															<li class="me-2" style="cursor: pointer;" onclick="openDocumentModal('@issue.Id')">
+																<div class="d-flex align-items-center">
+																	<i class="icofont-paper-clip"></i>
+																	<span class="ms-1" id="documentCount">@documentCount</span>
+																</div>
+															</li>
+															<li>
+																<div class="d-flex align-items-center" style="margin-left: 5px;">
+																	@if (issue.Type == IssueType.Task)
+																	{
+																		<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+																			<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+																		</span>
+																	}
+																	else if (issue.Type == IssueType.Bug)
+																	{
+																		<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+																			<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+																		</span>
+																	}
+																	else
+																	{
+																		<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+																			<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+																		</span>
+																	}
+																</div>
+															</li>
+														</ul>
+													</div>
+													<div class="col-sm text-end">
+														@if (issue.EpicID != null)
+														{
+															var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+															<div class="small text-truncate light-danger-bg py-1 px-2 rounded-1 d-inline-block fw-bold small"> @epic.Name </div>
+														}
+														else
+														{
+
+														}
+													</div>
+												</div>
+											</div>
+
+										</li>
+
+									}
+								</ol>
+							</div>
+
+							<div class="col-12 col-md-7 col-lg-6 order-md-1 px-4">
+								<ol class="dd-list" style="padding-left: 0px;">
+									<h6>In Progress</h6>
+									@foreach (var issue in InProgressIssues)
+									{
+										<li class="dd-item">
+											<div class="dd-handle p-2" style="border-radius: 3px;">
+												<div class="task-info d-flex align-items-center justify-content-between">
+													<h6 style="cursor: pointer;" class="light-success-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0" onclick="openEditModal('@issue.Id')">
+														@issue.Name
+													</h6>
+													<div class="task-priority d-flex flex-column align-items-center justify-content-center">
+														<div class="avatar-list avatar-list-stacked m-0">
+															@if (issue.AssigneeID == null)
+															{
+																<img class="avatar rounded-circle small-avt" src="/defaultuser.png" alt="" style="background-color: white;">
+															}
+															else
+															{
+																<img class="avatar rounded-circle small-avt" src="@issue.Assignee.Image" alt="" style="background-color: white;">
+															}
+														</div>
+														@if (issue.Priority == Priorities.Lowest)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.Low)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #0D1282 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.Medium)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #F0DE36 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.High)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
+														}
+														else if (issue.Priority == Priorities.Highest)
+														{
+															<span class="badge bg-warning text-end mt-2" style="background-color: #D71313 !important;">@issue.Priority</span>
+														}
+
+													</div>
+												</div>
+												<div class="tikit-info row g-3 align-items-center">
+													<div class="col-sm-8">
+														<ul class="d-flex list-unstyled align-items-center flex-wrap">
+															<li class="me-2">
+																<div class="d-flex align-items-center">
+																	@if (issue.IsFlag == false)
+																	{
+																		<i class="icofont-flag" style="font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', true)"></i>
+																	}
+																	else
+																	{
+																		<i class="icofont-flag" style="color: red; font-size: 25px; cursor: pointer;" onclick="updateIssueIsFlag('@issue.Id', false)"></i>
+																	}
+																	@if (issue.EndDate.HasValue)
+																	{
+																		<span>@issue.EndDate.Value.ToString("dd/MM")</span>
+																	}
+																	else { }
+																</div>
+															</li>
+															@{
+																var commentCount = _context.Comments.Where(c => c.IssueID == issue.Id).Count();
+																var documentCount = _context.IssueDocument.Where(d => d.IssueID == issue.Id).Count();
+															}
+															<li class="me-2" style="cursor: pointer;" onclick="openCommentModal('@issue.Id')">
+																<div class="d-flex align-items-center">
+																	<i class="icofont-ui-text-chat"></i>
+																	<span class="ms-1" id="commentCount">@commentCount</span>
+																</div>
+															</li>
+															<li class="me-2" style="cursor: pointer;" onclick="openDocumentModal('@issue.Id')">
+																<div class="d-flex align-items-center">
+																	<i class="icofont-paper-clip"></i>
+																	<span class="ms-1" id="documentCount">@documentCount</span>
+																</div>
+															</li>
+															<li>
+																<div class="d-flex align-items-center" style="margin-left: 5px;">
+																	@if (issue.Type == IssueType.Task)
+																	{
+																		<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+																			<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+																		</span>
+																	}
+																	else if (issue.Type == IssueType.Bug)
+																	{
+																		<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+																			<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+																		</span>
+																	}
+																	else
+																	{
+																		<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+																			<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+																		</span>
+																	}
+																</div>
+															</li>
+														</ul>
+													</div>
+													<div class="col-sm text-end">
+														@if (issue.EpicID != null)
+														{
+															var epic = _context.Epics.FirstOrDefault(e => e.Id == issue.EpicID);
+															<div class="small text-truncate light-danger-bg py-1 px-2 rounded-1 d-inline-block fw-bold small"> @epic.Name </div>
+														}
+														else
+														{
+
+														}
+													</div>
+												</div>
+											</div>
+
+										</li>
+									}
+								</ol>
+							</div>
+
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-12 col-lg-4 col-xl-5 col-xxl-5">
+				<div style="background-color: #FFE6E6;" class="alert p-3 mb-0 w-100" onclick="window.location.href='/Admin/Notes/Index';">
+					<h5 class="fw-bold mb-1">My notes</h5>
+					@foreach (var note in notes)
+					{
+						<div role="alert" class="alert mt-1 mb-1" style="background-color: @note.Color; font-weight: bold; border: solid 1px #C7C8CC;">
+							@note.Title
+							<span class="float-end pin-container" style="margin-right: 15px;">
+								@if (note.IsStick)
+								{
+									<i class="icofont-tack-pin pin-note" style="color: dimgray;"></i>
+								}
+							</span>
+						</div>
+					}
+				</div>
+			</div>
+		</div>
 		<div class="card mb-3">
 			<div class="card-header py-3  bg-transparent border-bottom-0">
 				<h6 class="mb-0 fw-bold ">Projects</h6>

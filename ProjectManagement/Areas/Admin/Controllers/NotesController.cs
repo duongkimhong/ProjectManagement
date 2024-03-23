@@ -22,7 +22,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
         }
 
         // GET: Admin/Notes
-        public async Task<IActionResult> Index(string id)
+        public async Task<IActionResult> Index()
         {
             // Kiểm tra xem người dùng đã đăng nhập chưa
             if (User.Identity.IsAuthenticated)

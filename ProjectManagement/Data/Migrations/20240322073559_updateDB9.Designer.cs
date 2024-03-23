@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectManagement.Models;
 
@@ -11,9 +12,11 @@ using ProjectManagement.Models;
 namespace ProjectManagement.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240322073559_updateDB9")]
+    partial class updateDB9
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -318,10 +321,33 @@ namespace ProjectManagement.Data.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("ProjectManagement.Models.Documents", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("File")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Documents");
+                });
+
             modelBuilder.Entity("ProjectManagement.Models.EpicDocument", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DocumentID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DocumentsId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("EpicID")
@@ -330,13 +356,9 @@ namespace ProjectManagement.Data.Migrations
                     b.Property<Guid?>("EpicsId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("DocumentsId");
 
                     b.HasIndex("EpicsId");
 
@@ -419,11 +441,11 @@ namespace ProjectManagement.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("DocumentID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("DocumentsId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("IssueID")
                         .HasColumnType("uniqueidentifier");
@@ -432,6 +454,8 @@ namespace ProjectManagement.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DocumentsId");
 
                     b.HasIndex("IssuesId");
 
@@ -471,12 +495,6 @@ namespace ProjectManagement.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ActualEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ActualStartDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("AssigneeID")
                         .HasColumnType("nvarchar(450)");
@@ -916,9 +934,15 @@ namespace ProjectManagement.Data.Migrations
 
             modelBuilder.Entity("ProjectManagement.Models.EpicDocument", b =>
                 {
+                    b.HasOne("ProjectManagement.Models.Documents", "Documents")
+                        .WithMany("EpicDocument")
+                        .HasForeignKey("DocumentsId");
+
                     b.HasOne("ProjectManagement.Models.Epics", "Epics")
                         .WithMany("EpicDocument")
                         .HasForeignKey("EpicsId");
+
+                    b.Navigation("Documents");
 
                     b.Navigation("Epics");
                 });
@@ -949,9 +973,15 @@ namespace ProjectManagement.Data.Migrations
 
             modelBuilder.Entity("ProjectManagement.Models.IssueDocument", b =>
                 {
+                    b.HasOne("ProjectManagement.Models.Documents", "Documents")
+                        .WithMany("IssueDocument")
+                        .HasForeignKey("DocumentsId");
+
                     b.HasOne("ProjectManagement.Models.Issues", "Issues")
                         .WithMany("IssueDocument")
                         .HasForeignKey("IssuesId");
+
+                    b.Navigation("Documents");
 
                     b.Navigation("Issues");
                 });
@@ -1138,6 +1168,13 @@ namespace ProjectManagement.Data.Migrations
                     b.Navigation("ToUser");
 
                     b.Navigation("UserRoom");
+                });
+
+            modelBuilder.Entity("ProjectManagement.Models.Documents", b =>
+                {
+                    b.Navigation("EpicDocument");
+
+                    b.Navigation("IssueDocument");
                 });
 
             modelBuilder.Entity("ProjectManagement.Models.Epics", b =>

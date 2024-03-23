@@ -1,5 +1,4 @@
 ﻿//Bắt sự kiện nút Create project
-// Bắt sự kiện click vào nút "Create"
 document.getElementById('myProjectTable').addEventListener('change', function () {
     var selectedValue = this.value;
     if (selectedValue === 'create') {
@@ -110,7 +109,7 @@ function updateSelectedUsersInput() {
 
 // Hàm hiển thị tệp đã chọn
 function displaySelectedFile() {
-    var selectedFile = $('#fileInput').prop('files')[0];
+    var selectedFile = $('#imgFileInput').prop('files')[0];
     var fileName = selectedFile.name;
     $('#fileName').val(fileName);
 }

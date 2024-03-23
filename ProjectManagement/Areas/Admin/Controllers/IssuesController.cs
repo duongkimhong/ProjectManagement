@@ -28,21 +28,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			_environment = environment;
 		}
 
-		// GET: Admin/Issues
-		public async Task<IActionResult> Index()
-		{
-			var applicationDbContext = _context.Issues.Include(i => i.Assignee).Include(i => i.Reporter);
-			return View(await applicationDbContext.ToListAsync());
-		}
-
-		// GET: Admin/Issues/Create
-		public IActionResult Create()
-		{
-			ViewData["AssigneeID"] = new SelectList(_context.Users, "Id", "Id");
-			ViewData["ReporterID"] = new SelectList(_context.Users, "Id", "Id");
-			return View();
-		}
-
 		// POST: Admin/Issues/Create
 		[HttpPost]
 		public async Task<IActionResult> Create(string name, string type, string projectId)
@@ -86,8 +71,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 											.Include(i => i.Comments)
 												.ThenInclude(c => c.User)
 											.Include(p => p.IssueDocument)
-												.ThenInclude(pd => pd.Documents)
-				.FirstOrDefaultAsync(i => i.Id == issueId);
+										.FirstOrDefaultAsync(i => i.Id == issueId);
 			if (issue == null)
 			{
 				return NotFound();
@@ -98,12 +82,17 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			var reporterFullName = issue.Reporter != null ? issue.Reporter.FullName : null;
 			var reporterImage = issue.Reporter != null ? issue.Reporter.Image : null;
 
-			var issueDocuments = issue.IssueDocument.Select(id => new
+			var issueDocuments = new List<object>();
+			foreach (var document in issue.IssueDocument)
 			{
-				DocumentId = id.DocumentID,
-				FileName = id.Documents.File,
-				DocumentType = id.Documents.DocumentType
-			});
+				var documentInfo = new
+				{
+					Id = document.Id,
+					FileName = document.FileName,
+					FilePath = document.FilePath
+				};
+				issueDocuments.Add(documentInfo);
+			}
 
 			Guid? epicId = null;
 			var epic = await _context.Epics.FirstOrDefaultAsync(e => e.Id == issue.EpicID);
@@ -146,41 +135,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				}),
 				IssueDocuments = issueDocuments
 			});
-		}
-
-		// POST: Admin/Issues/Edit/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Type,StartDate,EndDate,Description,Status,Priority,IsFlag,StoryPoint,ReporterID,AssigneeID,SprintID,EpicID")] Issues issues)
-		{
-			if (id != issues.Id)
-			{
-				return NotFound();
-			}
-
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_context.Update(issues);
-					await _context.SaveChangesAsync();
-				}
-				catch (DbUpdateConcurrencyException)
-				{
-					if (!IssuesExists(issues.Id))
-					{
-						return NotFound();
-					}
-					else
-					{
-						throw;
-					}
-				}
-				return RedirectToAction(nameof(Index));
-			}
-			ViewData["AssigneeID"] = new SelectList(_context.Users, "Id", "Id", issues.AssigneeID);
-			ViewData["ReporterID"] = new SelectList(_context.Users, "Id", "Id", issues.ReporterID);
-			return View(issues);
 		}
 
 		public async Task<IActionResult> updateIssueSprint(Guid issueId, Guid sprintId)
@@ -248,7 +202,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				return Problem("Entity set 'ApplicationDbContext.Issues'  is null.");
 			}
-			var issues = await _context.Issues.FindAsync(id);
+			var issues = await _context.Issues.Include(d => d.IssueDocument).FirstOrDefaultAsync(i => i.Id == id);
 
 			// Lấy danh sách các tài liệu thuộc dự án
 			var issueDocuments = _context.IssueDocument.Where(pd => pd.IssueID == issues.Id).ToList();
@@ -257,20 +211,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				_context.IssueDocument.RemoveRange(issueDocuments);
 
-				var documents = _context.Documents.Where(d => issueDocuments.Select(pd => pd.DocumentID).Contains(d.Id)).ToList();
-
-				if (documents.Any())
+				foreach (var document in issueDocuments)
 				{
-					_context.Documents.RemoveRange(documents);
-
-					foreach (var document in documents)
+					// Xóa tệp vật lý từ hệ thống tệp
+					var filePath = Path.Combine(_environment.WebRootPath, document.FilePath.TrimStart('/'));
+					if (System.IO.File.Exists(filePath))
 					{
-						// Xóa tệp vật lý từ hệ thống tệp
-						var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
-						if (System.IO.File.Exists(filePath))
-						{
-							System.IO.File.Delete(filePath);
-						}
+						System.IO.File.Delete(filePath);
 					}
 				}
 			}
@@ -349,10 +296,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				else if (status == "In Progress")
 				{
 					issue.Status = IssueStatus.InProgress;
+					issue.ActualStartDate = DateTime.Now;
 				}
 				else
 				{
 					issue.Status = IssueStatus.Completed;
+					issue.ActualEndDate = DateTime.Now;
 				}
 				_context.SaveChanges();
 				return Json(new { success = true });
@@ -566,27 +515,18 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		{
 			try
 			{
-				var issueDocument = _context.IssueDocument.FirstOrDefault(p => p.DocumentID == documentId);
+				var issueDocument = _context.IssueDocument.FirstOrDefault(p => p.Id == documentId);
 
-				// Kiểm tra xem projectDocument đã được tìm thấy không
 				if (issueDocument == null)
 				{
 					return NotFound();
 				}
 
 				_context.IssueDocument.Remove(issueDocument);
-
-				var document = await _context.Documents.FindAsync(documentId);
-				if (document == null)
-				{
-					return NotFound();
-				}
-
-				_context.Documents.Remove(document);
 				_context.SaveChanges();
 
 				// Xóa tệp vật lý từ hệ thống tệp
-				var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+				var filePath = Path.Combine(_environment.WebRootPath, issueDocument.FilePath.TrimStart('/'));
 				if (System.IO.File.Exists(filePath))
 				{
 					System.IO.File.Delete(filePath);
@@ -624,22 +564,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 							string documentPath = "/" + folder + "/" + uniqueFileName;
 
-							var document = new Documents
-							{
-								Id = Guid.NewGuid(),
-								File = documentPath, // Lưu đường dẫn của tệp tài liệu
-								DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
-							};
-
-							_context.Add(document);
-
 							var issueDocument = new IssueDocument
 							{
 								Id = Guid.NewGuid(),
+								FileName = file.FileName,
+								FilePath = documentPath,
 								IssueID = issue.Id,
 								Issues = issue,
-								DocumentID = document.Id,
-								Documents = document
 							};
 							_context.Add(issueDocument);
 							_context.SaveChanges();
@@ -656,7 +587,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 			catch (Exception ex)
 			{
-				return StatusCode(500, $"Internal server error: {ex.Message}"); // Trả về lỗi nếu có exception
+				return StatusCode(500, $"Internal server error: {ex.Message}");
 			}
 		}
 
@@ -684,15 +615,21 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		[HttpGet]
 		public IActionResult GetDocuments(Guid issueId)
 		{
-			var issue = _context.Issues.Include(i => i.IssueDocument).ThenInclude(id => id.Documents).FirstOrDefault(i => i.Id == issueId);
+			var issue = _context.Issues.Include(i => i.IssueDocument).FirstOrDefault(i => i.Id == issueId);
 			if (issue != null)
 			{
-				var documents = issue.IssueDocument.Select(id => new
+				var issueDocuments = new List<object>();
+				foreach (var document in issue.IssueDocument)
 				{
-					FileName = id.Documents.File,
-					File = id.Documents.File
-				}).ToList();
-				return Json(documents);
+					var documentInfo = new
+					{
+						Id = document.Id,
+						FileName = document.FileName,
+						FilePath = document.FilePath
+					};
+					issueDocuments.Add(documentInfo);
+				}
+				return Json(issueDocuments);
 			}
 			return Json(new List<object>());
 		}

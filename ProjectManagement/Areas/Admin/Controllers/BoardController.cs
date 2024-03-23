@@ -79,48 +79,80 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-		public async Task<IActionResult> GetData(Guid sprintId)
+		public class BurndownData
 		{
-			var sprint = _context.Sprints.FirstOrDefault(s => s.Id == sprintId);
+			public List<double> PlannedStoryPoints { get; set; }
+			public List<double> ActualStoryPoints { get; set; }
+			public List<double> RemainingPlannedPoints { get; set; }
+			public List<double> RemainingActualPoints { get; set; }
+		}
+
+		public IActionResult BurndownChart(Guid sprintId)
+		{
+			// Lấy sprint từ ID được cung cấp
+			var sprint = _context.Sprints
+				.Include(s => s.Issues)
+				.FirstOrDefault(s => s.Id == sprintId);
+
 			if (sprint == null)
 			{
 				return NotFound();
 			}
 
-			var tasks = _context.Issues.Where(i => i.SprintID == sprintId).ToList();
-			if (tasks.Count == 0)
+			// Tính toán dữ liệu cho burndown chart dựa trên story points
+			var plannedStoryPoints = new List<double>();
+			var actualStoryPoints = new List<double>();
+
+			// Lặp qua từng ngày của sprint
+			DateTime currentDate = sprint.StartDate ?? DateTime.Now;
+			while (currentDate <= (sprint.EndDate ?? DateTime.Now))
 			{
-				return Json(new { Error = "No tasks found for this sprint" });
-			}
+				// Đếm tổng số story points dự kiến và thực tế cho ngày hiện tại
+				double plannedPoints = sprint.Issues.Where(i => i.EndDate?.Date == currentDate.Date)
+												 .Sum(i => i.StoryPoint ?? 0); // Chuyển đổi double? sang double và xử lý trường hợp null
+				double actualPoints = sprint.Issues.Where(i => i.Status == IssueStatus.Completed && i.ActualEndDate != null && i.ActualEndDate.Value.Date == currentDate.Date)
+													.Sum(i => i.StoryPoint ?? 0); // Chuyển đổi double? sang double và xử lý trường hợp null
 
-			var startDate = sprint.StartDate.Value.Date;
-			var endDate = sprint.EndDate.Value.Date;
+				plannedStoryPoints.Add(plannedPoints);
+				actualStoryPoints.Add(actualPoints);
 
-			var labels = new List<string>();
-			var plannedProgress = new List<int>();
-			var actualProgress = new List<int>();
-
-			DateTime currentDate = startDate;
-			while (currentDate <= endDate)
-			{
-				var totalStoryPoints = tasks.Where(t => t.StartDate?.Date <= currentDate && (!t.EndDate.HasValue || t.EndDate.Value.Date >= currentDate)).Sum(t => t.StoryPoint);
-				var completedStoryPoints = tasks.Where(t => t.EndDate.HasValue && t.EndDate.Value.Date <= currentDate).Sum(t => t.StoryPoint);
-
-				labels.Add(currentDate.ToShortDateString());
-				plannedProgress.Add((int)totalStoryPoints);
-				actualProgress.Add((int)(totalStoryPoints - completedStoryPoints));
-
+				// Di chuyển tới ngày tiếp theo
 				currentDate = currentDate.AddDays(1);
 			}
 
-			var burndownData = new
+			// Tính tổng số story points dự kiến và thực tế
+			double totalPlannedStoryPoints = plannedStoryPoints.Sum();
+			double totalActualStoryPoints = actualStoryPoints.Sum();
+
+			// Tính toán giá trị cho remainingPlannedPoints và remainingActualPoints
+			var remainingPlannedPoints = new List<double>();
+			var remainingActualPoints = new List<double>();
+
+			double remainingPlanned = totalPlannedStoryPoints;
+			double remainingActual = totalActualStoryPoints;
+
+			for (int i = 0; i < plannedStoryPoints.Count; i++)
 			{
-				Labels = labels,
-				PlannedProgress = plannedProgress,
-				ActualProgress = actualProgress
+				remainingPlanned -= plannedStoryPoints[i];
+				remainingActual -= actualStoryPoints[i];
+
+				remainingPlannedPoints.Add(remainingPlanned);
+				remainingActualPoints.Add(remainingActual);
+			}
+
+			// Gửi dữ liệu dưới dạng JSON về view
+			var responseData = new
+			{
+				PlannedStoryPoints = plannedStoryPoints,
+				ActualStoryPoints = actualStoryPoints,
+				RemainingPlannedPoints = remainingPlannedPoints,
+				RemainingActualPoints = remainingActualPoints
 			};
 
-			return Json(burndownData);
+			return Json(responseData);
 		}
 	}
 }
+
+
+
