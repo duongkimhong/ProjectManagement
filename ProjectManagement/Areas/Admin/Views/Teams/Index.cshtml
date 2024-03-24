@@ -1,0 +1,173 @@
+﻿@model IEnumerable<ProjectManagement.Models.Teams>
+
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+	.avatar-cell {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		overflow: hidden;
+	}
+
+	.avatar-image {
+		width: 100%;
+		height: auto;
+		object-fit: cover;
+	}
+
+	.modal-custom-size {
+		max-width: 800px;
+	}
+</style>
+
+<div class="body d-flex py-lg-3 py-md-2">
+	<div class="container-xxl">
+		<div class="row align-items-center">
+			<div class="border-0 mb-4">
+				<div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
+					<h3 class="fw-bold mb-0">Project Teams</h3>
+					<div class="col-auto d-flex w-sm-100">
+						<button type="button" class="btn btn-dark btn-set-task w-sm-100" onclick="openCreateTeamModal()">
+							<i class="icofont-plus-circle me-2 fs-6"></i>Create team
+						</button>
+					</div>
+				</div>
+			</div>
+		</div> <!-- Row end  -->
+		<div class="row clearfix g-3">
+			<div class="col-sm-12">
+				<div class="card mb-3">
+					<div class="card-body">
+						<table id="myProjectTable" class="table table-hover align-middle mb-0" style="width:100%">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Name</th>
+									<th>Project</th>
+									<th>Members</th>
+									<th>Invite</th>
+									<th>Delete</th>
+								</tr>
+							</thead>
+							<tbody>
+								@{
+									int i = 1;
+								}
+								@foreach (var team in Model)
+								{
+									<tr>
+										<th>
+											@i
+										</th>
+										<td onclick="editTeamName('@team.Id', '@team.Name')">
+											@team.Name
+										</td>
+										<td>
+											@team.Projects.Name
+										</td>
+										<td id="teamMembersTd" onclick="openTeamMembersModal('@team.Id')" style="cursor: pointer;">
+											<div class="avatar-list avatar-list-stacked px-3">
+												@foreach (var member in team.TeamMembers)
+												{
+													if (member.Status == MemberStatus.Active)
+													{
+														<img class="avatar rounded-circle sm" src="@member.User.Image" alt="">
+													}
+												}
+											</div>
+										</td>
+										<td>
+											<button type="submit" class="btn btn-outline-info" onclick="populateAccountsList('@team.Id')">Invite</button>
+										</td>
+										<td>
+											<button type="button" class="btn btn-outline-secondary deleterow"><i class="icofont-ui-delete text-danger"></i></button>
+										</td>
+									</tr>
+									i++;
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div><!-- Row End -->
+	</div>
+</div>
+
+<!-- Modal -->
+<!-- Modal danh sách team members -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-custom-size modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="memberModalLabel">Thông tin thành viên</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body" id="memberModalBody">
+				<!-- Thông tin thành viên sẽ được hiển thị ở đây -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal danh sách account có thể mời -->
+<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="inviteModalLabel">Invite Members</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<!-- List of accounts to invite -->
+				<div id="accountsList">
+					<!-- Use JavaScript to populate this list -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary" onclick="inviteMembers()">Invite</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal tạo team mới -->
+<div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="createTeamModalLabel">Create New Team</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="createTeamForm">
+					<div class="mb-3">
+						<label for="teamName" class="form-label">Team Name</label>
+						<input type="text" class="form-control" id="teamName" required>
+					</div>
+					<div class="mb-3">
+						<label for="projectSelect" class="form-label">Select Project</label>
+						<select class="form-select" id="projectSelect" required>
+							<!-- Populate options dynamically using JavaScript -->
+						</select>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary" onclick="createTeam()">Create Team</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script src="~/js/teams_script.js"></script>

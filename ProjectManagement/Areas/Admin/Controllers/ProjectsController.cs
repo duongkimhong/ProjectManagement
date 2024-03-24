@@ -98,10 +98,11 @@ namespace ProjectManagement.Areas.Admin.Controllers
                     var teamMember = new TeamMembers
                     {
                         Id = Guid.NewGuid(),
-                        Role = "Member", // Đặt vai trò cho thành viên
+                        Role = "Member",
                         TeamID = team.Id,
                         Teams = team,
-                        UserID = userId // Liên kết thành viên với user
+                        UserID = userId,
+						Status = MemberStatus.Pending
                     };
                     _context.Add(teamMember);
                 }
@@ -197,7 +198,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 						UserId = member.UserID,
 						UserName = member.User?.UserName,
 						Role = member.Role,
-                        Image = member.User.Image
+                        Image = member.User.Image,
+						Status = member.Status
 					};
 					teamMembers.Add(memberInfo);
 				}

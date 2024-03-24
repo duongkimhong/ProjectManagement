@@ -78,18 +78,16 @@ function openEditModal(projectId) {
 
             // Tạo dòng tiêu đề của bảng
             var headerRow = $('<tr></tr>');
-            headerRow.append('<th>Hình ảnh</th>');
-            headerRow.append('<th>Tên</th>');
-            headerRow.append('<th>Vai trò</th>');
-            headerRow.append('<th>#</th>');
+            headerRow.append('<th>Avatar</th>');
+            headerRow.append('<th>Username</th>');
+            headerRow.append('<th>Role</th>');
+            headerRow.append('<th>Status</th>');
             table.append(headerRow);
 
             // Hiển thị thông tin của các thành viên
             response.teamMembers.forEach(function (member) {
-                // Tạo một dòng mới cho mỗi thành viên
                 var row = $('<tr></tr>');
 
-                // Tạo một thẻ div để chứa hình ảnh và đặt class là 'avatar-container'
                 var imageCell = $('<td><div class="avatar-container"><img src="' + member.image + '" alt="' + member.userName + '" class="avatar"></div></td>');
 
                 row.append(imageCell);
@@ -100,16 +98,29 @@ function openEditModal(projectId) {
                 var roleCell = $('<td>' + member.role + '</td>');
                 row.append(roleCell);
 
+                var statusBadge = $('<span class="badge"></span>');
+                if (member.status === 0) {
+                    statusBadge.addClass('bg-warning text-white');
+                    statusBadge.text('Pending');
+                } else if (member.status === 1) {
+                    statusBadge.addClass('bg-success text-white');
+                    statusBadge.text('Active');
+                } else if (member.status === 2) {
+                    statusBadge.addClass('bg-danger text-white');
+                    statusBadge.text('Blocked');
+                }
+                statusBadge.text(member.status);
+                var statusCell = $('<td></td>').append(statusBadge);
+                row.append(statusCell);
+
                 table.append(row);
             });
 
-            // Thêm bảng vào phần tử có id là 'teamMembersContainer'
             $('#teamMembersContainer').append(table);
 
             var documentList = $('#documentList');
-            documentList.empty(); // Xóa nội dung cũ trước khi thêm mới
+            documentList.empty();
 
-            // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
             response.projectDocuments.forEach(function (document) {
                 var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
                 documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';

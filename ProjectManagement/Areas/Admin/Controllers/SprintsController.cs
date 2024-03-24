@@ -46,6 +46,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			var teamMembers = await _context.Teams
 				.Where(t => t.ProjectID == id)
 				.SelectMany(t => t.TeamMembers)
+				.Where(tm => tm.Status != MemberStatus.Blocked && tm.Status != MemberStatus.Pending)
 				.Select(tm => new
 				{
 					userId = tm.User.Id,
