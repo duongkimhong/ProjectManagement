@@ -36,24 +36,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
                         Problem("Entity set 'ApplicationDbContext.Projects'  is null.");
         }
 
-        // GET: Admin/Projects/Details/5
-        public async Task<IActionResult> Details(Guid? id)
-        {
-            if (id == null || _context.Projects == null)
-            {
-                return NotFound();
-            }
-
-            var projects = await _context.Projects
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (projects == null)
-            {
-                return NotFound();
-            }
-
-            return View(projects);
-        }
-
         // GET: Admin/Projects/Create
         public IActionResult Create()
         {
@@ -61,8 +43,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
         }
 
         // POST: Admin/Projects/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([FromForm] Projects projects, [FromForm] IFormFile? CoverImage, [FromForm] string? selectedUsers, [FromForm] List<IFormFile>? documents)
@@ -118,10 +98,11 @@ namespace ProjectManagement.Areas.Admin.Controllers
                     var teamMember = new TeamMembers
                     {
                         Id = Guid.NewGuid(),
-                        Role = "Member", // Đặt vai trò cho thành viên
+                        Role = "Member",
                         TeamID = team.Id,
                         Teams = team,
-                        UserID = userId // Liên kết thành viên với user
+                        UserID = userId,
+						Status = MemberStatus.Pending
                     };
                     _context.Add(teamMember);
                 }
@@ -150,24 +131,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
                             // Cập nhật đường dẫn đến tệp tải lên
                             string documentPath = "/" + folder + "/" + uniqueFileName;
 
-                            // Lưu thông tin về tài liệu vào bảng Documents
-                            var document = new Documents
-                            {
-                                Id = Guid.NewGuid(),
-                                File = documentPath, // Lưu đường dẫn của tệp tài liệu
-                                DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
-                            };
-
-                            _context.Add(document);
-
                             // Tạo liên kết giữa project và document
                             var projectDocument = new ProjectDocument
                             {
                                 Id = Guid.NewGuid(),
+								FileName = file.FileName,
+								FilePath = documentPath,
                                 ProjectID = projects.Id,
-                                Projects = projects,
-                                DocumentID = document.Id,
-                                Documents = document
+                                Projects = projects
                             };
                             _context.Add(projectDocument);
                         }
@@ -208,8 +179,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				.Include(p => p.Teams)
 					.ThenInclude(t => t.TeamMembers)
 						.ThenInclude(tm => tm.User)
-				.Include(p => p.ProjectDocument)
-			        .ThenInclude(pd => pd.Documents)
+					.Include(p => p.ProjectDocument)
 				.FirstOrDefaultAsync(p => p.Id == projectId);
 
 			if (project == null)
@@ -228,19 +198,23 @@ namespace ProjectManagement.Areas.Admin.Controllers
 						UserId = member.UserID,
 						UserName = member.User?.UserName,
 						Role = member.Role,
-                        Image = member.User.Image
+                        Image = member.User.Image,
+						Status = member.Status
 					};
 					teamMembers.Add(memberInfo);
 				}
 			}
-
-			// Lấy danh sách tài liệu của dự án và đưa vào danh sách JSON
-			var projectDocuments = project.ProjectDocument.Select(pd => new
+			var projectDocuments = new List<object>();
+			foreach(var document in project.ProjectDocument)
 			{
-				DocumentId = pd.DocumentID,
-				FileName = pd.Documents.File,
-				DocumentType = pd.Documents.DocumentType
-			});
+				var documentInfo = new
+				{
+					Id = document.Id,
+					FileName = document.FileName,
+					FilePath = document.FilePath
+				};
+				projectDocuments.Add(documentInfo);
+			}
 
 			// Xây dựng object JSON chứa thông tin cần thiết từ dữ liệu lấy được
 			var responseData = new
@@ -270,7 +244,9 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
             // Truy vấn dự án cần xóa, bao gồm cả các liên kết với bảng ProjectDocument
             var project = await _context.Projects
-                .Include(p => p.ProjectDocument).ThenInclude(t => t.Documents)
+				.Include(s => s.Sprints)
+				.Include(e => e.Epics)
+                .Include(p => p.ProjectDocument)
                 .Include(p => p.Teams)
                     .ThenInclude(t => t.TeamMembers)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -302,25 +278,16 @@ namespace ProjectManagement.Areas.Admin.Controllers
                     // Xóa liên kết từ bảng ProjectDocument
                     _context.ProjectDocument.RemoveRange(projectDocuments);
 
-                    // Lấy danh sách các tài liệu từ bảng Documents
-                    var documents = _context.Documents.Where(d => projectDocuments.Select(pd => pd.DocumentID).Contains(d.Id)).ToList();
-
-                    if (documents.Any())
-                    {
-                        // Xóa các tài liệu từ bảng Documents
-                        _context.Documents.RemoveRange(documents);
-
-                        // Lặp qua từng tài liệu để xóa tệp vật lý
-                        foreach (var document in documents)
-                        {
-                            // Xóa tệp vật lý từ hệ thống tệp
-                            var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
-                            if (System.IO.File.Exists(filePath))
-                            {
-                                System.IO.File.Delete(filePath);
-                            }
-                        }
-                    }
+					// Lặp qua từng tài liệu để xóa tệp vật lý
+					foreach (var document in projectDocuments)
+					{
+						// Xóa tệp vật lý từ hệ thống tệp
+						var filePath = Path.Combine(_environment.WebRootPath, document.FilePath.TrimStart('/'));
+						if (System.IO.File.Exists(filePath))
+						{
+							System.IO.File.Delete(filePath);
+						}
+					}
                 }
 
                 // Xóa các thành viên trong các nhóm dự án
@@ -357,7 +324,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
                 _context.Projects.Remove(project);
 
                 // Thực hiện lưu thay đổi vào cơ sở dữ liệu
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
 
                 // Chuyển hướng đến trang chính sau khi xóa thành công
                 return RedirectToAction("Index", "Home", new { area = "Admin" });
@@ -526,45 +493,42 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-        [HttpGet]
-        public async Task<IActionResult> GetListAccountsNotInProject(Guid projectId)
-        {
+		[HttpGet]
+		public async Task<IActionResult> GetListAccountsNotInProject(Guid projectId)
+		{
 			// Lấy danh sách các người dùng không thuộc dự án
 			var usersNotInProject = await _context.Users
-				.Where(u => !_context.TeamMembers.Any(tm => tm.UserID == u.Id && tm.Teams.ProjectID == projectId))
+				.Where(u => !_context.TeamMembers
+					.Any(tm => tm.UserID == u.Id && tm.Teams.ProjectID == projectId))
+				.Select(u => new
+				{
+					UserId = u.Id,
+					UserName = u.UserName,
+					UserImage = u.Image
+				})
 				.ToListAsync();
 
 			// Trả về danh sách các người dùng
 			return Json(usersNotInProject);
 		}
 
-        
 		[HttpPost]
 		public async Task<IActionResult> DeleteDocument(Guid documentId)
 		{
             try
             {
-				var projectDocument = _context.ProjectDocument.FirstOrDefault(p => p.DocumentID == documentId);
+				var projectDocument = _context.ProjectDocument.FirstOrDefault(p => p.Id == documentId);
 
-				// Kiểm tra xem projectDocument đã được tìm thấy không
 				if (projectDocument == null)
 				{
 					return NotFound();
 				}
 
-				_context.ProjectDocument.Remove(projectDocument);
-
-				var document = await _context.Documents.FindAsync(documentId);
-                if (document == null)
-                {
-                    return NotFound();
-                }
-
-                _context.Documents.Remove(document);
+				_context.ProjectDocument.Remove(projectDocument);;
                 _context.SaveChanges();
 
                 // Xóa tệp vật lý từ hệ thống tệp
-                var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
+                var filePath = Path.Combine(_environment.WebRootPath, projectDocument.FilePath.TrimStart('/'));
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);
@@ -602,22 +566,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 
 							string documentPath = "/" + folder + "/" + uniqueFileName;
 
-							var document = new Documents
-							{
-								Id = Guid.NewGuid(),
-								File = documentPath, // Lưu đường dẫn của tệp tài liệu
-								DocumentType = DocumentType.Project // Đặt loại tài liệu là của project
-							};
-
-							_context.Add(document);
-
 							var projectDocument = new ProjectDocument
 							{
 								Id = Guid.NewGuid(),
+								FileName = file.FileName,
+								FilePath = documentPath,
 								ProjectID = project.Id,
 								Projects = project,
-								DocumentID = document.Id,
-								Documents = document
 							};
 							_context.Add(projectDocument);
 							_context.SaveChanges();
@@ -631,12 +586,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				}
 
 				return Json(new { success = true });
-	//			var projectDocuments = _context.ProjectDocument
-	//.Where(pd => pd.ProjectID == projectId)
-	//.Select(pd => pd.Documents)
-	//.ToList();
-
-	//			return PartialView("_DocumentListPartial", projectDocuments);
 			}
 			catch (Exception ex)
 			{
@@ -644,7 +593,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-		public async Task<IActionResult> AddTeamMember(Guid projectId, string selectedUser)
+		public async Task<IActionResult> AddTeamMember(Guid projectId, string selectedUsers)
 		{
 			return View();
 		}

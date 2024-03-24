@@ -51,7 +51,6 @@ namespace ProjectManagement.Models
         public DbSet<ProjectManagement.Models.Activities> Activities { get; set; } = default!;
         public DbSet<ProjectManagement.Models.CalendarEvent> CalendarEvent { get; set; } = default!;
         public DbSet<ProjectManagement.Models.Comments> Comments { get; set; } = default!;
-        public DbSet<ProjectManagement.Models.Documents> Documents { get; set; } = default!;
         public DbSet<ProjectManagement.Models.EpicDocument> EpicDocument { get; set; } = default!;
         public DbSet<ProjectManagement.Models.EpicHistory> EpicHistory { get; set; } = default!;
         public DbSet<ProjectManagement.Models.Epics> Epics { get; set; } = default!;

@@ -149,7 +149,7 @@ function handleEpicKeyPress(event) {
 }
 
 var id;
-
+//var editIssueId;
 $(document).ready(function () {
     $('.close').click(function () {
         $('#editIssueModal').modal('hide');
@@ -165,7 +165,6 @@ function openEditModal(issueId) {
         success: function (response) {
             originalDescription = response.Description;
             id = response.id;
-
             console.log(response);
 
             // Xử lý phản hồi từ máy chủ và điền thông tin vào form chỉnh sửa
@@ -297,7 +296,6 @@ function openEditModal(issueId) {
                     break;
             }
 
-
             // Sắp xếp các comment theo thời gian
             response.comments.sort(function (a, b) {
                 return new Date(b.timestamp) - new Date(a.timestamp);
@@ -319,6 +317,27 @@ function openEditModal(issueId) {
                     '</div>';
                     
                 $('#commentsContent').append(commentHtml);
+            });
+
+            var documentList = $('#IssueDocumentList');
+            documentList.empty(); // Xóa nội dung cũ trước khi thêm mới
+
+            // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
+            response.issueDocuments.forEach(function (document) {
+
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.id + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                documentList.append(documentHtml);
             });
 
             // Hiển thị modal popup
@@ -498,6 +517,7 @@ $(document).ready(function () {
         var name = $(this).data('name');
         var startDate = new Date($(this).data('start-date'));
         var endDate = new Date($(this).data('end-date'));
+        var sprintGoal = $(this).data('sprint-goal');
 
         startDate.setDate(startDate.getDate() + 1);
         endDate.setDate(endDate.getDate() + 1);
@@ -507,6 +527,7 @@ $(document).ready(function () {
         $('#sprintNameInput').val(name);
         $('#startDateInput').val(startDate.toISOString().split('T')[0]);
         $('#endDateInput').val(endDate.toISOString().split('T')[0]); // Chuyển đổi về định dạng YYYY-MM-DD
+        $('#sprintGoalInput').val(sprintGoal);
         //console.log(pj_id);
         // Show modal
         $('#editSprintModal').modal('show');
@@ -523,20 +544,22 @@ $(document).ready(function () {
         var sprintName = $('#sprintNameInput').val();
         var startDate = $('#startDateInput').val();
         var endDate = $('#endDateInput').val();
+        var sprintGoal = $('#sprintGoalInput').val();
 
         // Tạo object JSON chứa các giá trị
         var formData = {
             Id: sprintId,
             Name: sprintName,
             StartDate: startDate,
-            EndDate: endDate
+            EndDate: endDate,
+            SprintGoal: sprintGoal
         };
 
         // Gửi dữ liệu form qua Ajax
         $.ajax({
             url: '/Admin/Sprints/Edit',
             method: 'POST',
-            data: formData, // Gửi object JSON
+            data: formData,
             success: function (response) {
                 window.location.reload();
             },
@@ -547,13 +570,21 @@ $(document).ready(function () {
     });
 });
 
-function startSprint(sprintId, status) {
+function showConfirmationModal(sprintId) {
+    $('#confirmModal').modal('show');
+
+    $('#confirmButton').off('click').on('click', function () {
+        updateSprintStatus(sprintId, "Complete");
+    });
+}
+
+function updateSprintStatus(sprintId, status) {
     $.ajax({
         type: "POST",
         url: "/Admin/Sprints/UpdateSprintStatus",
         data: { sprintId: sprintId, status: status },
         success: function (response) {
-
+            location.reload();
         },
         error: function () {
 
@@ -808,15 +839,15 @@ function updateIssueDescription() {
 }
 
 // update issue startDate
-var startDateInput = document.getElementById("issueStartDate");
-startDateInput.addEventListener("blur", function () {
-    var startDateValue = startDateInput.value;
-    console.log(startDateValue); // Kiểm tra xem giá trị ngày đã được lấy đúng chưa
+var issueStartDateInput = document.getElementById("issueStartDate");
+issueStartDateInput.addEventListener("blur", function () {
+    var issueStartDateValue = issueStartDateInput.value;
+    console.log(issueStartDateValue);
 
     $.ajax({
         url: '/Admin/Issues/UpdateIssueStartDate',
         method: 'POST',
-        data: { issueId: id, date: startDateValue },
+        data: { issueId: id, date: issueStartDateValue },
         success: function (response) {
             //location.reload();
         },
@@ -827,15 +858,15 @@ startDateInput.addEventListener("blur", function () {
 });
 
 // update issue endDate
-var endDateInput = document.getElementById("issueEndDate");
-endDateInput.addEventListener("blur", function () {
-    var endDateValue = endDateInput.value;
-    console.log(endDateValue);
+var issueEndDateInput = document.getElementById("issueEndDate");
+issueEndDateInput.addEventListener("blur", function () {
+    var issueEndDateValue = issueEndDateInput.value;
+    console.log(issueEndDateInput);
 
     $.ajax({
         url: '/Admin/Issues/UpdateIssueEndDate',
         method: 'POST',
-        data: { issueId: id, date: endDateValue },
+        data: { issueId: id, date: issueEndDateValue },
         success: function (response) {
             //location.reload();
         },
@@ -854,6 +885,7 @@ $('#issueStoryPoint').blur(function () {
         method: 'POST',
         data: { issueId: id, storyPoint: storyPoint },
         success: function (response) {
+            $('#sprintsContainer').html(response);
         },
         error: function (xhr, status, error) {
             console.error(error);
@@ -905,13 +937,38 @@ function updateIssuePriority() {
         });
 }
 
+// update issue assignee
 function updateAssignee(userId) {
     $.ajax({
         url: '/Admin/Issues/UpdateIssueAssignee',
         method: 'POST',
         data: { issueId: id, userId: userId },
         success: function (response) {
+            updateIssueAssigneeImage(id);
+            $('#assigneeModal').modal('hide');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+function updateIssueAssigneeImage(issueId) {
+    $.ajax({
+        url: '/Admin/Issues/Edit',
+        method: 'GET',
+        data: { issueId: issueId },
+        success: function (response) {
+            console.log('success');
+            var assigneeImageSrc = response.assignee !== null && response.assignee.image !== null
+                ? response.assignee.image
+                : '/defaultuser.png';
 
+            var assigneeImageElement = document.getElementById('assigneeImage');
+            if (assigneeImageElement) {
+                assigneeImageElement.src = assigneeImageSrc;
+            } else {
+                console.error("Assignee image element not found");
+            }
         },
         error: function (xhr, status, error) {
             console.error(error);
@@ -980,6 +1037,26 @@ function openEditEpicModal(epicId) {
             } else {
                 console.error("Reporter image element not found");
             }
+
+            var epicDocumentList = $('#EpicDocumentList');
+            epicDocumentList.empty(); // Xóa nội dung cũ trước khi thêm mới
+
+            // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
+            response.epicDocument.forEach(function (document) {
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showEpicDeleteFileModal(\'' + document.id + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                epicDocumentList.append(documentHtml);
+            });
         },
         error: function (xhr, status, error) {
             console.error(error);
@@ -1154,3 +1231,176 @@ $('#deleteEpicButton').on('click', function () {
     });
     $('#confirmDeleteEpicModal').modal('hide');
 });
+
+// update issue document
+var selectedIssueDocumentId;
+function showIssueDeleteFileModal(issueDocumentId) {
+    // Hiển thị modal xác nhận xóa
+    $('#confirmIssueDeleteModal').modal('show');
+
+    // Gán documentId cho biến selectedDocumentId để sử dụng trong hàm confirmDeleteBtn
+    selectedIssueDocumentId = issueDocumentId;
+    console.log(issueDocumentId);
+    console.log(selectedIssueDocumentId);
+}
+
+function confirmIssueDeleteBtn() {
+    $.ajax({
+        url: '/Admin/Issues/DeleteDocument',
+        method: 'POST',
+        data: { documentId: selectedIssueDocumentId },
+        success: function () {
+            $('#confirmIssueDeleteModal').modal('hide');
+            updateIssueDocumentList();
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function updateIssueDocumentList() {
+    $.ajax({
+        url: '/Admin/Issues/Edit',
+        method: 'GET',
+        data: { issueId: id },
+        success: function (response) {
+            var issueDocumentList = $('#IssueDocumentList');
+            issueDocumentList.empty();
+            response.issueDocuments.forEach(function (document) {
+                var lastSlashIndex = document.fileName.lastIndexOf('_');
+                var fileName = document.fileName.substring(lastSlashIndex + 1);
+
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                issueDocumentList.append(documentHtml);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function uploadIssueFiles(files) {
+    var formData = new FormData();
+    var issueId = id;
+
+    formData.append("issueId", issueId);
+
+    for (var i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    $.ajax({
+        url: '/Admin/Issues/UpdateIssueFiles',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            updateIssueDocumentList()
+        },
+        error: function (xhr, status, error) {
+            console.error('File upload failed:', error);
+        }
+    });
+}
+
+// update epic document
+var selectedEpicDocumentId;
+function showEpicDeleteFileModal(epicDocumentId) {
+    // Hiển thị modal xác nhận xóa
+    $('#confirmEpicDeleteModal').modal('show');
+    
+    selectedEpicDocumentId = epicDocumentId;
+    console.log(epicDocumentId);
+    console.log(selectedEpicDocumentId);
+}
+
+function confirmEpicDeleteBtn() {
+    console.log('clicked');
+    $.ajax({
+        url: '/Admin/Epics/DeleteDocument',
+        method: 'POST',
+        data: { documentId: selectedEpicDocumentId },
+        success: function () {
+            console.log('success');
+            $('#confirmEpicDeleteModal').modal('hide');
+            updateEpicDocumentList();
+            console.log(selectedEpicDocumentId);
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function updateEpicDocumentList() {
+    $.ajax({
+        url: '/Admin/Epics/Edit',
+        method: 'GET',
+        data: { epicId: epicEditId },
+        success: function (response) {
+            var documentList = $('#EpicDocumentList');
+            documentList.empty();
+            response.epicDocument.forEach(function (document) {
+                var lastSlashIndex = document.fileName.lastIndexOf('_');
+                var fileName = document.fileName.substring(lastSlashIndex + 1);
+
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showEpicDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                documentList.append(documentHtml);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function uploadEpicFiles(files) {
+    var formData = new FormData();
+    var epicId = epicEditId;
+
+    formData.append("epicId", epicId);
+
+    for (var i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    $.ajax({
+        url: '/Admin/Epics/UpdateEpicFiles',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            updateEpicDocumentList()
+        },
+        error: function (xhr, status, error) {
+            console.error('File upload failed:', error);
+        }
+    });
+}
+

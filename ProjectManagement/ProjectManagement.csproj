@@ -33,6 +33,8 @@
     <Folder Include="Areas\Admin\Models\" />
     <Folder Include="Areas\Admin\Views\Shared\Components\" />
     <Folder Include="mailssave\" />
+    <Folder Include="wwwroot\Uploads\IssueFile\" />
+    <Folder Include="wwwroot\Uploads\EpicFile\" />
     <Folder Include="wwwroot\Uploads\ProjectFile\" />
     <Folder Include="wwwroot\Uploads\ProjectIcon\" />
   </ItemGroup>

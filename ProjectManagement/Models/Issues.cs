@@ -19,6 +19,10 @@ namespace ProjectManagement.Models
 
         public DateTime? EndDate { get; set;}
 
+        public DateTime? ActualStartDate { get; set; }
+
+        public DateTime? ActualEndDate { get; set; }
+
         public string? Description { get; set; }
 
         public IssueStatus? Status { get; set; }

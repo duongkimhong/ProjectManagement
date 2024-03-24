@@ -9,13 +9,13 @@
         public Guid? TeamID { get; set; }
         public virtual Teams? Teams { get; set; }
 
-        public MembetStatus Status { get; set; }
+        public MemberStatus Status { get; set; }
 
         public string? UserID { get; set; }
         public virtual ApplicationUser? User { get; set; }
     }
 
-    public enum MembetStatus
+    public enum MemberStatus
     {
         Pending,
         Active,

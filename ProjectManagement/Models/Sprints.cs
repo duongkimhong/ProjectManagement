@@ -14,6 +14,8 @@ namespace ProjectManagement.Models
 
         public DateTime? EndDate { get; set; }
 
+        public string? SprintGoal { get; set; }
+
         public Guid? ProjectID { get; set; }
         public virtual Projects? Projects { get; set; }
 

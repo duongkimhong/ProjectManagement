@@ -1,4 +1,4 @@
-﻿@* @model IEnumerable<ProjectManagement.Models.Sprints> *@
+﻿
 @inject ApplicationDbContext _context
 @{
 	ViewData["Title"] = "Index";
@@ -94,7 +94,6 @@
 				<div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
 					<h3 class="fw-bold mb-0">Backlog</h3>
 					<div class="col-auto d-flex w-sm-100">
-
 						<button type="button" class="btn btn-primary btn-set-task w-sm-100" data-bs-toggle="modal" data-bs-target="#anotherModal">
 							<i class="icofont-chart-line-alt me-2 fs-6"></i>Insights
 						</button>
@@ -137,7 +136,7 @@
 									@if (item.Issues != null && item.Issues.Any())
 									{
 										<ul style="padding: 0px;">
-
+											<div id="issueContainer">
 											@foreach (var issue in item.Issues)
 											{
 												<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" data-issue-id="@issue.Id" id="@issue.Id" draggable="true" ondragstart="drag(event)">
@@ -240,7 +239,7 @@
 													</div>
 												</div>
 											}
-
+											</div>
 											<!-- Menu popup -->
 											<div id="contextMenu" class="custom-menu" style="display: none;">
 												<ul>
@@ -259,7 +258,7 @@
 									}
 									else
 									{
-										<p class="me-2">No issues found for this sprint</p>
+										<p class="me-2 d-flex justify-content-center">No issues found for this sprint</p>
 									}
 								</div>
 
@@ -309,7 +308,8 @@
 											 data-id="@item.Id"
 											 data-name="@item.Name"
 											 data-start-date="@item.StartDate"
-											 data-end-date="@item.EndDate">
+											 data-end-date="@item.EndDate"
+											data-sprint-goal="@item.SprintGoal">
 											<h6 class="mb-0 fw-bold">@item.Name</h6>
 											<span style="color: gray; margin-left: 10px;">(@($"{item.StartDate:dd/MM/yyyy} - {item.EndDate:dd/MM/yyyy}"))</span>
 										</div>
@@ -327,15 +327,15 @@
 											<span>
 												@if (item.Status == null)
 												{
-													<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Start')">Start Sprint</button>
+													<button class="btn btn-primary" onclick="updateSprintStatus('@item.Id', 'Start')">Start Sprint</button>
 												}
 												else if (item.Status == SprintStatus.Start)
 												{
-													<button class="btn btn-primary" onclick="startSprint('@item.Id', 'Complete')">Complete Sprint</button>
+													<button class="btn btn-primary" onclick="showConfirmationModal('@item.Id')">Complete Sprint</button>
 												}
 												else
 												{
-													<button class="btn btn-primary">Sprint completed</button>
+													<button class="btn btn-primary" disabled>Sprint completed</button>
 												}
 											</span>
 										</div>
@@ -468,7 +468,7 @@
 									}
 									else
 									{
-										<p class="me-2">No issues found for this sprint</p>
+										<p class="me-2 d-flex justify-content-center">No issues found for this sprint</p>
 									}
 								</div>
 							</div>
@@ -552,7 +552,10 @@
 						<label for="endDate" class="form-label">End Date</label>
 						<input type="date" class="form-control" id="endDate" name="EndDate">
 					</div>
-
+					<div class="mb-3">
+						<label class="form-label">Sprint goal</label>
+						<textarea class="form-control" id="sprintGoal" name="SprintGoal"></textarea>
+					</div>
 					<button type="submit" class="btn btn-primary">Create</button>
 				</form>
 			</div>
@@ -637,14 +640,13 @@
 
 						<!-- startdate endate -->
 						<div class="col-md-6">
-							<label for="issueStartDate" class="form-label">Start Date</label>
+							<label class="form-label">Start Date</label>
 							<input type="date" class="form-control" id="issueStartDate" name="issueStartDate">
 						</div>
 						<div class="col-md-6">
-							<label for="issueEndDate" class="form-label">End Date</label>
+							<label class="form-label">End Date</label>
 							<input type="date" class="form-control" id="issueEndDate" name="issueEndDate">
 						</div>
-
 						<!-- assignee, reporter, story point -->
 						<div class="col-md-2 d-flex align-items-center justify-content-center">
 							<label class="form-label">Assignee</label>
@@ -695,6 +697,17 @@
 							</select>
 						</div>
 
+						<!-- document -->
+						<div class="col-md-12">
+							<label for="documents" class="form-label">Documents</label>
+							<div id="IssueDocumentList">
+								<!-- Danh sách tài liệu sẽ được cập nhật bằng JavaScript -->
+							</div>
+							<div>
+								<input type="file" id="fileInput" class="form-control" multiple onchange="uploadIssueFiles(this.files)" />
+							</div>
+						</div>
+
 						<div class="row mt-2">
 							<div class="col-md-2">Show:</div>
 							<div class="col-md-2">
@@ -731,7 +744,7 @@
 	</div>
 </div>
 
-<!-- Modal -->
+<!-- Modal danh sách các account chưa thuộc project -->
 <div class="modal fade" id="assigneeModal" tabindex="-1" aria-labelledby="assigneeModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content">
@@ -779,6 +792,10 @@
 						<label for="endDateInput" class="form-label">End Date</label>
 						<input type="date" class="form-control" id="endDateInput" name="EndDate">
 					</div>
+					<div class="mb-6">
+						<label class="form-label">Sprint goal</label>
+						<textarea class="form-control" id="sprintGoalInput" name="SprintGoal"></textarea>
+					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						<button type="button" class="btn btn-primary" id="saveChangesBtn">Save changes</button>
@@ -786,6 +803,25 @@
 				</form>
 			</div>
 
+		</div>
+	</div>
+</div>
+
+<!-- Modal Popup xác nhận hoàn thành sprint -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="confirmModalLabel">Confirmation</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				Are you sure you want to complete the sprint? This action will move any incomplete issues to the Product Backlog.
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="confirmButton">Confirm</button>
+			</div>
 		</div>
 	</div>
 </div>
@@ -804,6 +840,25 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button id="deleteIssueButton" type="button" class="btn btn-danger">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal xác nhận xóa issue file -->
+<div class="modal fade" id="confirmIssueDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Delete</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>Are you sure you want to delete this issue document?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-danger" id="confirmIssueDeleteBtn" onclick="confirmIssueDeleteBtn()">Delete</button>
 			</div>
 		</div>
 	</div>
@@ -869,6 +924,17 @@
 							<input type="date" class="form-control" id="epicEndDate" name="epicEndDate">
 						</div>
 
+						<!-- document -->
+						<div class="col-md-12">
+							<label for="documents" class="form-label">Documents</label>
+							<div id="EpicDocumentList">
+								<!-- Danh sách tài liệu sẽ được cập nhật bằng JavaScript -->
+							</div>
+							<div>
+								<input type="file" id="fileInput" class="form-control" multiple onchange="uploadEpicFiles(this.files)" />
+							</div>
+						</div>
+
 						<!-- history -->
 						<div class="row">
 							<div class="col-md-2">Show:</div>
@@ -905,6 +971,25 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button id="deleteEpicButton" type="button" class="btn btn-danger">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal xác nhận xóa epic file -->
+<div class="modal fade" id="confirmEpicDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Delete</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>Are you sure you want to delete this epic document?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-danger" id="confirmEpicDeleteBtn" onclick="confirmEpicDeleteBtn()">Delete</button>
 			</div>
 		</div>
 	</div>

@@ -15,7 +15,6 @@ function drop(event) {
     event.target.appendChild(document.getElementById(data));
 }
 
-
 function drag(event) {
     event.dataTransfer.setData("issueId", event.target.id);
 }
@@ -205,10 +204,32 @@ function openEditModal(issueId) {
 
                 // Thêm commentHtml vào phần tử có id là 'commentsContent'
                 $('#commentsContent').append(commentHtml);
+                $('#commentCount').text(response.comments.length);
+            });
+
+            var documentList = $('#IssueDocumentList');
+            documentList.empty(); // Xóa nội dung cũ trước khi thêm mới
+
+            // Lặp qua danh sách tài liệu và tạo thẻ HTML cho mỗi tài liệu
+            response.issueDocuments.forEach(function (document) {
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.id + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                documentList.append(documentHtml);
             });
 
             // Hiển thị modal popup
             $('#editIssueModal').modal('show');
+            $('#commentCount').text(response.length);
         },
         error: function (xhr, status, error) {
             // Xử lý lỗi nếu có
@@ -216,6 +237,72 @@ function openEditModal(issueId) {
         }
     });
 }
+
+function openCommentModal(issueId) {
+    $.ajax({
+        url: '/Admin/Issues/GetIssueComments',
+        method: 'GET',
+        data: { issueId: issueId },
+        success: function (response) {
+            console.log(response);
+            $('#commentModalBody').empty();
+
+            response.forEach(function (comment) {
+                var userImage = comment.userImage ? comment.userImage : '/default-avatar.png';
+                var commentHtml = '<div class="comment-item">' +
+                    '    <img class="user-avatar" width="30" height="30" src="' + userImage + '" alt="User Avatar">' +
+                    '    <div class="comment-content">' +
+                    '        <p class="mb-1">' + comment.content + '</p>' +
+                    '        <p class="text-muted mb-0">' + comment.username + ' - ' + new Date(comment.timestamp).toLocaleString() + '</p>' +
+                    '    </div>' +
+                    '</div>';
+                $('#commentModalBody').append(commentHtml);
+            });
+
+            $('#commentModal').modal('show');
+            
+        },
+        error: function () {
+            console.error('Failed to fetch comments.');
+        }
+    });
+}
+
+function openDocumentModal(issueId) {
+    // Call AJAX to get the list of documents for the issue
+    $.ajax({
+        url: '/Admin/Issues/GetDocuments',
+        method: 'GET',
+        data: { issueId: issueId },
+        success: function (response) {
+            // Clear existing documents in the modal
+            $('#documentList').empty();
+
+            // Populate the modal with documents
+            response.forEach(function (document) {
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + document.fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.filePath + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>'; 
+                documentHtml += '</div>';
+
+                $('#documentList').append(documentHtml);
+            });
+
+            // Show the document modal
+            $('#documentModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
 function showAssigneeList() {
     // Mở modal
     $('#assigneeModal').modal('show');
@@ -271,24 +358,6 @@ function updateNewButton(value) {
     document.getElementById('selectedIcon').className = iconClass;
     document.getElementById('newSelectedItemButton').style.backgroundColor = backgroundColor;
 }
-
-//function updateNewButton(type) {
-//	var issueId = id;
-//	console.log('update new button');
-//	//console.log(issueId);
-//	$.ajax({
-//		url: '/Admin/Issues/Edit',
-//		method: 'POST',
-//		data: { id: issueId },
-//		//data: { issueId: issueId, type: type },
-//		success: function (response) {
-//		},
-//		error: function (xhr, status, error) {
-//			// Xử lý lỗi nếu có
-//			console.error(error);
-//		}
-//	});
-//}
 
 // update issue type
 function updateIssueType(type, color, iconClass) {
@@ -505,13 +574,53 @@ $('#issueStoryPoint').blur(function () {
     });
 });
 
+// update issue assignee
 function updateAssignee(userId) {
     $.ajax({
         url: '/Admin/Issues/UpdateIssueAssignee',
         method: 'POST',
         data: { issueId: id, userId: userId },
         success: function (response) {
+            updateIssueAssigneeImage(id);
+            $('#assigneeModal').modal('hide');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+function updateIssueAssigneeImage(issueId) {
+    $.ajax({
+        url: '/Admin/Issues/Edit',
+        method: 'GET',
+        data: { issueId: issueId },
+        success: function (response) {
+            console.log('success');
+            var assigneeImageSrc = response.assignee !== null && response.assignee.image !== null
+                ? response.assignee.image
+                : '/defaultuser.png';
 
+            var assigneeImageElement = document.getElementById('assigneeImage');
+            if (assigneeImageElement) {
+                assigneeImageElement.src = assigneeImageSrc;
+            } else {
+                console.error("Assignee image element not found");
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+// update issue isFlag
+function updateIssueIsFlag(issueId, isFlag) {
+    $.ajax({
+        url: '/Admin/Issues/UpdateIssueIsFlag',
+        method: 'POST',
+        data: { issueId: issueId, isFlag: isFlag },
+        success: function (response) {
+            location.reload();
         },
         error: function (xhr, status, error) {
             console.error(error);
@@ -569,4 +678,157 @@ function saveComment() {
 
 function cancelComment() {
     // Xử lý hủy comment nếu cần
+}
+
+// update issue document
+var selectedIssueDocumentId;
+function showIssueDeleteFileModal(issueDocumentId) {
+    // Hiển thị modal xác nhận xóa
+    $('#confirmIssueDeleteModal').modal('show');
+
+    // Gán documentId cho biến selectedDocumentId để sử dụng trong hàm confirmDeleteBtn
+    selectedIssueDocumentId = issueDocumentId;
+    console.log(issueDocumentId);
+    console.log(selectedIssueDocumentId);
+}
+
+function confirmIssueDeleteBtn() {
+    $.ajax({
+        url: '/Admin/Issues/DeleteDocument',
+        method: 'POST',
+        data: { documentId: selectedIssueDocumentId },
+        success: function () {
+            $('#confirmIssueDeleteModal').modal('hide');
+            updateIssueDocumentList();
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function updateIssueDocumentList() {
+    $.ajax({
+        url: '/Admin/Issues/Edit',
+        method: 'GET',
+        data: { issueId: id },
+        success: function (response) {
+            var issueDocumentList = $('#IssueDocumentList');
+            issueDocumentList.empty();
+            response.issueDocuments.forEach(function (document) {
+                var lastSlashIndex = document.fileName.lastIndexOf('_');
+                var fileName = document.fileName.substring(lastSlashIndex + 1);
+
+                var documentHtml = '<div class="col-12 py-2 d-flex align-items-center">';
+                documentHtml += '<div class="d-flex ms-3 align-items-center flex-fill">';
+                documentHtml += '<div class="d-flex flex-column ps-3">';
+                documentHtml += '<h6 class="fw-bold mb-0 small-14">' + fileName + '</h6>';
+                documentHtml += '</div>';
+                documentHtml += '</div>';
+                documentHtml += '<a href="' + document.fileName + '" download>';
+                documentHtml += '<button type="button" class="btn light-danger-bg text-end">Download</button>';
+                documentHtml += '</a>';
+                documentHtml += '<button type="button" style="margin-left: 5px;" class="btn light-danger-bg text-end delete-document-btn" onclick="showIssueDeleteFileModal(\'' + document.documentId + '\')"><i class="icofont-ui-delete text-danger"></i></button>';
+                documentHtml += '</div>';
+
+                issueDocumentList.append(documentHtml);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function uploadIssueFiles(files) {
+    var formData = new FormData();
+    var issueId = id;
+
+    formData.append("issueId", issueId);
+
+    for (var i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    $.ajax({
+        url: '/Admin/Issues/UpdateIssueFiles',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            updateIssueDocumentList()
+        },
+        error: function (xhr, status, error) {
+            console.error('File upload failed:', error);
+        }
+    });
+}
+
+
+
+
+
+var burndownChart; // Biến lưu trữ biểu đồ
+
+function openBurndownModal(sprintId) {
+    console.log('hello');
+    $.ajax({
+        url: '/Admin/Board/GetData',
+        method: 'Get',
+        data: { sprintId: sprintId },
+        success: function (data) {
+            // Hủy biểu đồ cũ nếu tồn tại
+            if (burndownChart != null) {
+                burndownChart.destroy();
+            }
+            // Vẽ biểu đồ mới
+            drawBurndownChart(data);
+            $('#burndownModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
+function drawBurndownChart(sprintId) {
+    $.ajax({
+        url: '/Admin/Board/BurndownChart',
+        method: 'GET',
+        data: { sprintId: sprintId },
+        success: function (response) {
+            console.log(response);
+            // Vẽ biểu đồ burndown chart bằng Chart.js
+            var ctx = document.getElementById('burndownChart').getContext('2d');
+            var burndownChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [...Array(response.remainingPlannedPoints.length).keys()].map(i => i + 1),
+                    datasets: [{
+                        label: 'Planned Tasks',
+                        data: response.remainingPlannedPoints,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Actual Tasks',
+                        data: response.remainingActualPoints,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            $('#burndownModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
 }

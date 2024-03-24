@@ -110,7 +110,7 @@
 					</li>
 
 					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
+						<a class="m-link" asp-area="Admin" asp-controller="Teams" asp-action="Index">
 							<i class="icofont-users-social"></i> <span>TeamMembers</span></span>
 						</a>
 					</li>
@@ -144,6 +144,7 @@
 					<div class="container-xxl">
 
 						<!-- header rightbar icon -->
+
 						<div class="h-right d-flex align-items-center mr-5 mr-lg-0 order-1">
 							<div class="d-flex">
 								<a class="nav-link text-primary collapsed" href="help.html" title="Get Help">
@@ -297,7 +298,7 @@
 
 	<!--Modals-->
 
-	<!-- Modal -->
+	<!-- Modal for create -->
 	<div class="modal fade" id="createProjectModal" tabindex="-1" aria-labelledby="createProjectModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
@@ -315,10 +316,10 @@
 						<div class="form-group">
 							<label for="CoverImage" class="control-label">Hình ảnh</label>
 							<div class="input-group">
-								<input for="CoverImage" name="CoverImage" type="file" class="form-control" id="fileInput" style="display: none;" accept="image/*" onchange="displaySelectedFile()" />
+								<input for="CoverImage" name="CoverImage" type="file" class="form-control" id="imgFileInput" style="display: none;" accept="image/*" onchange="displaySelectedFile()" />
 								<input type="text" class="form-control" readonly id="fileName" />
 								<div class="input-group-append">
-									<button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('fileInput').click();">Chọn tệp</button>
+									<button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('imgFileInput').click();">Chọn tệp</button>
 								</div>
 							</div>
 							<div class="mt-2 text-center">

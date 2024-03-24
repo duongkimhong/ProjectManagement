@@ -28,22 +28,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			_environment = environment;
 		}
 
-		// GET: Admin/Issues
-		public async Task<IActionResult> Index()
-		{
-			var applicationDbContext = _context.Issues.Include(i => i.Assignee).Include(i => i.Reporter);
-			return View(await applicationDbContext.ToListAsync());
-		}
-
-
-		// GET: Admin/Issues/Create
-		public IActionResult Create()
-		{
-			ViewData["AssigneeID"] = new SelectList(_context.Users, "Id", "Id");
-			ViewData["ReporterID"] = new SelectList(_context.Users, "Id", "Id");
-			return View();
-		}
-
 		// POST: Admin/Issues/Create
 		[HttpPost]
 		public async Task<IActionResult> Create(string name, string type, string projectId)
@@ -81,8 +65,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				return NotFound();
 			}
 
-			var issue = await _context.Issues.Include(i => i.Assignee).Include(i => i.Reporter).Include(i => i.Epics).Include(i => i.Comments).ThenInclude(c => c.User)
-				.FirstOrDefaultAsync(i => i.Id == issueId);
+			var issue = await _context.Issues.Include(i => i.Assignee)
+											.Include(i => i.Reporter)
+											.Include(i => i.Epics)
+											.Include(i => i.Comments)
+												.ThenInclude(c => c.User)
+											.Include(p => p.IssueDocument)
+										.FirstOrDefaultAsync(i => i.Id == issueId);
 			if (issue == null)
 			{
 				return NotFound();
@@ -92,6 +81,18 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			var assigneeImage = issue.Assignee != null ? issue.Assignee.Image : null;
 			var reporterFullName = issue.Reporter != null ? issue.Reporter.FullName : null;
 			var reporterImage = issue.Reporter != null ? issue.Reporter.Image : null;
+
+			var issueDocuments = new List<object>();
+			foreach (var document in issue.IssueDocument)
+			{
+				var documentInfo = new
+				{
+					Id = document.Id,
+					FileName = document.FileName,
+					FilePath = document.FilePath
+				};
+				issueDocuments.Add(documentInfo);
+			}
 
 			Guid? epicId = null;
 			var epic = await _context.Epics.FirstOrDefaultAsync(e => e.Id == issue.EpicID);
@@ -131,45 +132,9 @@ namespace ProjectManagement.Areas.Admin.Controllers
 					UserId = c.UserID,
 					UserImage = c.User.Image,
 					Username = c.User.UserName
-				})
+				}),
+				IssueDocuments = issueDocuments
 			});
-		}
-
-		// POST: Admin/Issues/Edit/5
-		// To protect from overposting attacks, enable the specific properties you want to bind to.
-		// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Type,StartDate,EndDate,Description,Status,Priority,IsFlag,StoryPoint,ReporterID,AssigneeID,SprintID,EpicID")] Issues issues)
-		{
-			if (id != issues.Id)
-			{
-				return NotFound();
-			}
-
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_context.Update(issues);
-					await _context.SaveChangesAsync();
-				}
-				catch (DbUpdateConcurrencyException)
-				{
-					if (!IssuesExists(issues.Id))
-					{
-						return NotFound();
-					}
-					else
-					{
-						throw;
-					}
-				}
-				return RedirectToAction(nameof(Index));
-			}
-			ViewData["AssigneeID"] = new SelectList(_context.Users, "Id", "Id", issues.AssigneeID);
-			ViewData["ReporterID"] = new SelectList(_context.Users, "Id", "Id", issues.ReporterID);
-			return View(issues);
 		}
 
 		public async Task<IActionResult> updateIssueSprint(Guid issueId, Guid sprintId)
@@ -229,17 +194,15 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-
 		// POST: Admin/Issues/Delete/5
 		[HttpPost]
-		//[ValidateAntiForgeryToken]
 		public async Task<IActionResult> DeleteConfirmed(Guid id)
 		{
 			if (_context.Issues == null)
 			{
 				return Problem("Entity set 'ApplicationDbContext.Issues'  is null.");
 			}
-			var issues = await _context.Issues.FindAsync(id);
+			var issues = await _context.Issues.Include(d => d.IssueDocument).FirstOrDefaultAsync(i => i.Id == id);
 
 			// Lấy danh sách các tài liệu thuộc dự án
 			var issueDocuments = _context.IssueDocument.Where(pd => pd.IssueID == issues.Id).ToList();
@@ -248,20 +211,13 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				_context.IssueDocument.RemoveRange(issueDocuments);
 
-				var documents = _context.Documents.Where(d => issueDocuments.Select(pd => pd.DocumentID).Contains(d.Id)).ToList();
-
-				if (documents.Any())
+				foreach (var document in issueDocuments)
 				{
-					_context.Documents.RemoveRange(documents);
-
-					foreach (var document in documents)
+					// Xóa tệp vật lý từ hệ thống tệp
+					var filePath = Path.Combine(_environment.WebRootPath, document.FilePath.TrimStart('/'));
+					if (System.IO.File.Exists(filePath))
 					{
-						// Xóa tệp vật lý từ hệ thống tệp
-						var filePath = Path.Combine(_environment.WebRootPath, document.File.TrimStart('/'));
-						if (System.IO.File.Exists(filePath))
-						{
-							System.IO.File.Delete(filePath);
-						}
+						System.IO.File.Delete(filePath);
 					}
 				}
 			}
@@ -286,7 +242,6 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		[HttpPost]
-		// BUG: không lấy đúng id của issue cần unlink epic
 		public async Task<IActionResult> UnlinkEpic(Guid issueId)
 		{
 			var issue = _context.Issues.Find(issueId);
@@ -341,10 +296,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				else if (status == "In Progress")
 				{
 					issue.Status = IssueStatus.InProgress;
+					issue.ActualStartDate = DateTime.Now;
 				}
 				else
 				{
 					issue.Status = IssueStatus.Completed;
+					issue.ActualEndDate = DateTime.Now;
 				}
 				_context.SaveChanges();
 				return Json(new { success = true });
@@ -496,7 +453,14 @@ namespace ProjectManagement.Areas.Admin.Controllers
 					issue.StoryPoint = storyPoint;
 				}
 				_context.SaveChanges();
-				return Json(new { success = true });
+				//return Json(new { success = true });
+
+				//var projectSprints = await _context.Sprints.Include(s => s.Issues).ThenInclude(i => i.Assignee).Where(s => s.ProjectID == _context.Issues
+				//									.Where(i => i.Id == issueId).Select(i => i.Sprints.ProjectID).FirstOrDefault()).ToListAsync();
+				var issues = await _context.Issues.Include(i => i.Sprints).ThenInclude(s => s.Projects).FirstOrDefaultAsync(i => i.Id == issueId);
+				var projectId = issue.Sprints?.Projects?.Id;
+				var projectSprints = await _context.Sprints.Include(i => i.Issues).ThenInclude(a => a.Assignee).Where(s => s.ProjectID == projectId).ToListAsync();
+				return PartialView("_SprintsPartial", projectSprints);
 			}
 			catch (Exception ex)
 			{
@@ -522,6 +486,152 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				return StatusCode(500, $"An error occurred: {ex.Message}");
 			}
+		}
+
+		public async Task<IActionResult> UpdateIssueIsFlag(Guid issueId, bool isFlag)
+		{
+			try
+			{
+				var issue = await _context.Issues.FindAsync(issueId);
+				if (isFlag == true)
+				{
+					issue.IsFlag = true;
+				}
+				else
+				{
+					issue.IsFlag = false;
+				}
+				_context.SaveChanges();
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> DeleteDocument(Guid documentId)
+		{
+			try
+			{
+				var issueDocument = _context.IssueDocument.FirstOrDefault(p => p.Id == documentId);
+
+				if (issueDocument == null)
+				{
+					return NotFound();
+				}
+
+				_context.IssueDocument.Remove(issueDocument);
+				_context.SaveChanges();
+
+				// Xóa tệp vật lý từ hệ thống tệp
+				var filePath = Path.Combine(_environment.WebRootPath, issueDocument.FilePath.TrimStart('/'));
+				if (System.IO.File.Exists(filePath))
+				{
+					System.IO.File.Delete(filePath);
+				}
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
+		}
+
+		public async Task<IActionResult> UpdateIssueFiles(Guid issueId)
+		{
+			var issue = _context.Issues.Find(issueId);
+			try
+			{
+				foreach (var file in Request.Form.Files)
+				{
+					if (file != null && file.Length > 0)
+					{
+						if (file.Length <= 10 * 1024 * 1024) // 10MB
+						{
+							string folder = "Uploads/IssueFile";
+							string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+							string filePath = Path.Combine(_environment.WebRootPath, folder, uniqueFileName);
+
+							Directory.CreateDirectory(Path.Combine(_environment.WebRootPath, folder));
+
+							using (var stream = new FileStream(filePath, FileMode.Create))
+							{
+								await file.CopyToAsync(stream);
+							}
+
+							string documentPath = "/" + folder + "/" + uniqueFileName;
+
+							var issueDocument = new IssueDocument
+							{
+								Id = Guid.NewGuid(),
+								FileName = file.FileName,
+								FilePath = documentPath,
+								IssueID = issue.Id,
+								Issues = issue,
+							};
+							_context.Add(issueDocument);
+							_context.SaveChanges();
+						}
+						else
+						{
+							ModelState.AddModelError("Documents", "Dung lượng tệp tải lên quá lớn (tối đa 10MB).");
+							return View();
+						}
+					}
+				}
+
+				return Json(new { success = true });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"Internal server error: {ex.Message}");
+			}
+		}
+
+		[HttpGet]
+		public IActionResult GetIssueComments(Guid issueId)
+		{
+			var issue = _context.Issues
+				.Include(i => i.Comments)
+					.ThenInclude(c => c.User)
+				.FirstOrDefault(i => i.Id == issueId);
+
+			var comments = issue.Comments.Select(c => new
+			{
+				Id = c.Id,
+				Content = c.Content,
+				Timestamp = c.Timestamp,
+				UserId = c.UserID,
+				UserImage = c.User.Image, // Lấy avatar của user
+				Username = c.User.UserName
+			});
+
+			return Json(comments);
+		}
+
+		[HttpGet]
+		public IActionResult GetDocuments(Guid issueId)
+		{
+			var issue = _context.Issues.Include(i => i.IssueDocument).FirstOrDefault(i => i.Id == issueId);
+			if (issue != null)
+			{
+				var issueDocuments = new List<object>();
+				foreach (var document in issue.IssueDocument)
+				{
+					var documentInfo = new
+					{
+						Id = document.Id,
+						FileName = document.FileName,
+						FilePath = document.FilePath
+					};
+					issueDocuments.Add(documentInfo);
+				}
+				return Json(issueDocuments);
+			}
+			return Json(new List<object>());
 		}
 	}
 }
