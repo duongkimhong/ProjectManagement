@@ -121,14 +121,19 @@ namespace ProjectManagement.Areas.Identity.Pages.Account
 
                 await _userStore.SetUserNameAsync((ApplicationUser)user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync((ApplicationUser)user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync((ApplicationUser)user, Input.Password);
+				var result = await _userManager.CreateAsync((ApplicationUser)user, Input.Password);
+				user.Image = "/defaultuser.png";
 
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User created a new account with password.");
+					_logger.LogInformation("User created a new account with password.");
 
                     var userId = await _userManager.GetUserIdAsync((ApplicationUser)user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync((ApplicationUser)user);
+					var userRole = new IdentityUserRole<string> { UserId = userId, RoleId = "c9d5bded-4289-4c3a-9e49-960b6f0f6d68" };
+					_context.UserRoles.Add(userRole);
+                    _context.SaveChanges();
+
+					var code = await _userManager.GenerateEmailConfirmationTokenAsync((ApplicationUser)user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                     var callbackUrl = Url.Page(
                         "/Account/ConfirmEmail",
@@ -159,7 +164,7 @@ namespace ProjectManagement.Areas.Identity.Pages.Account
             return Page();
         }
 
-        private IdentityUser CreateUser()
+        private ApplicationUser CreateUser()
         {
             try
             {
@@ -168,7 +173,7 @@ namespace ProjectManagement.Areas.Identity.Pages.Account
             catch
             {
                 throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                    $"Ensure that '{nameof(IdentityUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                     $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
             }
         }

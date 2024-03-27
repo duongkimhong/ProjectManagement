@@ -2,9 +2,29 @@
 @model LockoutModel
 @{
     ViewData["Title"] = "Locked out";
+    Layout = null;
 }
 
-<header>
+@* <header>
     <h1 class="text-danger">@ViewData["Title"]</h1>
     <p class="text-danger">This account has been locked out, please try again later.</p>
-</header>
+</header> *@
+
+<div style="max-width: 700px; margin: 10px auto; margin-top: 200px; background-color: #e65656; color: #ffffff; font-family: 'Open Sans', Arial, sans-serif; border-radius: 15px;">
+    <div style="padding: 25px;">
+        <div style="float: left;">
+            <img src="https://api.icons8.com/download/470f346b94b35f372dcd2165be630167d6519272/Color/PNG/144/Very_Basic/lock-144.png" title="Lock" width="144">
+        </div>
+        <div style="margin-left: 165px;">
+            <h1>
+                This account has been locked out, please try again later.
+            </h1>
+        </div>
+        <div style="margin-left: 165px;">
+            <p>
+                Please check your mailbox or contact the administrator to check for errors
+            </p>
+        </div>
+        <div style="clear: both"></div>
+    </div>
+</div>
