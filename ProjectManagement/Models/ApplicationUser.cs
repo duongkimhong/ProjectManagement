@@ -22,6 +22,8 @@ public class ApplicationUser : IdentityUser
 
     public bool IsActive { get; set; }
 
+    public DateTime? LastLogin {  get; set; }
+
     public ICollection<Epics>? Epics { get; set; }
     public ICollection<TeamMembers>? TeamMembers { get; set; }
     public ICollection<Comments>? Comments { get; set; }

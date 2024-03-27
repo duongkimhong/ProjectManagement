@@ -1,0 +1,67 @@
+﻿@model IEnumerable<ProjectManagement.Models.ApplicationUser>
+@inject ApplicationDbContext _context
+
+@{
+	var roles = _context.Roles.ToList();
+}
+
+<table id="patient-table" class="table table-hover align-middle mb-0" style="width: 100%;">
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Avatar</th>
+			<th>Last login</th>
+			<th>Role</th>
+			<th>Active</th>
+			<th>Action</th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			int i = 1;
+		}
+		@foreach (var employee in Model)
+		{
+			<tr data-employee-id="@employee.Id">
+				<td>@i</td>
+				<td><img src="@employee.Image" class="avatar sm rounded-circle me-2" alt="profile-image"><span>@employee.UserName </span></td>
+				<td>@employee.LastLogin</td>
+				<td>
+					<div class="d-flex py-2 project-tab flex-wrap w-sm-100">
+						<ul class="nav nav-tabs tab-body-header rounded ms-3 prtab-set w-sm-100" style="cursor: pointer;">
+							@{
+								string getUserRole = _context.UserRoles.FirstOrDefault(u => u.UserId == employee.Id).RoleId;
+								if (getUserRole == "c9d5bded-4289-4c3a-9e49-960b6f0f6d68") //role: User
+								{
+									<li class="nav-item"><a class="nav-link active">Member</a></li>
+									<li class="nav-item"><a class="nav-link" onclick="updateUserRole('@employee.Id', '6a2c6e95-a72b-4ee7-8ca1-e4759097769a')">Admin</a></li>
+								}
+								else
+								{
+									<li class="nav-item"><a class="nav-link" onclick="updateUserRole('@employee.Id', 'c9d5bded-4289-4c3a-9e49-960b6f0f6d68')">Member</a></li>
+									<li class="nav-item"><a class="nav-link active">Admin</a></li>
+								}
+							}
+						</ul>
+					</div>
+				</td>
+				<td>
+					<div class="form-check form-switch">
+						@if (employee.IsActive)
+						{
+							<input class="form-check-input" type="checkbox" id="list-group2" checked="">
+						}
+						else
+						{
+							<input class="form-check-input" type="checkbox" id="list-group2">
+						}
+					</div>
+				</td>
+				<td>
+					<button type="button" class="btn btn-outline-info" onclick="viewDetail(event,'@employee.Id')">Detail</button>
+				</td>
+			</tr>
+			i++;
+		}
+	</tbody>
+</table>

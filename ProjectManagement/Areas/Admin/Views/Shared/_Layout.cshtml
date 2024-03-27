@@ -6,19 +6,19 @@
 @inject ApplicationDbContext _context
 
 @{
-	var projects = _context.Projects.ToList(); // Lấy danh sách các project từ cơ sở dữ liệu
+	var projects = _context.Projects.ToList();
 	var accounts = UserManager.Users.ToList();
+	var getUser = _context.Users.Find(UserManager.GetUserId(User));
 }
 
 <!doctype html>
 <html class="no-js" lang="en" dir="ltr">
-
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<title>:: Viettel:: ProjectManagement </title>
-	<link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon-->
+	<link rel="icon" href="~/favicon.ico" type="image/x-icon"> <!-- Favicon-->
 	<!-- project css file  -->
 	<link rel="stylesheet" href="~/User/assets/css/my-task.style.min.css">
 
@@ -41,7 +41,7 @@
 		.logo-column {
 			display: flex;
 			flex-direction: column;
-			margin-left: 8px; 
+			margin-left: 8px;
 		}
 
 		.logo-subtext {
@@ -53,8 +53,8 @@
 </head>
 
 <body data-mytask="theme-indigo">
-	<div id="mytask-layout">
 
+	<div id="mytask-layout">
 		<!-- sidebar -->
 		<div class="sidebar px-4 py-4 py-md-5 me-0">
 			<div class="d-flex flex-column h-100">
@@ -70,23 +70,23 @@
 					</div>
 				</a>
 				<!-- Menu: main ul -->
-
+				
 				<ul class="menu-list flex-grow-1 mt-3">
 
 					<li class="collapsed">
-						<a class="m-link active" asp-area="Admin" asp-controller="Home" asp-action="Index">
+						<a class="m-link" asp-area="Admin" asp-controller="Home" asp-action="Index">
 							<i class="icofont-home fs-5"></i> <span>Dashboard</span>
 						</a>
 					</li>
 
 					<li class="collapsed">
-						<a id="backlogLink" class="m-link" href="#">
+						<a id="backlogLink" class="m-link" asp-area="Admin" asp-controller="Sprints" asp-action="Index" asp-route-id="">
 							<i class="icofont-layers"></i><span>Backlog</span>
 						</a>
 					</li>
 
 					<li class="collapsed">
-						<a class="m-link" id="boardLink" href="#">
+						<a class="m-link" id="boardLink" asp-area="Admin" asp-controller="Board" asp-action="Index" asp-route-id="">
 							<i class="icofont-leaflet"></i> <span>Board</span>
 						</a>
 					</li>
@@ -111,19 +111,13 @@
 
 					<li class="collapsed">
 						<a class="m-link" asp-area="Admin" asp-controller="Teams" asp-action="Index">
-							<i class="icofont-users-social"></i> <span>TeamMembers</span></span>
+							<i class="icofont-users-social"></i> <span>TeamMembers</span>
 						</a>
 					</li>
 
 					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
-							<i class="icofont-user-alt-5"></i> <span>Employees</span></span>
-						</a>
-					</li>
-
-					<li class="collapsed">
-						<a class="m-link" data-bs-toggle="collapse" data-bs-target="#client-Components" href="#">
-							<i class="icofont-ui-user"></i> <span>Accounts</span></span>
+						<a class="m-link" asp-area="Admin" asp-controller="Employees" asp-action="Index">
+							<i class="icofont-user-alt-5"></i> <span>Employees</span>
 						</a>
 					</li>
 				</ul>
@@ -161,6 +155,7 @@
 									<option value="create">Create</option>
 								</select>
 							</div>
+
 							<div class="dropdown notifications">
 								<a class="nav-link dropdown-toggle pulse" href="#" role="button" data-bs-toggle="dropdown">
 									<i class="icofont-alarm fs-5"></i>
@@ -244,32 +239,31 @@
 									<small>Admin Profile</small>
 								</div>
 								<a class="nav-link dropdown-toggle pulse p-0" href="#" role="button" data-bs-toggle="dropdown" data-bs-display="static">
-									<img class="avatar lg rounded-circle img-thumbnail" src="~/User/assets/images/profile_av.png" alt="profile">
+									<img class="avatar lg rounded-circle img-thumbnail" src="@getUser.Image" alt="profile">
 								</a>
 								<div class="dropdown-menu rounded-lg shadow border-0 dropdown-animation dropdown-menu-end p-0 m-0">
 									<div class="card border-0 w280">
 										<div class="card-body pb-0">
 											<div class="d-flex py-1">
-												<img class="avatar rounded-circle" src="~/User/assets/images/profile_av.png" alt="profile">
+												<img class="avatar rounded-circle" src="@getUser.Image" alt="profile">
 												<div class="flex-fill ms-3">
 													<p class="mb-0"><span class="font-weight-bold">@UserManager.GetUserName(User)</span></p>
-													<small class="">Dylan.hunter@gmail.com</small>
+													<small class="">@getUser.Email</small>
 												</div>
 											</div>
 
 											<div><hr class="dropdown-divider border-dark"></div>
 										</div>
 										<div class="list-group m-2 ">
-											<a href="task.html" class="list-group-item list-group-item-action border-0 "><i class="icofont-tasks fs-5 me-3"></i>My Task</a>
-											<a href="members.html" class="list-group-item list-group-item-action border-0 "><i class="icofont-ui-user-group fs-6 me-3"></i>members</a>
-											<a href="ui-elements/auth-signin.html" class="list-group-item list-group-item-action border-0 "><i class="icofont-logout fs-6 me-3"></i>Signout</a>
-											<div><hr class="dropdown-divider border-dark"></div>
-											<a href="ui-elements/auth-signup.html" class="list-group-item list-group-item-action border-0 "><i class="icofont-contact-add fs-5 me-3"></i>Add personal account</a>
+											<a id="manage" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage" class="list-group-item list-group-item-action border-0 "><i class="icofont-ui-user fs-5 me-3"></i>My Account</a>
+											<form id="logoutForm" class="form-inline dropdown-item p-0" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+												<button id="logout" type="submit" class="list-group-item list-group-item-action border-0 "><i class="icofont-logout fs-6 me-3"></i>Signout</button>
+											</form>
+											@* <a asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" class="list-group-item list-group-item-action border-0 "><i class="icofont-logout fs-6 me-3"></i>Signout</a> *@
 										</div>
 									</div>
 								</div>
 							</div>
-
 						</div>
 
 						<!-- menu toggler -->
@@ -285,7 +279,6 @@
 
 							</div>
 						</div>
-
 					</div>
 				</nav>
 			</div>
@@ -297,7 +290,6 @@
 	</div>
 
 	<!--Modals-->
-
 	<!-- Modal for create -->
 	<div class="modal fade" id="createProjectModal" tabindex="-1" aria-labelledby="createProjectModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
@@ -353,7 +345,7 @@
 			</div>
 		</div>
 	</div>
-	
+
 	<!-- Modal Popup for Invite -->
 	<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
@@ -396,7 +388,6 @@
 	@* <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-Km2BrFfMj3zehrlZlR/4DUAJ4HqXk8DtIeay4Hoj6g8=" crossorigin="anonymous"></script> *@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-	
 
 	<script src="~/js/dashboard_script.js"></script>
 	<!-- Jquery Core Js -->
@@ -408,7 +399,7 @@
 	<!-- Jquery Page Js -->
 	<script src="~/user/assets/js/template.js"></script>
 	<script src="~/user/assets/js/page/hr.js"></script>
-	@* <script src="../js/template.js"></script> 
+	@* <script src="../js/template.js"></script>
 	<script src="../js/page/hr.js"></script> *@
 	@await RenderSectionAsync("Scripts", required: false)
 </body>

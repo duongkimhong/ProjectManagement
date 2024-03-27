@@ -21,7 +21,6 @@ function drag(event) {
 
 function drop(event, targetType, id) {
     var issueId = event.dataTransfer.getData("issueId");
-    console.log(issueId);
     var epicId = event.target.getAttribute('data-epic-id');
 
     if (targetType === 'sprint') {

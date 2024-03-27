@@ -336,9 +336,10 @@
 							<th>#</th>
 							<th>Icon</th>
 							<th>Project Name</th>
-							<th>StartDate</th>
-							<th>EndDate</th>
+							@* <th>StartDate</th>
+							<th>EndDate</th> *@
 							<th>Status</th>
+							<th>Completion</th>
 							<th>Action</th>
 						</tr>
 					</thead>
@@ -356,9 +357,14 @@
 									</div>
 								</td>
 								<td>@project.Name</td>
-								<td>@(project.StartDate.HasValue ? project.StartDate.Value.ToString("dd/MM/yyyy") : "")</td>
-								<td>@(project.EndDate.HasValue ? project.EndDate.Value.ToString("dd/MM/yyyy") : "")</td>
+								@* <td>@(project.StartDate.HasValue ? project.StartDate.Value.ToString("dd/MM/yyyy") : "")</td>
+								<td>@(project.EndDate.HasValue ? project.EndDate.Value.ToString("dd/MM/yyyy") : "")</td> *@
 								<td>@project.Status</td>
+								<td>
+									<div class="progress">
+										<div class="progress-bar bg-primary" role="progressbar" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100" style="width: @project.Completion%;">@project.Completion%</div>
+									</div>
+								</td>
 								<td>
 									<div class="btn-group" role="group" aria-label="Basic outlined example">
 										<button type="button" class="btn btn-outline-secondary editButton" onclick="openEditModal('@project.Id')">

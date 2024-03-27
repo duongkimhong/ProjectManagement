@@ -473,12 +473,18 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			try
 			{
 				var issue = await _context.Issues.FindAsync(issueId);
-				var user = await _context.Users.FindAsync(userId);
-				if (issue != null)
+				if(userId != null)
 				{
+					var user = await _context.Users.FindAsync(userId);
 					issue.AssigneeID = userId;
 					issue.Assignee = user;
 				}
+				else
+				{
+					issue.AssigneeID = null;
+					issue.Assignee = null;
+				}
+				
 				_context.SaveChanges();
 				return Json(new { success = true });
 			}

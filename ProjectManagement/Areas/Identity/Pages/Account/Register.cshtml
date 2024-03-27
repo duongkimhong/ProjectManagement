@@ -2,66 +2,96 @@
 @model RegisterModel
 @{
     ViewData["Title"] = "Register";
+    Layout = null;
 }
 
-<h1>@ViewData["Title"]</h1>
+<!doctype html>
+<html class="no-js" lang="en" dir="ltr">
 
-<div class="row">
-    <div class="col-md-4">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>:: Viettel:: Signup</title>
+    <link rel="icon" href="~/favicon.ico" type="image/x-icon"> <!-- Favicon-->
+    <!-- project css file  -->
+    <link rel="stylesheet" href="~/user/assets/css/my-task.style.min.css">
+</head>
+
+<body data-mytask="theme-indigo">
+
+    <div id="mytask-layout">
+
+        <!-- main body area -->
+        <div class="main p-2 py-3 p-xl-5">
+
+            <!-- Body: Body -->
+            <div class="body d-flex p-0 p-xl-5">
+                <div class="container-xxl">
+                    <div class="row g-0">
+                        <div class="col-lg-6 d-none d-lg-flex justify-content-center align-items-center rounded-lg auth-h100">
+                            <div style="max-width: 25rem;">
+                                <div class="text-center mb-5">
+                                    <svg width="4rem" fill="currentColor" class="bi bi-clipboard-check" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z" />
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                                    </svg>
+                                </div>
+                                <div class="mb-5">
+                                    <h2 class="color-900 text-center">My-Task Let's Management Better</h2>
+                                </div>
+                                <!-- Image block -->
+                                <div class="">
+                                    <img src="~/user/assets/images/login-img.svg" alt="login-img">
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                }
-            }
-        </section>
-    </div>
-</div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+                        <div class="col-lg-6 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100">
+                            <div class="w-100 p-3 p-md-5 card border-0 bg-dark text-light" style="max-width: 32rem;">
+                                <!-- Form -->
+                                <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="row g-1 p-3 p-md-4">
+                                    <div class="col-12 text-center mb-1 mb-lg-5">
+                                        <h1>Create your account</h1>
+                                        <span>Free access to our dashboard.</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="mb-2">
+                                            <label class="form-label">Email address</label>
+                                            <input asp-for="Input.Email" autocomplete="username" aria-required="true" type="email" class="form-control form-control-lg" placeholder="name@example.com">
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="mb-2">
+                                            <label class="form-label">Password</label>
+                                            <input asp-for="Input.Password" autocomplete="new-password" aria-required="true" class="form-control form-control-lg" placeholder="8+ characters required">
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="mb-2">
+                                            <label class="form-label">Confirm password</label>
+                                            <input asp-for="Input.ConfirmPassword" autocomplete="new-password" aria-required="true" class="form-control form-control-lg" placeholder="8+ characters required">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 text-center mt-4">
+                                        <button id="registerSubmit" type="submit" class="btn btn-lg btn-block btn-light lift text-uppercase" alt="SIGNUP">SIGN UP</button>
+                                    </div>
+                                    <div class="col-12 text-center mt-4">
+                                        <span class="text-muted">Already have an account? <a asp-area="Identity" asp-page="/Account/Login" title="Sign in" class="text-secondary">Sign in here</a></span>
+                                    </div>
+                                </form>
+                                <!-- End Form -->
+                            </div>
+                        </div>
+                    </div> <!-- End Row -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jquery Core Js -->
+    <script src="~/user/assets/bundles/libscripts.bundle.js"></script>
+</body>
+</html>

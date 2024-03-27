@@ -35,6 +35,7 @@
     <Folder Include="mailssave\" />
     <Folder Include="wwwroot\Uploads\IssueFile\" />
     <Folder Include="wwwroot\Uploads\EpicFile\" />
+    <Folder Include="wwwroot\Uploads\UserImage\" />
     <Folder Include="wwwroot\Uploads\ProjectFile\" />
     <Folder Include="wwwroot\Uploads\ProjectIcon\" />
   </ItemGroup>

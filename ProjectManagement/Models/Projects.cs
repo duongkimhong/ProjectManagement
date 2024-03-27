@@ -19,6 +19,8 @@ namespace ProjectManagement.Models
         public string? Description { get; set; }
 
         public ProjectStatus? Status { get; set; }
+        [NotMapped]
+        public int? Completion {  get; set; }
 
 		public ICollection<Epics>? Epics { get; set; }
 		public ICollection<Sprints>? Sprints { get; set; }

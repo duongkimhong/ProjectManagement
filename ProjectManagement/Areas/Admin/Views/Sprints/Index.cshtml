@@ -104,19 +104,21 @@
 		<div class="row-content">
 			<div class="mb-4">
 				<div id="sprintsContainer">
-					@foreach (var item in ViewBag.ProjectSprints as List<Sprints>)
-					{
-						if (item.Name == "Backlog")
+					@{
+						var projectSprints = ViewBag.ProjectSprints as List<Sprints>;
+						var backlogSprint = projectSprints.FirstOrDefault(s => s.Name == "Backlog");
+
+						if (backlogSprint != null)
 						{
-							<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@item.Id')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
+							<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@backlogSprint.Id')" ondragover="allowDrop(event)" data-sprint-id="@backlogSprint.Id">
 								<div class="card-header py-3 bg-transparent border-bottom-0">
 									<div class="row align-items-center">
 										<div class="col-sm-8" style="display: flex; align-items: center;">
-											<h6 class="mb-0 fw-bold">@item.Name</h6>
+											<h6 class="mb-0 fw-bold">@backlogSprint.Name</h6>
 										</div>
 										<div class="col-sm-4 d-flex align-items-center justify-content-end">
 											@{
-												var issues = item.Issues ?? new List<Issues>(); ;
+												var issues = backlogSprint.Issues ?? new List<Issues>(); ;
 												var todoStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Todo).Sum(issue => issue.StoryPoint);
 												var inProgressStoryPoints = issues.Where(issue => issue.Status == IssueStatus.InProgress).Sum(issue => issue.StoryPoint);
 												var completedStoryPoints = issues.Where(issue => issue.Status == IssueStatus.Completed).Sum(issue => issue.StoryPoint);
@@ -133,11 +135,11 @@
 								</div>
 
 								<div>
-									@if (item.Issues != null && item.Issues.Any())
+									@if (backlogSprint.Issues != null && backlogSprint.Issues.Any())
 									{
 										<ul style="padding: 0px;">
 											<div id="issueContainer">
-											@foreach (var issue in item.Issues)
+												@foreach (var issue in backlogSprint.Issues)
 											{
 												<div class="issue d-flex align-items-center justify-content-between" style="border-radius: 5px; margin-left: 4px; margin-right: 4px;" data-issue-id="@issue.Id" id="@issue.Id" draggable="true" ondragstart="drag(event)">
 													<div>
@@ -298,6 +300,9 @@
 								</div>
 							</div>
 						}
+					}
+					@foreach (var item in ViewBag.ProjectSprints as List<Sprints>)
+					{
 						if (item.Name != "Backlog")
 						{
 							<div class="card mb-3" data-type="sprint" ondrop="drop(event, 'sprint', '@item.Id')" ondragover="allowDrop(event)" data-sprint-id="@item.Id">
@@ -744,7 +749,7 @@
 	</div>
 </div>
 
-<!-- Modal danh sách các account chưa thuộc project -->
+<!-- Modal danh sách các account thuộc project -->
 <div class="modal fade" id="assigneeModal" tabindex="-1" aria-labelledby="assigneeModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content">
@@ -754,9 +759,15 @@
 			</div>
 			<div class="modal-body">
 				<div id="assigneeList" class="list-group">
+					<a onclick="updateAssignee('')" class="list-group-item list-group-item-action d-flex align-items-center" style="cursor: pointer;">
+						<img src="/DefaultUser.png" class="rounded-circle me-3" alt="Avatar" width="50" height="50">
+						<div>
+							<h5 class="mb-0">Unassignee</h5>
+						</div>
+					</a>
 					@foreach (var user in ViewBag.ProjectTeamMembers)
 					{
-						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center">
+						<a onclick="updateAssignee('@user.userId')" class="list-group-item list-group-item-action d-flex align-items-center" style="cursor: pointer;">
 							<img src="@user.Image" class="rounded-circle me-3" alt="Avatar" width="50" height="50">
 							<div>
 								<h5 class="mb-0">@user.UserName</h5>
