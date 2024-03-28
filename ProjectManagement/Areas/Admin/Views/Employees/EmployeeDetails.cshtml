@@ -1,0 +1,307 @@
+﻿@using System;
+@using Microsoft.EntityFrameworkCore
+@* @model ProjectManagement.Models.ApplicationUser *@
+@inject ApplicationDbContext _context;
+@{
+	ViewData["Title"] = "Admin Index";
+	Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+
+	var employee = ViewBag.EmployeeInfo as ApplicationUser;
+	var projects = ViewBag.EmployeeProjects as List<Projects>;
+	var issues = ViewBag.InProgressIssues as List<Issues>;
+}
+
+<div class="body d-flex py-lg-3 py-md-2">
+	<div class="container-xxl">
+		<div class="row clearfix">
+			<div class="col-md-12">
+				<div class="card border-0 mb-4 no-bg">
+					<div class="card-header py-3 px-0 d-flex align-items-center  justify-content-between border-bottom">
+						<h3 class=" fw-bold flex-fill mb-0">Employee Profile</h3>
+					</div>
+				</div>
+			</div>
+		</div><!-- Row End -->
+		<div class="row g-3">
+			<div class="col-xl-8 col-lg-12 col-md-12">
+				<div class="card teacher-card  mb-3">
+					<div class="card-body  d-flex teacher-fulldeatil">
+						<div class="profile-teacher pe-xl-4 pe-md-2 pe-sm-4 pe-0 text-center w220 mx-sm-0 mx-auto">
+							<a href="#">
+								<img src="@employee.Image" alt="" class="avatar xl rounded-circle img-thumbnail shadow-sm">
+							</a>
+						</div>
+						<div class="teacher-info border-start ps-xl-4 ps-md-3 ps-sm-4 ps-4 w-100">
+							<h6 class="mb-0 mt-2  fw-bold d-block fs-6">@employee.FullName</h6>
+							<p class="mt-2 small">@employee.Description</p>
+							<div class="row g-2 pt-2">
+								<div class="col-xl-5">
+									<div class="d-flex align-items-center">
+										<i class="icofont-ui-touch-phone"></i>
+										<span class="ms-2 small">@employee.PhoneNumber</span>
+									</div>
+								</div>
+								<div class="col-xl-5">
+									<div class="d-flex align-items-center">
+										<i class="icofont-email"></i>
+										<span class="ms-2 small">@employee.Email</span>
+									</div>
+								</div>
+								<div class="col-xl-5">
+									<div class="d-flex align-items-center">
+										<i class="icofont-birthday-cake"></i>
+										<span class="ms-2 small">@employee.Birthday</span>
+									</div>
+								</div>
+								<div class="col-xl-5">
+									<div class="d-flex align-items-center">
+										<i class="icofont-address-book"></i>
+										<span class="ms-2 small">@employee.Address</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<h6 class="fw-bold  py-3 mb-3">Current Work Project</h6>
+
+				<div class="teachercourse-list">
+					<div class="row g-3 gy-5 py-3 row-deck">
+						@foreach (var project in projects)
+						{
+							var findProject1 = _context.Projects.Include(d => d.ProjectDocument).FirstOrDefault(p => p.Id == project.Id);
+
+							var findProject2 = _context.Projects.Include(s => s.Sprints).ThenInclude(i => i.Issues).FirstOrDefault(p => p.Id == project.Id);
+
+							var findProject3 = _context.Projects.Include(t => t.Teams).ThenInclude(tm => tm.TeamMembers).ThenInclude(u => u.User).FirstOrDefault(p => p.Id == project.Id);
+
+							var countFile = findProject1.ProjectDocument.Count();
+							var countTeam = findProject3.Teams.Count();
+							var countMember = findProject3.Teams.Sum(t => t.TeamMembers.Count());
+							var startDate = findProject1.StartDate;
+							var endDate = findProject1.EndDate;
+							var months = 0;
+							if (startDate.HasValue && endDate.HasValue)
+							{
+								months = ((endDate.Value.Year - startDate.Value.Year) * 12) + (endDate.Value.Month - startDate.Value.Month);
+
+								// Nếu ngày kết thúc là cuối tháng và ngày bắt đầu không phải cuối tháng
+								if (endDate.Value.Day > startDate.Value.Day && endDate.Value == endDate.Value.AddMonths(1).AddDays(-endDate.Value.Day))
+								{
+									months++;
+								}
+								// Nếu ngày kết thúc không phải cuối tháng và ngày bắt đầu là cuối tháng
+								else if (endDate.Value.Day < startDate.Value.Day && endDate.Value == endDate.Value.AddMonths(-1).AddDays(-endDate.Value.Day))
+								{
+									months--;
+								}
+							}
+
+							string durationString = "";
+							int totalDays = 0;
+							
+							if (months >= 12)
+							{
+								int years = months / 12;
+								durationString = $"{years} year{(years > 1 ? "s" : "")}";
+							}
+							else if (months >= 1)
+							{
+								durationString = $"{months} month{(months > 1 ? "s" : "")}";
+							}
+							else
+							{
+								// Nếu số tháng < 1, bạn có thể xử lý các trường hợp khác như số ngày
+								if (startDate.HasValue && endDate.HasValue && endDate.Value != null)
+								{
+									totalDays = (endDate.Value - startDate.Value).Days;
+								}
+								if (totalDays >= 30)
+								{
+									int weeks = totalDays / 7;
+									durationString = $"{weeks} week{(weeks > 1 ? "s" : "")}";
+								}
+								else
+								{
+									durationString = $"{totalDays} day{(totalDays > 1 ? "s" : "")}";
+								}
+							}
+
+							var teamMembers = findProject3.Teams.SelectMany(t => t.TeamMembers).ToList();
+							var userImages = new List<string>();
+							@foreach (var teamMember in teamMembers)
+							{
+								var user = teamMember.User;
+								if (user != null)
+								{
+									// Kiểm tra xem người dùng có hình ảnh không và thêm vào danh sách nếu có
+									if (!string.IsNullOrEmpty(user.Image))
+									{
+										userImages.Add(user.Image);
+									}
+								}
+							}
+
+							var currentDate = DateTime.Now;
+							var daysLeft = 0;
+							if (startDate.HasValue && endDate.HasValue && endDate.Value != null)
+							{
+								daysLeft = (endDate - currentDate).Value.Days;
+							}
+							
+							double totalStoryPoints = findProject2.Sprints
+							.SelectMany(sprint => sprint.Issues)
+							.Sum(issue => issue.StoryPoint ?? 0);
+
+							double completeStoryPoint = findProject2.Sprints
+							.SelectMany(sprint => sprint.Issues)
+							.Where(issue => issue.Status == IssueStatus.Completed)
+							.Sum(issue => issue.StoryPoint ?? 0);
+
+							findProject1.Completion = totalStoryPoints == 0 ? 0 : (int)(completeStoryPoint / totalStoryPoints * 100);
+
+							<div class="col-xxl-6 col-xl-6 col-lg-6 col-md-6 col-sm-12">
+								<div class="card">
+									<div class="card-body">
+										<div class="d-flex align-items-center justify-content-between mt-5">
+											<div class="lesson_name">
+												@if(project.Image == null)
+												{
+													<div class="project-block bg-lightgreen">
+														<i class="icofont-vector-path"></i>
+													</div>
+												}
+												else
+												{
+													<div class="project-block">
+														<img width="60" height="60" src="@project.Image" />
+													</div>
+												}
+												
+												@* <span class="small text-muted project_name fw-bold"> Social Geek Made </span> *@
+												<div class="d-flex flex-column justify-content-center ms-2">
+													<h6 class="mb-0 fw-bold align-items-center fs-6 mb-2 text-center">@project.Name</h6>
+												</div>
+											</div>
+										</div>
+										<div class="d-flex align-items-center">
+											<div class="avatar-list avatar-list-stacked pt-2">
+												@foreach (var userImage in userImages)
+												{
+													<img class="avatar rounded-circle sm" src="@userImage" alt="">
+												}
+											</div>
+										</div>
+										<div class="row g-2 pt-4">
+											<div class="col-6">
+												<div class="d-flex align-items-center">
+													<i class="icofont-paper-clip"></i>
+													<span class="ms-2">@countFile Attach</span>
+												</div>
+											</div>
+											<div class="col-6">
+												<div class="d-flex align-items-center">
+													<i class="icofont-sand-clock"></i>
+													<span class="ms-2">@durationString</span>
+												</div>
+											</div>
+											<div class="col-6">
+												<div class="d-flex align-items-center">
+													<i class="icofont-group-students "></i>
+													<span class="ms-2">@countMember Members</span>
+												</div>
+											</div>
+											<div class="col-6">
+												<div class="d-flex align-items-center">
+													<i class="icofont-users-social"></i>
+													<span class="ms-2">@countTeam team(s)</span>
+												</div>
+											</div>
+										</div>
+										<div class="dividers-block"></div>
+										<div class="d-flex align-items-center justify-content-between mb-2">
+											<h4 class="small fw-bold mb-0">Progress</h4>
+											@if (daysLeft > 0)
+											{
+												<span class="small light-danger-bg p-1 rounded">
+													<i class="icofont-ui-clock"></i> @daysLeft Days Left
+												</span>
+											}
+										</div>
+										<div class="progress" style="height: 8px;">
+											<div class="progress-bar bg-secondary" role="progressbar" style="width: @findProject1.Completion%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+
+			<div class="col-xl-4 col-lg-12 col-md-12">
+				<div class="card mb-3">
+					<div class="card-header py-3">
+						<h6 class="mb-0 fw-bold ">Current Task</h6>
+					</div>
+					<div class="card-body">
+						<div class="planned_task client_task">
+							<div class="dd" data-plugin="nestable">
+								<ol class="dd-list p-0">
+									@foreach(var issue in issues)
+									{
+										var projectName = await _context.Issues.Where(issue => issue.Id == issue.Id).Select(issue => issue.Sprints.Projects.Name).FirstOrDefaultAsync();
+										<li class="dd-item mb-3">
+											<div class="dd-handle">
+												<div class="task-info d-flex align-items-center justify-content-between">
+													<h6 class="light-info-bg py-1 px-2 rounded-1 d-inline-block fw-bold small-14 mb-0">@issue.Name</h6>
+													<div class="task-priority d-flex flex-column align-items-center justify-content-center">
+														<div class="avatar-list avatar-list-stacked m-0">
+															<img class="avatar rounded-circle small-avt sm" src="@employee.Image" alt="">
+														</div>
+														<span class="badge bg-info text-end mt-1">@issue.Priority</span>
+													</div>
+												</div>
+												<div class="tikit-info row g-3 align-items-center">
+													<div class="col-sm">
+														<div class="d-flex align-items-center">
+															<span class="rounded-circle bg-secondary text-light p-2 me-1" style="font-size: 18px; width: 30px; height: 30px; margin-right: 10px !important; display: flex; align-items: center; justify-content: center; background-color:#39B5E0 !important;">@issue.StoryPoint</span>
+															@if (issue.Type == IssueType.Task)
+															{
+																<span style="display: inline-block; background-color: #1a73e8; padding: 3px; border-radius: 3px;">
+																	<i class="icofont-book-mark text-white" style="vertical-align: middle;"></i>
+																</span>
+															}
+															else if (issue.Type == IssueType.Bug)
+															{
+																<span style="display: inline-block; background-color: #dc3545; padding: 3px; border-radius: 3px;">
+																	<i class="icofont-bug text-white" style="vertical-align: middle;"></i>
+																</span>
+															}
+															else
+															{
+																<span style="display: inline-block; background-color: #ffc107; padding: 3px; border-radius: 3px;">
+																	<i class="icofont-ui-messaging text-white" style="vertical-align: middle;"></i>
+																</span>
+															}
+														</div>
+													</div>
+
+													<div class="col-sm text-end">
+														<div class="small text-truncate light-danger-bg py-1 px-2 rounded-1 d-inline-block fw-bold small"> @projectName </div>
+													</div>
+												</div>
+											</div>
+										</li>
+									}
+								</ol>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div><!-- Row End -->
+
+	</div>
+</div>
+

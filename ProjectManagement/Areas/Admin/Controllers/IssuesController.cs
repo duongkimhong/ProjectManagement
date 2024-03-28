@@ -47,10 +47,10 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				Sprints = backlogSprint,
 				StoryPoint = 0
 			};
-			if(type == "Task") { issues.Type = IssueType.Task; }
-			else if(type == "Bug") { issues.Type = IssueType.Bug; }
+			if (type == "Task") { issues.Type = IssueType.Task; }
+			else if (type == "Bug") { issues.Type = IssueType.Bug; }
 			else { issues.Type = IssueType.UserStory; }
-			
+
 			_context.Add(issues);
 			await _context.SaveChangesAsync();
 			return RedirectToAction("Index", "Sprints", new { area = "Admin", id = projectId });
@@ -326,10 +326,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				else if (priority == "Low")
 				{
 					issue.Priority = Priorities.Low;
-				} else if (priority == "Medium")
+				}
+				else if (priority == "Medium")
 				{
 					issue.Priority = Priorities.Medium;
-				} else if (priority == "High")
+				}
+				else if (priority == "High")
 				{
 					issue.Priority = Priorities.High;
 				}
@@ -353,11 +355,12 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			{
 				var issue = await _context.Issues.FindAsync(issueId);
 				var epic = await _context.Epics.FindAsync(epicId);
-				if(issue != null && epic != null)
+				if (issue != null && epic != null)
 				{
 					issue.EpicID = epicId;
 					issue.Epics = epic;
-				} else if(epic == null && issue != null)
+				}
+				else if (epic == null && issue != null)
 				{
 					issue.EpicID = null;
 					issue.Epics = null;
@@ -473,7 +476,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			try
 			{
 				var issue = await _context.Issues.FindAsync(issueId);
-				if(userId != null)
+				if (userId != null)
 				{
 					var user = await _context.Users.FindAsync(userId);
 					issue.AssigneeID = userId;
@@ -484,7 +487,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 					issue.AssigneeID = null;
 					issue.Assignee = null;
 				}
-				
+
 				_context.SaveChanges();
 				return Json(new { success = true });
 			}
@@ -600,22 +603,29 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		[HttpGet]
 		public IActionResult GetIssueComments(Guid issueId)
 		{
-			var issue = _context.Issues
+			try
+			{
+				var issue = _context.Issues
 				.Include(i => i.Comments)
 					.ThenInclude(c => c.User)
 				.FirstOrDefault(i => i.Id == issueId);
 
-			var comments = issue.Comments.Select(c => new
-			{
-				Id = c.Id,
-				Content = c.Content,
-				Timestamp = c.Timestamp,
-				UserId = c.UserID,
-				UserImage = c.User.Image, // Lấy avatar của user
-				Username = c.User.UserName
-			});
+				var comments = issue.Comments.Select(c => new
+				{
+					Id = c.Id,
+					Content = c.Content,
+					Timestamp = c.Timestamp,
+					UserId = c.UserID,
+					UserImage = c.User.Image, // Lấy avatar của user
+					Username = c.User.UserName
+				});
 
-			return Json(comments);
+				return Json(comments);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"An error occurred: {ex.Message}");
+			}
 		}
 
 		[HttpGet]

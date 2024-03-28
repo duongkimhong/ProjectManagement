@@ -66,7 +66,8 @@ namespace ProjectManagement.Areas.Identity.Pages.Account.Manage
             public string PhoneNumber { get; set; }
             public string? FullName { get; set; }
             public string? Address { get; set; }
-            public DateTime? DateOfBirth { get; set; }
+			public string? Description { get; set; }
+			public DateTime? DateOfBirth { get; set; }
             public string? ProfileImage { get; set; }
 			[Display(Name = "Profile Image")]
 			public IFormFile ProfileImageFile { get; set; }
@@ -80,6 +81,7 @@ namespace ProjectManagement.Areas.Identity.Pages.Account.Manage
 			var address = user.Address;
 			var dateOfBirth = user.Birthday; 
 			var profileImage = user.Image;
+			var description = user.Description;
 
 			Username = userName;
 
@@ -89,7 +91,8 @@ namespace ProjectManagement.Areas.Identity.Pages.Account.Manage
 				FullName = fullName,
 				Address = address,
 				DateOfBirth = dateOfBirth,
-				ProfileImage = profileImage
+				ProfileImage = profileImage,
+				Description = description
 			};
 			if (!string.IsNullOrEmpty(profileImage))
 			{
@@ -157,6 +160,7 @@ namespace ProjectManagement.Areas.Identity.Pages.Account.Manage
 			user.Birthday = Input.DateOfBirth;
 			user.Address = Input.Address;
 			user.FullName = Input.FullName;
+			user.Description = Input.Description;
 			await _userManager.UpdateAsync(user);
 
 			await _signInManager.RefreshSignInAsync(user);

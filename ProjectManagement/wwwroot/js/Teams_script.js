@@ -327,49 +327,99 @@ function populateAccountsList(teamId) {
         url: '/Admin/Teams/GetAccountsToInvite',
         data: { teamId: teamId },
         success: function (accounts) {
-            var accountsList = document.getElementById('accountsList');
-            accountsList.innerHTML = '';
-            accounts.forEach(function (account) {
-                var row = document.createElement('div');
-                row.classList.add('row', 'align-items-center');
+            var inviteAccountsList = document.getElementById('accountsInvite');
+            inviteAccountsList.innerHTML = '';
 
-                // First column: Avatar
-                var avatarCol = document.createElement('div');
-                avatarCol.classList.add('col-auto');
+            // Input group for search
+            var searchInputGroup = document.createElement('div');
+            searchInputGroup.classList.add('input-group', 'mb-3');
+
+            var inviteSearchInput = document.createElement('input');
+            inviteSearchInput.type = 'text';
+            inviteSearchInput.classList.add('form-control');
+            inviteSearchInput.id = 'inviteSearchInput_' + teamId;
+            inviteSearchInput.placeholder = 'Search by username';
+
+            var inviteSearchButton = document.createElement('button');
+            inviteSearchButton.classList.add('btn', 'btn-outline-secondary');
+            inviteSearchButton.type = 'button';
+            inviteSearchButton.id = 'inviteSearchButton_' + teamId;
+            inviteSearchButton.textContent = 'Search';
+
+            searchInputGroup.appendChild(inviteSearchInput);
+            searchInputGroup.appendChild(inviteSearchButton);
+            inviteAccountsList.appendChild(searchInputGroup);
+
+            // Table
+            var table = document.createElement('table');
+            table.classList.add('table');
+
+            var thead = document.createElement('thead');
+            var tr = document.createElement('tr');
+            ['Avatar', 'Username', 'Select'].forEach(function (columnName) {
+                var th = document.createElement('th');
+                th.scope = 'col';
+                th.textContent = columnName;
+                tr.appendChild(th);
+            });
+            thead.appendChild(tr);
+            table.appendChild(thead);
+
+            var tbody = document.createElement('tbody');
+            accounts.forEach(function (account) {
+                var tr = document.createElement('tr');
+
+                // Avatar cell
+                var avatarCell = document.createElement('td');
                 var avatarImg = document.createElement('img');
                 avatarImg.src = account.image;
                 avatarImg.alt = 'Avatar';
                 avatarImg.classList.add('avatar-image');
                 avatarImg.style.width = '30px';
                 avatarImg.style.height = '30px';
-                avatarCol.appendChild(avatarImg);
-                row.appendChild(avatarCol);
+                avatarCell.appendChild(avatarImg);
+                tr.appendChild(avatarCell);
 
-                // Second column: Username
-                var usernameCol = document.createElement('div');
-                usernameCol.classList.add('col');
-                var label = document.createElement('label');
-                label.htmlFor = 'account_' + account.userId;
-                label.appendChild(document.createTextNode(account.userName));
-                usernameCol.appendChild(label);
-                row.appendChild(usernameCol);
+                // Username cell
+                var usernameCell = document.createElement('td');
+                usernameCell.textContent = account.userName;
+                tr.appendChild(usernameCell);
 
-                // Third column: Checkbox
-                var checkboxCol = document.createElement('div');
-                checkboxCol.classList.add('col-auto');
+                // Select cell
+                var selectCell = document.createElement('td');
                 var checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.classList.add('user-checkbox');
+                checkbox.dataset.userId = account.userId;
+                checkbox.name = 'selectedUsers';
                 checkbox.value = account.userId;
-                checkbox.id = 'account_' + account.userId;
-                checkboxCol.appendChild(checkbox);
-                row.appendChild(checkboxCol);
+                selectCell.appendChild(checkbox);
+                tr.appendChild(selectCell);
 
-                // Append the row to the accounts list
-                accountsList.appendChild(row);
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            inviteAccountsList.appendChild(table);
+
+            // Gán sự kiện click cho nút tìm kiếm
+            inviteSearchButton.addEventListener("click", function () {
+                var keyword = inviteSearchInput.value.toLowerCase().trim();
+                var rows = tbody.querySelectorAll('tr');
+
+                rows.forEach(function (row) {
+                    var username = row.querySelector("td:nth-child(2)").textContent.toLowerCase().trim();
+
+                    if (username.includes(keyword)) {
+                        row.style.display = "table-row";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
             });
 
             // Show the modal after all accounts are populated
-            $('#inviteModal').modal('show');
+            $('#inviteMemberModal').modal('show');
         },
         error: function (xhr, status, error) {
             console.error('Error fetching accounts:', error);
@@ -379,46 +429,11 @@ function populateAccountsList(teamId) {
 
 function inviteMembers() {
     var selectedAccounts = [];
-    var checkboxes = document.querySelectorAll('#accountsList input[type="checkbox"]:checked');
+    var checkboxes = document.querySelectorAll('#accountsInvite input[type="checkbox"]:checked');
     checkboxes.forEach(function (checkbox) {
         selectedAccounts.push(checkbox.value);
     });
-
-    var table = document.createElement('table');
-    table.classList.add('table');
-
-    var headerRow = table.insertRow();
-    var headerNames = ['Avatar', 'Username'];
-    headerNames.forEach(function (name) {
-        var headerCell = document.createElement('th');
-        headerCell.textContent = name;
-        headerRow.appendChild(headerCell);
-    });
-
-    selectedAccounts.forEach(function (accountId) {
-        var account = document.getElementById('account_' + accountId);
-        var accountRow = table.insertRow();
-
-        var avatarCell = accountRow.insertCell();
-        var avatarImg = document.createElement('img');
-        var avatarSrc = account.querySelector('img') ? account.querySelector('img').src : '';
-        avatarImg.src = avatarSrc; 
-        avatarImg.alt = 'Avatar';
-        avatarImg.style.width = '30px';
-        avatarImg.style.height = '30px';
-        avatarCell.appendChild(avatarImg);
-
-        var usernameCell = accountRow.insertCell();
-        var usernameText = account.querySelector('label') ? account.querySelector('label').textContent : '';
-        usernameCell.textContent = usernameText;
-    });
-
-    var modalBody = document.querySelector('#inviteModal .modal-body');
-    modalBody.innerHTML = '';
-    modalBody.appendChild(table);
-
-    var teamId = '@team.Id';
-
+    console.log(selectedAccounts);
     $.ajax({
         type: 'POST',
         url: '/Admin/Teams/AddMembers',

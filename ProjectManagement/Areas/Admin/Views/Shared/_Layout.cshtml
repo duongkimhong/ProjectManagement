@@ -49,6 +49,11 @@
 			margin-top: 2px;
 			color: white;
 		}
+
+		#accountsList {
+			max-height: 300px;
+			overflow-y: auto;
+		}
 	</style>
 </head>
 
@@ -70,7 +75,7 @@
 					</div>
 				</a>
 				<!-- Menu: main ul -->
-				
+
 				<ul class="menu-list flex-grow-1 mt-3">
 
 					<li class="collapsed">
@@ -356,6 +361,10 @@
 				</div>
 				<div class="modal-body">
 					<h6>List of available users to invite:</h6>
+					<div class="input-group mb-3">
+						<input type="text" class="form-control" id="searchInput" placeholder="Search by username">
+						<button class="btn btn-outline-secondary" type="button" id="searchButton">Search</button>
+					</div>
 					<table class="table">
 						<thead>
 							<tr>
@@ -364,19 +373,21 @@
 							</tr>
 						</thead>
 						<tbody>
-							<!-- Render users dynamically here -->
-							@foreach (var account in accounts)
-							{
-								<tr>
-									<td>@account.UserName</td>
-									<td>
-										<input type="checkbox" class="user-checkbox" data-user-id="@account.Id" name="selectedUsers">
-									</td>
-								</tr>
-							}
+							<div id="accountsList">
+								@foreach (var account in accounts)
+								{
+									<tr>
+										<td>@account.UserName</td>
+										<td>
+											<input type="checkbox" class="user-checkbox" data-user-id="@account.Id" name="selectedUsers">
+										</td>
+									</tr>
+								}
+							</div>
 						</tbody>
 					</table>
 				</div>
+
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 					<button type="button" class="btn btn-primary" onclick="inviteUsers()">Invite</button>
@@ -397,10 +408,8 @@
 	<script src="~/user/assets/bundles/apexcharts.bundle.js"></script>
 
 	<!-- Jquery Page Js -->
-	<script src="~/user/assets/js/template.js"></script>
+	@* <script src="~/user/assets/js/template.js"></script> *@
 	<script src="~/user/assets/js/page/hr.js"></script>
-	@* <script src="../js/template.js"></script>
-	<script src="../js/page/hr.js"></script> *@
 	@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

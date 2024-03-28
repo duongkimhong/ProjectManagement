@@ -107,35 +107,34 @@ function updateSelectedUsersInput() {
     $('#selectedUsersInput').val(JSON.stringify(selectedUsers));
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    var rows = document.querySelectorAll(".modal-body table tbody tr");
+
+    var searchInput = document.getElementById("searchInput");
+    var searchButton = document.getElementById("searchButton");
+
+    searchButton.addEventListener("click", function () {
+        var keyword = searchInput.value.toLowerCase().trim();
+
+        // Lặp qua từng hàng trong bảng
+        rows.forEach(function (row) {
+            var username = row.querySelector("td").textContent.toLowerCase();
+
+            if (username.includes(keyword)) {
+                row.style.display = "table-row";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+});
+
 // Hàm hiển thị tệp đã chọn
 function displaySelectedFile() {
     var selectedFile = $('#imgFileInput').prop('files')[0];
     var fileName = selectedFile.name;
     $('#fileName').val(fileName);
 }
-
-
-
-
-////Tạo link cho nút backlog ở sidebar theo id của project đang được chọn trên dropdown button
-//document.addEventListener("DOMContentLoaded", function () {
-//    var backlogLink = document.getElementById('backlogLink');
-
-//    backlogLink.addEventListener('click', function (event) {
-//        event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
-
-//        var projectDropdown = document.getElementById('myProjectTable');
-//        var selectedProject = projectDropdown.value;
-
-//        if (selectedProject !== 'create') {
-//            backlogLink.classList.add('active');
-//            var url = '/Admin/Sprints/Index/' + selectedProject;
-//            window.location.href = url;
-//        } else {
-
-//        }
-//    });
-//});
 
 document.addEventListener("DOMContentLoaded", function () {
     var backlogLink = document.getElementById('backlogLink');
@@ -161,30 +160,9 @@ document.addEventListener("DOMContentLoaded", function () {
         boardLink.href = '/Admin/Board/Index/' + selectedProject;
     }
 
-    // Gọi hàm cập nhật khi trang được tải và khi giá trị của dropdown thay đổi
     updateBoardLink();
     projectDropdown.addEventListener('change', updateBoardLink);
 });
-
-////Tạo link cho nút board ở sidebar theo id của project đang được chọn trên dropdown button
-//document.addEventListener("DOMContentLoaded", function () {
-//    var boardLink = document.getElementById('boardLink');
-
-//    boardLink.addEventListener('click', function (event) {
-//        event.preventDefault();
-
-//        var projectDropdown = document.getElementById('myProjectTable');
-//        var selectedProject = projectDropdown.value;
-//        console.log(selectedProject);
-//        if (selectedProject !== 'create') {
-//            boardLink.classList.add('active');
-//            var url = '/Admin/Board/Index/' + selectedProject;
-//            window.location.href = url;
-//        } else {
-
-//        }
-//    });
-//});
 
 jQuery(function ($) {
     var path = window.location.href;
@@ -195,5 +173,7 @@ jQuery(function ($) {
         }
     });
 });
+
+
 
 

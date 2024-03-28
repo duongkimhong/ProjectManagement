@@ -308,14 +308,15 @@ function openEditModal(issueId) {
                     '        <div class="col-md-1">' +
                     '            <img class="rounded-circle user-avatar" alt="Avatar" width="30" height="30" src="' + userImage + '">' +
                     '        </div>' +
-                    '        <div class="col-md-10">' +
+                    '        <div class="col-md-11">' +
                     '            <p class="mb-1">' + comment.content + '</p>' +
                     '            <p class="text-muted mb-1">' + comment.username + ' - Posted on: ' + new Date(comment.timestamp).toLocaleString() + '</p>' +
                     '        </div>' +
                     '    </div>' +
                     '</div>';
-                    
-                $('#commentsContent').append(commentHtml);
+
+                // Thêm commentHtml vào phần tử có id là 'commentsContent'
+                $('#commentsContainer').append(commentHtml);
             });
 
             var documentList = $('#IssueDocumentList');
@@ -695,13 +696,8 @@ function toggleContent(content) {
 }
 
 function saveComment() {
-    // Lấy nội dung của comment từ textarea
     var commentContent = document.getElementById('commentInput').value;
 
-    // Lấy issueId từ URL hoặc từ một nguồn khác nếu có
-    var issueId = 'your_issue_id_value';
-
-    // Tạo đối tượng dữ liệu để gửi qua AJAX
     var data = {
         issueId: id,
         content: commentContent
@@ -713,8 +709,7 @@ function saveComment() {
         method: 'POST',
         data: data,
         success: function (response) {
-            // Xử lý kết quả nếu cần
-            console.log('Comment created successfully');
+            GetComments(id);
         },
         error: function (xhr, status, error) {
             // Xử lý lỗi nếu có
@@ -723,8 +718,48 @@ function saveComment() {
     });
 }
 
+function GetComments(issueId) {
+    $.ajax({
+        url: '/Admin/Issues/GetIssueComments',
+        method: 'GET',
+        data: { issueId: issueId },
+        success: function (response) {
+            console.log(response);
+            $('#commentsContainer').empty();
+            // Sắp xếp các comment theo thời gian
+            response.sort(function (a, b) {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+
+            // Lặp qua các comment đã được sắp xếp
+            $.each(response, function (index, comment) {
+                var userImage = comment.userImage ? comment.userImage : '/defaultuser.png';
+                var commentHtml = '<div class="col-md-12 comment-item">' +
+                    '    <div class="row align-items-center">' +
+                    '        <div class="col-md-1">' +
+                    '            <img class="rounded-circle user-avatar" alt="Avatar" width="30" height="30" src="' + userImage + '">' +
+                    '        </div>' +
+                    '        <div class="col-md-11">' +
+                    '            <p class="mb-1">' + comment.content + '</p>' +
+                    '            <p class="text-muted mb-1">' + comment.username + ' - Posted on: ' + new Date(comment.timestamp).toLocaleString() + '</p>' +
+                    '        </div>' +
+                    '    </div>' +
+                    '</div>';
+
+                $('#commentsContainer').append(commentHtml);
+                $('#commentCount').text(response.length);
+            });
+            document.getElementById('commentInput').value = '';
+
+        },
+        error: function () {
+            console.error('Failed to fetch comments.');
+        }
+    });
+}
+
 function cancelComment() {
-    // Xử lý hủy comment nếu cần
+    document.getElementById('commentInput').value = '';
 }
 
 // update issue type

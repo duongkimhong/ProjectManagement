@@ -12,6 +12,8 @@ public class ApplicationUser : IdentityUser
 {
     public string? FullName { get; set; }
 
+    public string? Description { get; set; }
+
     public DateTime? Birthday { get; set; }
 
     public string? Address { get; set; }

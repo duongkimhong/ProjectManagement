@@ -1,17 +1,16 @@
-﻿function viewDetail(event, employeeId) {
-	event.preventDefault();
-	$.ajax({
-		type: 'GET',
-		url: '/Admin/Employees/Detail',
-		data: { id: employeeId },
-		success: function (response) {
-			window.location.href = response.redirectUrl;
-		},
-		error: function (xhr, status, error) {
-			console.error(error);
-		}
-	});
-}
+﻿//function viewDetail(employeeId) {
+//	$.ajax({
+//		type: 'GET',
+//		url: '/Admin/Employees/EmployeeDetails',
+//		data: { id: employeeId },
+//		success: function (response) {
+//			console.log('get employee details success');
+//		},
+//		error: function (xhr, status, error) {
+//			console.error(error);
+//		}
+//	});
+//}
 
 function updateEmployeeActive(employeeId, status) {
 	$.ajax({

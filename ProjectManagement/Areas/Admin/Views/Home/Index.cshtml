@@ -24,12 +24,19 @@
 		height: auto;
 		display: block;
 	}
+
+	#assigneeToMe,
+	#myNotes {
+		max-height: 300px;
+		overflow-y: auto;
+	}
 </style>
 
 @{
 	var accounts = UserManager.Users.ToList();
 	// var projects = _context.Projects.Where(p => p.Status != ProjectStatus.Cancelled).ToList();
-	var projects = ViewBag.Projects as List<Projects>;
+	// var projects = ViewBag.Projects as List<Projects>;
+	var projects = ViewBag.Projects as IPagedList<Projects>;
 	var TodoIssues = ViewBag.TodoIssues as List<Issues>;
 	var InProgressIssues = ViewBag.InProgressIssues as List<Issues>;
 	var notes = ViewBag.Top5Notes as List<Notes>;
@@ -50,13 +57,13 @@
 		<div class="row g-3 mb-3 row-deck">
 			<div class="col-md-12 col-lg-8 col-xl-7 col-xxl-7">
 				<div class="card">
-					<div class="card-body" style="background-color: #B4D4FF; border-radius: 5px;">
+					<div class="card-body" id="assigneeToMe" style="background-color: #B4D4FF; border-radius: 5px;">
 						<h5 class="fw-bold mb-1">Assignee to me</h5>
 						<div class="row align-items-center">
 
 							<div class="col-12 col-md-5 col-lg-6 order-md-2 ">
+								<h6>Todo</h6>
 								<ol class="dd-list" style="padding-left: 0px;">
-									<h6>Todo</h6>
 									@foreach (var issue in TodoIssues)
 									{
 										<li class="dd-item">
@@ -180,8 +187,8 @@
 							</div>
 
 							<div class="col-12 col-md-7 col-lg-6 order-md-1 px-4">
+								<h6>In Progress</h6>
 								<ol class="dd-list" style="padding-left: 0px;">
-									<h6>In Progress</h6>
 									@foreach (var issue in InProgressIssues)
 									{
 										<li class="dd-item">
@@ -308,7 +315,7 @@
 				</div>
 			</div>
 			<div class="col-md-12 col-lg-4 col-xl-5 col-xxl-5">
-				<div style="background-color: #FFE6E6;" class="alert p-3 mb-0 w-100" onclick="window.location.href='/Admin/Notes/Index';">
+				<div id="myNotes" style="background-color: #FFE6E6;" class="alert p-3 mb-0 w-100" onclick="window.location.href='/Admin/Notes/Index';">
 					<h5 class="fw-bold mb-1">My notes</h5>
 					@foreach (var note in notes)
 					{
@@ -325,6 +332,7 @@
 				</div>
 			</div>
 		</div>
+
 		<div class="card mb-3">
 			<div class="card-header py-3  bg-transparent border-bottom-0">
 				<h6 class="mb-0 fw-bold ">Projects</h6>
@@ -345,12 +353,12 @@
 					</thead>
 					<tbody>
 						@{
-							int i = 1;
+							int stt = 1;
 						}
 						@foreach (var project in projects)
 						{
 							<tr>
-								<td>@i</td>
+								<td>@stt</td>
 								<td class="text-center align-middle">
 									<div class="p-1 border" style="width: 50px; height: 50px; overflow: hidden;">
 										<img src="@project.Image" class="img-fluid" alt="profile-image">
@@ -358,7 +366,7 @@
 								</td>
 								<td>@project.Name</td>
 								@* <td>@(project.StartDate.HasValue ? project.StartDate.Value.ToString("dd/MM/yyyy") : "")</td>
-								<td>@(project.EndDate.HasValue ? project.EndDate.Value.ToString("dd/MM/yyyy") : "")</td> *@
+							<td>@(project.EndDate.HasValue ? project.EndDate.Value.ToString("dd/MM/yyyy") : "")</td> *@
 								<td>@project.Status</td>
 								<td>
 									<div class="progress">
@@ -374,11 +382,39 @@
 									</div>
 								</td>
 							</tr>
-							i++;
+							stt++;
 						}
 					</tbody>
 				</table>
 			</div>
+		</div>
+
+		<div class="pagination-container d-flex justify-content-end mr-5">
+			<nav aria-label="Page navigation">
+				<ul class="pagination">
+
+					@if (projects.HasPreviousPage)
+					{
+						<li class="page-item">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = projects.PageNumber - 1 })" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>
+						</li>
+					}
+
+					@for (var i = 1; i <= projects.PageCount; i++)
+					{
+						<li class="page-item @(i == projects.PageNumber ? "active" : "")">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = i })">@i</a>
+						</li>
+					}
+
+					@if (projects.HasNextPage)
+					{
+						<li class="page-item">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = projects.PageNumber + 1 })" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+						</li>
+					}
+				</ul>
+			</nav>
 		</div>
 	</div>
 </div>

@@ -51,6 +51,14 @@
 					</div>
 				</div>
 			</div>
+			<div class="col-md-12">
+				<div class="form-floating mb-3">
+					<textarea asp-for="Input.Description" class="form-control" placeholder="A short description about you." style="height: 100px;"></textarea>
+					<label asp-for="Input.Description" class="form-label"></label>
+					<span asp-validation-for="Input.Description" class="text-danger"></span>
+				</div>
+			</div>
+
 		</div>
 		<button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
 	</form>
@@ -77,10 +85,10 @@
 				};
 				reader.readAsDataURL(file);
 				imageInfo.innerHTML = `
-									<p>File name: ${file.name}</p>
-									<p>File type: ${file.type}</p>
-									<p>File size: ${formatBytes(file.size)}</p>
-								`;
+										<p>File name: ${file.name}</p>
+										<p>File type: ${file.type}</p>
+										<p>File size: ${formatBytes(file.size)}</p>
+									`;
 			}
 		});
 

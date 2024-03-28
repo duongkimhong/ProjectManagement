@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ProjectManagement.Models.ApplicationUser>
+﻿@model IPagedList<ProjectManagement.Models.ApplicationUser>
 @inject ApplicationDbContext _context
 @{
 	ViewData["Title"] = "Index";
@@ -17,6 +17,7 @@
 				</div>
 			</div>
 		</div><!-- Row End -->
+
 		<div class="row align-item-center">
 			<div class="col-md-12">
 				<div class="card mb-3">
@@ -35,12 +36,12 @@
 								</thead>
 								<tbody>
 									@{
-										int i = 1;
+										int stt = 1;
 									}
 									@foreach (var employee in Model)
 									{
 										<tr data-employee-id="@employee.Id">
-											<td>@i</td>
+											<td>@stt</td>
 											<td><img src="@employee.Image" class="avatar sm rounded-circle me-2" alt="profile-image"><span>@employee.UserName </span></td>
 											<td>@employee.LastLogin</td>
 											<td>
@@ -75,10 +76,10 @@
 												</div>
 											</td>
 											<td>
-												<button type="button" class="btn btn-outline-info" onclick="viewDetail(event,'@employee.Id')">Detail</button>
+												<a class="btn btn-outline-info" asp-area="Admin" asp-controller="Employees" asp-action="EmployeeDetails" asp-route-id="@employee.Id">Detail</a>
 											</td>
 										</tr>
-										i++;
+										stt++;
 									}
 								</tbody>
 							</table>
@@ -87,6 +88,34 @@
 					</div>
 				</div>
 			</div>
+		</div>
+
+		<div class="pagination-container d-flex justify-content-end mr-5">
+			<nav aria-label="Page navigation">
+				<ul class="pagination">
+
+					@if (Model.HasPreviousPage)
+					{
+						<li class="page-item">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>
+						</li>
+					}
+
+					@for (var i = 1; i <= Model.PageCount; i++)
+					{
+						<li class="page-item @(i == Model.PageNumber ? "active" : "")">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = i })">@i</a>
+						</li>
+					}
+
+					@if (Model.HasNextPage)
+					{
+						<li class="page-item">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+						</li>
+					}
+				</ul>
+			</nav>
 		</div>
 	</div>
 </div>
