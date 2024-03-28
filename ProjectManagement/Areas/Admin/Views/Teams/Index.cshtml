@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ProjectManagement.Models.Teams>
+﻿@model IPagedList<ProjectManagement.Models.Teams>
 
 @{
 	ViewData["Title"] = "Index";
@@ -41,6 +41,7 @@
 				</div>
 			</div>
 		</div> <!-- Row end  -->
+
 		<div class="row clearfix g-3">
 			<div class="col-sm-12">
 				<div class="card mb-3">
@@ -58,13 +59,13 @@
 							</thead>
 							<tbody>
 								@{
-									int i = 1;
+									int stt = 1;
 								}
 								@foreach (var team in Model)
 								{
 									<tr>
 										<th>
-											@i
+											@stt
 										</th>
 										<td onclick="editTeamName('@team.Id', '@team.Name')">
 											@team.Name
@@ -90,7 +91,7 @@
 											<button type="button" class="btn btn-outline-secondary deleterow"><i class="icofont-ui-delete text-danger"></i></button>
 										</td>
 									</tr>
-									i++;
+									stt++;
 								}
 							</tbody>
 						</table>
@@ -98,6 +99,34 @@
 				</div>
 			</div>
 		</div><!-- Row End -->
+
+		<div class="pagination-container d-flex justify-content-end mr-5">
+			<nav aria-label="Page navigation">
+				<ul class="pagination">
+
+					@if (Model.HasPreviousPage)
+					{
+						<li class="page-item">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>
+						</li>
+					}
+
+					@for (var i = 1; i <= Model.PageCount; i++)
+					{
+						<li class="page-item @(i == Model.PageNumber ? "active" : "")">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = i })">@i</a>
+						</li>
+					}
+
+					@if (Model.HasNextPage)
+					{
+						<li class="page-item">
+							<a class="page-link text-danger" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+						</li>
+					}
+				</ul>
+			</nav>
+		</div>
 	</div>
 </div>
 
@@ -118,7 +147,7 @@
 </div>
 
 <!-- Modal danh sách account có thể mời -->
-<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+<div class="modal fade" id="inviteMemberModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -127,7 +156,7 @@
 			</div>
 			<div class="modal-body">
 				<!-- List of accounts to invite -->
-				<div id="accountsList">
+				<div id="accountsInvite">
 					<!-- Use JavaScript to populate this list -->
 				</div>
 			</div>
@@ -168,6 +197,5 @@
 		</div>
 	</div>
 </div>
-
 
 <script src="~/js/teams_script.js"></script>

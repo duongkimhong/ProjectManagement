@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using ProjectManagement.Models;
+using X.PagedList;
 
 namespace ProjectManagement.Areas.Admin.Controllers
 {
@@ -21,11 +22,18 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		// GET: Admin/Teams
-		public async Task<IActionResult> Index()
+		public async Task<IActionResult> Index(int? page)
 		{
-			var teams = await _context.Teams.Include(p => p.Projects)
+			int pageSize = 10;
+			int pageNumber = page ?? 1;
+			IEnumerable<Teams> teams = await _context.Teams.Include(p => p.Projects)
 											.Include(tm => tm.TeamMembers).ThenInclude(u => u.User).ToListAsync();
-			return View(teams);
+
+			var pagedListNews = await teams.ToPagedListAsync(pageNumber, pageSize);
+			return View(pagedListNews);
+			//var teams = await _context.Teams.Include(p => p.Projects)
+			//								.Include(tm => tm.TeamMembers).ThenInclude(u => u.User).ToListAsync();
+			//return View(teams);
 		}
 
 		// GET: Admin/Teams/Create

@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Utilities.IO;
 using ProjectManagement.Models;
+using X.PagedList;
 
 namespace ProjectManagement.Areas.Admin.Controllers
 {
@@ -19,18 +21,20 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			_userManager = userManager;
 		}
 
-		public async Task<IActionResult> Index()
+		public async Task<IActionResult> Index(int? page)
 		{
 			var currentUser = await _userManager.GetUserAsync(User);
 			if (currentUser == null)
 			{
 				return NotFound();
 			}
-
-			var projects = await _context.Projects.Include(s => s.Sprints).ThenInclude(i => i.Issues)
+			int pageSize = 10;
+			int pageNumber = page ?? 1;
+			IEnumerable<Projects> projects = await _context.Projects.Include(s => s.Sprints).ThenInclude(i => i.Issues)
 				.Where(p => p.Status != ProjectStatus.Cancelled).ToListAsync();
 
 			await CalculateProjectCompletionAsync(projects);
+			var pagedListNews = await projects.ToPagedListAsync(pageNumber, pageSize);
 
 			var todoIssues = await _context.Issues.Include(a => a.Assignee)
 				.Where(i => i.Assignee.Id == currentUser.Id && i.Status == IssueStatus.Todo).ToListAsync();
@@ -44,7 +48,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				.Take(5)
 				.ToListAsync();
 
-			ViewBag.Projects = projects;
+			ViewBag.Projects = pagedListNews;
 			ViewBag.TodoIssues = todoIssues;
 			ViewBag.InProgressIssues = inProgressIssues;
 			ViewBag.Top5Notes = top5Notes;
@@ -52,7 +56,7 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			return View();
 		}
 
-		private async Task CalculateProjectCompletionAsync(List<Projects> projects)
+		private async Task CalculateProjectCompletionAsync(IEnumerable<Projects> projects)
 		{
 			foreach (var project in projects)
 			{

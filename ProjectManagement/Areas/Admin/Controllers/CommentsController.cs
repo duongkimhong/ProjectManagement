@@ -73,7 +73,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			};
 				_context.Comments.Add(comment);
 				await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                //return RedirectToAction(nameof(Index));
+                return Json(new {success=true});
             }
             //ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", comments.UserID);
             return View();

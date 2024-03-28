@@ -84,6 +84,19 @@
 		top: 0;
 		transform: translateX(min(var(--mouse-x), calc(100vw - 100%))) translateY(min(var(--mouse-y), calc(100vh - 100%)));
 	}
+
+	#commentsContainer,
+	#historyContent,
+	#assigneeList {
+		max-height: 300px;
+		overflow-y: auto;
+	}
+
+	#IssueDocumentList,
+	#EpicDocumentList {
+		max-height: 150px;
+		overflow-y: auto;
+	}
 </style>
 
 <div class="body d-flex py-lg-3 py-md-2">
@@ -724,18 +737,22 @@
 
 							</div>
 						</div>
+
 						<div class="row" id="commentsContent" style="display: none;">
 							<!-- Comment input -->
 							<div class="col-md-12 mb-3">
 								<textarea class="form-control" id="commentInput" rows="3" placeholder="Enter your comment"></textarea>
 							</div>
-
 							<!-- Save and Cancel buttons -->
 							<div class="col-md-12 mb-3">
 								<button type="button" class="btn btn-primary" onclick="saveComment()">Save</button>
 								<button type="button" class="btn btn-secondary" onclick="cancelComment()">Cancel</button>
 							</div>
+							<div id="commentsContainer">
+								<!-- nội dung của các comments -->
+							</div>
 						</div>
+
 						<div class="row" id="historyContent" style="display: none;">
 							<!-- Place your history content here -->
 							<div class="col-md-12">

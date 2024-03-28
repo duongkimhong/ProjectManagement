@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Utilities.IO;
 using ProjectManagement.Models;
 using System.Data;
 using System.Security.Claims;
+using X.PagedList;
 
 namespace ProjectManagement.Areas.Admin.Controllers
 {
@@ -21,14 +23,17 @@ namespace ProjectManagement.Areas.Admin.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult Index()
+		public async Task<IActionResult> Index(int? page)
 		{
-			var employees = _context.Users.ToList();
-
-			return View(employees);
+			int pageSize = 10;
+			int pageNumber = page ?? 1;
+			IEnumerable<ApplicationUser> employees = _context.Users.ToList();
+			var pagedListNews = await employees.ToPagedListAsync(pageNumber, pageSize);
+			return View(pagedListNews);
 		}
 
-		public async Task<IActionResult> Detail(string id)
+		[HttpGet]
+		public async Task<IActionResult> EmployeeDetails(string id)
 		{
 			try
 			{
@@ -37,18 +42,44 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				{
 					return NotFound();
 				}
-				ViewBag.EmployeeInfo = employee;
+
+                // Tìm tất cả các nhóm mà người dùng tham gia
+                var teamMemberships = await _context.TeamMembers
+                    .Include(t => t.Teams) 
+                    .ThenInclude(p => p.Projects) 
+                    .Where(u => u.UserID == id && u.Status == MemberStatus.Active)
+                    .ToListAsync();
+
+                // Tạo danh sách các dự án mà người dùng tham gia
+                var projects = new List<Projects>();
+                foreach (var teamMembership in teamMemberships)
+                {
+                    var team = teamMembership.Teams;
+                    if (team != null)
+                    {
+                        var project = team.Projects;
+                        if (project != null)
+                        {
+                            projects.Add(project);
+                        }
+                    }
+                }
+
+				var inProgressIssues = await _context.Issues.Include(a => a.Assignee)
+				.Where(i => i.Assignee.Id == id && i.Status == IssueStatus.InProgress).ToListAsync();
+
+				// Gửi danh sách dự án vào ViewBag để sử dụng trong View
+				ViewBag.EmployeeProjects = projects;
+                ViewBag.EmployeeInfo = employee;
+				ViewBag.InProgressIssues = inProgressIssues;
 				return View(employee);
-			}
-			catch (Exception ex)
+			} catch(Exception ex)
 			{
-				// Ghi lại chi tiết lỗi vào log hoặc hiển thị thông báo lỗi
-				ViewBag.ErrorMessage = "Có lỗi xảy ra khi truy vấn dữ liệu.";
 				return View("Error");
 			}
 		}
 
-		public async Task<IActionResult> updateEmployeeActive(string employeeId, string status)
+		public async Task<IActionResult> updateEmployeeActive(string employeeId, string status, int? page)
 		{
 			try
 			{
@@ -68,8 +99,11 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				}
 				await _context.SaveChangesAsync();
 				//return Json(new { success = true });
-				var employees = _context.Users.ToList();
-				return PartialView("_EmployeesPartial", employees);
+				int pageSize = 10;
+				int pageNumber = page ?? 1;
+				IEnumerable<ApplicationUser> employees = _context.Users.ToList();
+				var pagedListNews = await employees.ToPagedListAsync(pageNumber, pageSize);
+				return PartialView("_EmployeesPartial", pagedListNews);
 			}
 			catch (Exception ex)
 			{
@@ -78,16 +112,8 @@ namespace ProjectManagement.Areas.Admin.Controllers
 			}
 		}
 
-		public async Task<IActionResult> updateUserRole(string userId, string roleId)
+		public async Task<IActionResult> updateUserRole(string userId, string roleId, int? page)
 		{
-			//var user = await _context.UserRoles.FirstOrDefaultAsync(u => u.UserId == userId);
-			//if (user == null)
-			//{
-			//	return NotFound();
-			//}
-			//user.RoleId = roleId;
-			//await _context.SaveChangesAsync();
-
 			// Kiểm tra xem userId và roleId có tồn tại trong cơ sở dữ liệu không
 			var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 			var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
@@ -112,9 +138,11 @@ namespace ProjectManagement.Areas.Admin.Controllers
 				_context.UserRoles.Add(newUserRole);
 				await _context.SaveChangesAsync();
 
-				// Trả về kết quả thành công
-				var employees = await _context.Users.ToListAsync();
-				return PartialView("_EmployeesPartial", employees);
+				int pageSize = 10;
+				int pageNumber = page ?? 1;
+				IEnumerable<ApplicationUser> employees = _context.Users.ToList();
+				var pagedListNews = await employees.ToPagedListAsync(pageNumber, pageSize);
+				return PartialView("_EmployeesPartial", pagedListNews);
 			}
 			catch (Exception ex)
 			{
